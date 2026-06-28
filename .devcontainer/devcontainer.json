@@ -17,6 +17,9 @@
     },
     "ghcr.io/jrussellsmyth/devcontainer-features/openspec:1": {
       "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "latest"
     }
   },
   "customizations": {
@@ -32,5 +35,9 @@
       }
     }
   },
+  "mounts": [
+    "source=${localEnv:HOME}/Pictures,target=/mnt/pictures,type=bind,readonly",
+    "source=${localEnv:HOME}/Downloads,target=/mnt/downloads,type=bind"
+  ],
   "remoteUser": "root"
 }

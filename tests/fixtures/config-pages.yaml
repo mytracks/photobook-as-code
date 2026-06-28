@@ -1,0 +1,11 @@
+# Test configuration with fixed pages
+photos: ./sample-photos/
+output:
+  size: A4
+  format: pdf
+  filename: test-pages.pdf
+  directory: tests/output/
+layout:
+  pages: 3
+  order: alphabetical
+theme: classic

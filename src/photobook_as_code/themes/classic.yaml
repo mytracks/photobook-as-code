@@ -1,0 +1,15 @@
+name: Classic
+description: Traditional style with cream background and visible borders
+
+background:
+  color: "#F5F5DC"  # Beige/cream
+
+borders:
+  enabled: true
+  width: 4
+  color: "#8B7355"  # Brown
+  shadow: true
+
+spacing:
+  grid_gap: 15  # pixels between photos
+  page_margin: 30  # pixels around page edges

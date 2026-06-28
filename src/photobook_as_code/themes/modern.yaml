@@ -1,0 +1,15 @@
+name: Modern
+description: Contemporary style with no borders and tight spacing
+
+background:
+  color: "#FFFFFF"
+
+borders:
+  enabled: false
+  width: 0
+  color: "#000000"
+  shadow: false
+
+spacing:
+  grid_gap: 5  # pixels between photos
+  page_margin: 10  # pixels around page edges

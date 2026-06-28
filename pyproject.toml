@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photobook-as-code"
+version = "0.1.0"
+description = "Automated photobook layout generator from YAML configuration"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Photobook as Code Contributors"}
+]
+keywords = ["photobook", "layout", "generator", "cli", "pdf"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "Pillow>=10.0.0",
+    "reportlab>=4.0.0",
+    "click>=8.1.0",
+    "PyYAML>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+photobook = "photobook_as_code.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/photobook-as-code"
+Repository = "https://github.com/yourusername/photobook-as-code"
+
+[tool.setuptools.packages.find]
+where = ["src"]

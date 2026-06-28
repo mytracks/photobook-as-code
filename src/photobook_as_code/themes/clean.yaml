@@ -1,0 +1,15 @@
+name: Clean
+description: Minimalist style with white background and thin borders
+
+background:
+  color: "#FFFFFF"
+
+borders:
+  enabled: true
+  width: 2
+  color: "#CCCCCC"
+  shadow: false
+
+spacing:
+  grid_gap: 10  # pixels between photos
+  page_margin: 20  # pixels around page edges
