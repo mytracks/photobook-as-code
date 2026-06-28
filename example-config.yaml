@@ -1,0 +1,36 @@
+# Example photobook configuration
+
+# Path to directory containing photos
+# Can be relative or absolute
+photos: ./sample-photos/
+
+# Output configuration
+output:
+  # Paper size: A4, Letter, or custom dimensions
+  size: A4
+  
+  # Output format: pdf, png, or jpg
+  format: pdf
+  
+  # Output filename (optional - defaults to config filename)
+  filename: my-photobook.pdf
+  
+  # Output directory (optional - defaults to current directory)
+  # directory: ./output/
+
+# Layout configuration
+# Specify EITHER photos_per_page OR pages (not both)
+layout:
+  # Fixed number of photos per page
+  photos_per_page: 4
+  
+  # OR: Fixed total number of pages
+  # pages: 10
+  
+  # Photo ordering (optional)
+  # order: alphabetical  # alphabetical (default) or date
+
+# Theme selection
+# Available: clean, classic, modern
+# Or path to custom theme file
+theme: clean

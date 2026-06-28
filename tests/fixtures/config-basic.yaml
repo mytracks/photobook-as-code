@@ -1,0 +1,10 @@
+# Basic test configuration
+photos: ./sample-photos/
+output:
+  size: A4
+  format: pdf
+  filename: test-basic.pdf
+  directory: tests/output/
+layout:
+  photos_per_page: 4
+theme: clean

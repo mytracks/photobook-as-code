@@ -17,6 +17,9 @@
     },
     "ghcr.io/jrussellsmyth/devcontainer-features/openspec:1": {
       "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "latest"
     }
   },
   "customizations": {

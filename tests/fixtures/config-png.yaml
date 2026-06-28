@@ -1,0 +1,9 @@
+# Test configuration for PNG output
+photos: ./sample-photos/
+output:
+  size: Letter
+  format: png
+  directory: tests/output/
+layout:
+  photos_per_page: 6
+theme: modern
