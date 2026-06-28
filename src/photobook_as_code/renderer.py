@@ -3,7 +3,7 @@ Page rendering with photos and styling.
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Iterator, List, Optional
 import logging
 
 from PIL import Image, ImageDraw
@@ -216,9 +216,12 @@ def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
 
 
 def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
-                     distribution, theme: Theme) -> List[Image.Image]:
+                     distribution, theme: Theme):
     """
-    Render all pages for the photobook.
+    Render all pages for the photobook incrementally.
+    
+    This is a generator function that yields pages one at a time to minimize
+    memory usage. The generator can only be consumed once.
     
     Args:
         page_layout: Page layout specification
@@ -226,10 +229,9 @@ def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
         distribution: PhotoDistribution instance
         theme: Theme to apply
         
-    Returns:
-        List of rendered page images
+    Yields:
+        Rendered page images (Iterator[Image.Image])
     """
-    pages = []
     photo_index = 0
     
     for page_num in range(distribution.total_pages):
@@ -239,9 +241,10 @@ def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
         
         # Render page
         page = render_page(page_layout, page_photos, theme, page_num)
-        pages.append(page)
+        
+        # Yield page for processing (memory-efficient streaming)
+        yield page
         
         photo_index += photos_on_page
     
-    logger.info(f"Rendered {len(pages)} pages")
-    return pages
+    logger.info(f"Completed rendering {distribution.total_pages} pages")

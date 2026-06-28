@@ -4,6 +4,7 @@ Command-line interface for photobook generation.
 
 import sys
 import logging
+import tracemalloc
 from pathlib import Path
 from typing import Optional
 
@@ -64,6 +65,11 @@ def main(config: Path, output: Optional[Path], verbose: bool):
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
     
+    # Start memory tracking in verbose mode
+    if verbose:
+        tracemalloc.start()
+        logger.debug("Memory tracking enabled")
+    
     try:
         # Stage 1: Load and validate configuration
         click.echo("📖 Loading configuration...")
@@ -112,14 +118,8 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         # Stage 5: Render pages
         click.echo("🖼️  Rendering pages...")
         
-        with click.progressbar(
-            length=distribution.total_pages,
-            label='Rendering',
-            show_percent=True
-        ) as bar:
-            # We'll render all at once, but update progress
-            pages = render_all_pages(page_layout, photos, distribution, theme)
-            bar.update(distribution.total_pages)
+        # Create page generator (memory-efficient streaming)
+        pages_generator = render_all_pages(page_layout, photos, distribution, theme)
         
         # Stage 6: Generate output
         click.echo("💾 Generating output...")
@@ -137,16 +137,25 @@ def main(config: Path, output: Optional[Path], verbose: bool):
                 ensure_unique=False
             )
         
-        # Generate output files
-        output_files = generate_output(
-            pages=pages,
-            output_format=pb_config.output.format,
-            output_path=output_path,
-            page_width=page_width,
-            page_height=page_height,
-            quality=pb_config.output.quality,
-            dpi=300
-        )
+        # Generate output files with streaming pages
+        with click.progressbar(
+            length=distribution.total_pages,
+            label='Processing',
+            show_percent=True
+        ) as bar:
+            # We'll consume the generator during output generation
+            # Progress updates happen inside the output functions
+            output_files = generate_output(
+                pages=pages_generator,
+                output_format=pb_config.output.format,
+                output_path=output_path,
+                page_width=page_width,
+                page_height=page_height,
+                total_pages=distribution.total_pages,
+                quality=pb_config.output.quality,
+                dpi=300
+            )
+            bar.update(distribution.total_pages)
         
         # Stage 7: Success!
         click.echo()
@@ -156,6 +165,15 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         for file_path in output_files:
             click.echo(f"  📄 {file_path}")
         click.echo()
+        
+        # Show memory statistics in verbose mode
+        if verbose:
+            current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            logger.info(f"Memory usage - Current: {current / 1024 / 1024:.1f} MB, "
+                       f"Peak: {peak / 1024 / 1024:.1f} MB")
+            click.echo(f"💾 Peak memory usage: {peak / 1024 / 1024:.1f} MB")
+            click.echo()
         
     except ConfigurationError as e:
         click.secho(f"❌ Configuration error: {e}", fg='red', err=True)
@@ -182,6 +200,9 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         if verbose:
             import traceback
             traceback.print_exc()
+            # Stop memory tracking on error
+            if tracemalloc.is_tracing():
+                tracemalloc.stop()
         sys.exit(1)
 
 

@@ -3,7 +3,7 @@ Output file generation (PDF and images).
 """
 
 from pathlib import Path
-from typing import List
+from typing import Iterator, List
 import logging
 from datetime import datetime
 
@@ -20,17 +20,21 @@ class OutputError(Exception):
     pass
 
 
-def generate_pdf(pages: List[Image.Image], output_path: Path,
+def generate_pdf(pages: Iterator[Image.Image], output_path: Path,
                  page_width_pixels: int, page_height_pixels: int,
-                 dpi: int = 300) -> None:
+                 total_pages: int, dpi: int = 300) -> None:
     """
-    Generate PDF from rendered page images.
+    Generate PDF from rendered page images using streaming approach.
+    
+    Processes pages one at a time to minimize memory usage. The pages iterator
+    can only be consumed once.
     
     Args:
-        pages: List of page images
+        pages: Iterator of page images (yields pages one at a time)
         output_path: Path for output PDF file
         page_width_pixels: Page width in pixels
         page_height_pixels: Page height in pixels
+        total_pages: Expected number of pages for progress reporting
         dpi: Dots per inch for conversion
         
     Raises:
@@ -44,10 +48,10 @@ def generate_pdf(pages: List[Image.Image], output_path: Path,
         # Create PDF canvas
         c = canvas.Canvas(str(output_path), pagesize=(page_width_pts, page_height_pts))
         
-        logger.info(f"Generating PDF with {len(pages)} pages...")
+        logger.info(f"Generating PDF with {total_pages} pages...")
         
-        for i, page in enumerate(pages):
-            logger.debug(f"Adding page {i + 1}/{len(pages)} to PDF")
+        for i, page in enumerate(pages, start=1):
+            logger.debug(f"Adding page {i}/{total_pages} to PDF")
             
             # Save page image to temporary bytes
             import io
@@ -68,7 +72,7 @@ def generate_pdf(pages: List[Image.Image], output_path: Path,
             )
             
             # Add new page for next image (except on last page)
-            if i < len(pages) - 1:
+            if i < total_pages:
                 c.showPage()
         
         # Save PDF
@@ -79,15 +83,19 @@ def generate_pdf(pages: List[Image.Image], output_path: Path,
         raise OutputError(f"Failed to generate PDF: {e}")
 
 
-def generate_png_pages(pages: List[Image.Image], output_dir: Path,
-                       base_filename: str) -> List[Path]:
+def generate_png_pages(pages: Iterator[Image.Image], output_dir: Path,
+                       base_filename: str, total_pages: int) -> List[Path]:
     """
-    Generate PNG images for each page.
+    Generate PNG images for each page using streaming approach.
+    
+    Processes pages one at a time to minimize memory usage. The pages iterator
+    can only be consumed once.
     
     Args:
-        pages: List of page images
+        pages: Iterator of page images (yields pages one at a time)
         output_dir: Directory for output files
         base_filename: Base name for files (without extension)
+        total_pages: Expected number of pages for progress reporting
         
     Returns:
         List of generated file paths
@@ -98,14 +106,14 @@ def generate_png_pages(pages: List[Image.Image], output_dir: Path,
     try:
         output_paths = []
         
-        logger.info(f"Generating {len(pages)} PNG pages...")
+        logger.info(f"Generating {total_pages} PNG pages...")
         
-        for i, page in enumerate(pages):
+        for i, page in enumerate(pages, start=1):
             # Generate sequential filename
-            page_filename = f"{base_filename}_page_{i+1:03d}.png"
+            page_filename = f"{base_filename}_page_{i:03d}.png"
             output_path = output_dir / page_filename
             
-            logger.debug(f"Saving page {i + 1}/{len(pages)} as PNG")
+            logger.debug(f"Saving page {i}/{total_pages} as PNG")
             
             # Save as PNG
             page.save(output_path, format='PNG', optimize=False)
@@ -118,15 +126,19 @@ def generate_png_pages(pages: List[Image.Image], output_dir: Path,
         raise OutputError(f"Failed to generate PNG pages: {e}")
 
 
-def generate_jpg_pages(pages: List[Image.Image], output_dir: Path,
-                       base_filename: str, quality: int = 95) -> List[Path]:
+def generate_jpg_pages(pages: Iterator[Image.Image], output_dir: Path,
+                       base_filename: str, total_pages: int, quality: int = 95) -> List[Path]:
     """
-    Generate JPG images for each page.
+    Generate JPG images for each page using streaming approach.
+    
+    Processes pages one at a time to minimize memory usage. The pages iterator
+    can only be consumed once.
     
     Args:
-        pages: List of page images
+        pages: Iterator of page images (yields pages one at a time)
         output_dir: Directory for output files
         base_filename: Base name for files (without extension)
+        total_pages: Expected number of pages for progress reporting
         quality: JPEG quality (1-100)
         
     Returns:
@@ -138,14 +150,14 @@ def generate_jpg_pages(pages: List[Image.Image], output_dir: Path,
     try:
         output_paths = []
         
-        logger.info(f"Generating {len(pages)} JPG pages with quality {quality}...")
+        logger.info(f"Generating {total_pages} JPG pages with quality {quality}...")
         
-        for i, page in enumerate(pages):
+        for i, page in enumerate(pages, start=1):
             # Generate sequential filename
-            page_filename = f"{base_filename}_page_{i+1:03d}.jpg"
+            page_filename = f"{base_filename}_page_{i:03d}.jpg"
             output_path = output_dir / page_filename
             
-            logger.debug(f"Saving page {i + 1}/{len(pages)} as JPG")
+            logger.debug(f"Saving page {i}/{total_pages} as JPG")
             
             # Save as JPEG
             page.save(output_path, format='JPEG', quality=quality, optimize=True)
@@ -158,18 +170,22 @@ def generate_jpg_pages(pages: List[Image.Image], output_dir: Path,
         raise OutputError(f"Failed to generate JPG pages: {e}")
 
 
-def generate_output(pages: List[Image.Image], output_format: str,
+def generate_output(pages: Iterator[Image.Image], output_format: str,
                     output_path: Path, page_width: int, page_height: int,
-                    quality: int = 95, dpi: int = 300) -> List[Path]:
+                    total_pages: int, quality: int = 95, dpi: int = 300) -> List[Path]:
     """
-    Generate output files in specified format.
+    Generate output files in specified format using streaming approach.
+    
+    Processes pages one at a time to minimize memory usage. The pages iterator
+    can only be consumed once.
     
     Args:
-        pages: List of rendered page images
+        pages: Iterator of rendered page images (yields pages one at a time)
         output_format: Output format ('pdf', 'png', or 'jpg')
         output_path: Output file path (for PDF) or directory (for images)
         page_width: Page width in pixels
         page_height: Page height in pixels
+        total_pages: Expected number of pages for progress reporting
         quality: JPEG quality for JPG output
         dpi: DPI for PDF conversion
         
@@ -179,7 +195,7 @@ def generate_output(pages: List[Image.Image], output_format: str,
     Raises:
         OutputError: If output generation fails
     """
-    if not pages:
+    if total_pages <= 0:
         raise OutputError("No pages to output")
     
     # Ensure output directory exists
@@ -187,16 +203,16 @@ def generate_output(pages: List[Image.Image], output_format: str,
     output_dir.mkdir(parents=True, exist_ok=True)
     
     if output_format == 'pdf':
-        generate_pdf(pages, output_path, page_width, page_height, dpi)
+        generate_pdf(pages, output_path, page_width, page_height, total_pages, dpi)
         return [output_path]
     
     elif output_format == 'png':
         base_name = output_path.stem if output_path.suffix else output_path.name
-        return generate_png_pages(pages, output_dir, base_name)
+        return generate_png_pages(pages, output_dir, base_name, total_pages)
     
     elif output_format == 'jpg':
         base_name = output_path.stem if output_path.suffix else output_path.name
-        return generate_jpg_pages(pages, output_dir, base_name, quality)
+        return generate_jpg_pages(pages, output_dir, base_name, total_pages, quality)
     
     else:
         raise OutputError(f"Unsupported output format: {output_format}")
