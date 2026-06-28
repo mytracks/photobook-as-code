@@ -1,0 +1,12 @@
+# Test configuration for sparse distribution: 2 photos across 5 pages
+# Note: Uses a subdirectory with only 2 photos
+photos: ./sample-photos-subset-2/
+output:
+  size: A4
+  format: pdf
+  filename: test-sparse-2-5.pdf
+  directory: tests/output/
+layout:
+  pages: 5
+  order: alphabetical
+theme: clean

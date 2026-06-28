@@ -232,19 +232,15 @@ def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
     Yields:
         Rendered page images (Iterator[Image.Image])
     """
-    photo_index = 0
-    
     for page_num in range(distribution.total_pages):
-        # Get photos for this page
-        photos_on_page = distribution.get_photos_for_page(page_num)
-        page_photos = all_photos[photo_index:photo_index + photos_on_page]
+        # Get photo indices for this page (handles both sparse and normal distribution)
+        photo_indices = distribution.get_photo_indices_for_page(page_num)
+        page_photos = [all_photos[i] for i in photo_indices]
         
         # Render page
         page = render_page(page_layout, page_photos, theme, page_num)
         
         # Yield page for processing (memory-efficient streaming)
         yield page
-        
-        photo_index += photos_on_page
     
     logger.info(f"Completed rendering {distribution.total_pages} pages")

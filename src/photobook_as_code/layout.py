@@ -65,10 +65,53 @@ class PhotoDistribution:
     photos_per_page: int
     photos_on_last_page: int
     exact_page_count: bool = False  # Whether page count is enforced exactly
+    sparse_distribution: bool = False  # Whether using interval-based sparse distribution
+    photo_to_page_map: dict = None  # Mapping of photo index to page number for sparse distribution
+    
+    def __post_init__(self):
+        """Initialize mutable defaults."""
+        if self.photo_to_page_map is None:
+            self.photo_to_page_map = {}
+    
+    def _calculate_sparse_page_assignments(self) -> dict:
+        """
+        Calculate which page each photo should appear on for sparse distribution.
+        Uses interval-based spacing to distribute photos evenly across all pages.
+        
+        Returns:
+            Dictionary mapping photo index to page number
+        """
+        if self.total_photos == 0:
+            return {}
+        
+        # Calculate spacing interval (floating point for even distribution)
+        interval = self.total_pages / self.total_photos
+        
+        assignments = {}
+        for photo_idx in range(self.total_photos):
+            # Calculate target page position and round to nearest integer
+            page_num = round(photo_idx * interval)
+            
+            # Ensure first photo is on page 0
+            if photo_idx == 0:
+                page_num = 0
+            
+            # Ensure last photo is within valid page range
+            if page_num >= self.total_pages:
+                page_num = self.total_pages - 1
+            
+            assignments[photo_idx] = page_num
+        
+        return assignments
     
     def get_photos_for_page(self, page_num: int) -> int:
         """Get number of photos for a specific page (0-indexed)."""
-        if self.exact_page_count:
+        if self.sparse_distribution:
+            # In sparse distribution mode, count photos assigned to this page
+            photos_on_page = sum(1 for page in self.photo_to_page_map.values() 
+                                if page == page_num)
+            return photos_on_page
+        elif self.exact_page_count:
             # In exact page count mode, distribute photos evenly then trail empty
             photos_remaining = self.total_photos - (page_num * self.photos_per_page)
             if photos_remaining <= 0:
@@ -83,6 +126,26 @@ class PhotoDistribution:
                 return self.photos_per_page
             else:
                 return self.photos_on_last_page
+    
+    def get_photo_indices_for_page(self, page_num: int) -> list:
+        """
+        Get the photo indices (into all_photos list) for a specific page.
+        
+        Args:
+            page_num: Page number (0-indexed)
+            
+        Returns:
+            List of photo indices that should appear on this page
+        """
+        if self.sparse_distribution:
+            # In sparse distribution, look up which photos are assigned to this page
+            return [photo_idx for photo_idx, page in self.photo_to_page_map.items() 
+                   if page == page_num]
+        else:
+            # For normal distribution, calculate photo range
+            photos_before = sum(self.get_photos_for_page(i) for i in range(page_num))
+            photos_on_page = self.get_photos_for_page(page_num)
+            return list(range(photos_before, photos_before + photos_on_page))
 
 
 class LayoutError(Exception):
@@ -228,7 +291,22 @@ def distribute_photos(total_photos: int, photos_per_page: int = None,
         if total_pages < 1:
             raise LayoutError("total_pages must be at least 1")
         
-        # Calculate photos per page for even distribution
+        # Check if we need sparse distribution (more pages than photos)
+        if total_pages > total_photos and total_photos > 0:
+            # Sparse distribution: spread photos evenly across pages
+            distribution = PhotoDistribution(
+                total_photos=total_photos,
+                total_pages=total_pages,
+                photos_per_page=1,  # Each page with photo has exactly 1 photo
+                photos_on_last_page=1,
+                exact_page_count=True,
+                sparse_distribution=True,
+            )
+            # Calculate page assignments using interval-based spacing
+            distribution.photo_to_page_map = distribution._calculate_sparse_page_assignments()
+            return distribution
+        
+        # Dense distribution: calculate photos per page for even distribution
         photos_pp = calculate_photos_per_page(total_photos, total_pages)
         
         # In exact page count mode, generate exactly the requested number of pages

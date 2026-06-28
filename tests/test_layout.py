@@ -125,20 +125,24 @@ class TestDistributePhotos:
             assert dist.get_photos_for_page(i) == 10
     
     def test_exact_page_count_with_excess_pages(self):
-        """Test exact page count when pages exceed photos needed."""
+        """Test exact page count when pages exceed photos needed (sparse distribution)."""
         dist = distribute_photos(total_photos=10, total_pages=20)
         
         assert dist.total_pages == 20  # Exactly 20 pages
         assert dist.photos_per_page == 1  # 1 photo per page
         assert dist.exact_page_count is True
+        assert dist.sparse_distribution is True  # Should use sparse distribution
         
-        # First 10 pages have photos
-        for i in range(10):
-            assert dist.get_photos_for_page(i) == 1
+        # Total photos distributed should be 10
+        total_photos_placed = sum(dist.get_photos_for_page(i) for i in range(20))
+        assert total_photos_placed == 10
         
-        # Last 10 pages are empty
-        for i in range(10, 20):
-            assert dist.get_photos_for_page(i) == 0
+        # Photos should be spread across the range, not consecutive
+        # With interval = 2.0, photos should be at: 0, 2, 4, 6, 8, 10, 12, 14, 16, 18
+        pages_with_photos = [i for i in range(20) if dist.get_photos_for_page(i) == 1]
+        assert len(pages_with_photos) == 10
+        assert pages_with_photos[0] == 0  # First photo
+        assert pages_with_photos[-1] == 18  # Last photo near end
     
     def test_exact_page_count_uneven_distribution(self):
         """Test exact page count with uneven photo distribution."""
@@ -183,19 +187,23 @@ class TestDistributePhotos:
         assert dist.get_photos_for_page(0) == 10
     
     def test_very_high_page_count(self):
-        """Test edge case: very high page count (should still work)."""
+        """Test edge case: very high page count (sparse distribution)."""
         dist = distribute_photos(total_photos=5, total_pages=100)
         
         assert dist.total_pages == 100
         assert dist.photos_per_page == 1
+        assert dist.sparse_distribution is True
         
-        # First 5 pages have 1 photo each
-        for i in range(5):
-            assert dist.get_photos_for_page(i) == 1
+        # Total photos distributed should be 5
+        total_photos_placed = sum(dist.get_photos_for_page(i) for i in range(100))
+        assert total_photos_placed == 5
         
-        # Remaining 95 pages are empty
-        for i in range(5, 100):
-            assert dist.get_photos_for_page(i) == 0
+        # Photos should be evenly spaced, not consecutive
+        # With interval = 20.0, photos should be at: 0, 20, 40, 60, 80
+        pages_with_photos = [i for i in range(100) if dist.get_photos_for_page(i) == 1]
+        assert len(pages_with_photos) == 5
+        assert pages_with_photos[0] == 0  # First photo
+        assert pages_with_photos[-1] == 80  # Last photo
     
     def test_error_no_parameters(self):
         """Test error when neither parameter is specified."""
@@ -232,6 +240,90 @@ class TestDistributePhotos:
         
         # Last page has 1 photo
         assert dist.get_photos_for_page(6) == 1
+    
+    def test_sparse_distribution_8_photos_15_pages(self):
+        """Test sparse distribution with 8 photos across 15 pages."""
+        dist = distribute_photos(total_photos=8, total_pages=15)
+        
+        assert dist.total_photos == 8
+        assert dist.total_pages == 15
+        assert dist.sparse_distribution is True
+        assert dist.photos_per_page == 1
+        
+        # Count total photos distributed
+        total_photos_placed = sum(dist.get_photos_for_page(i) for i in range(15))
+        assert total_photos_placed == 8
+        
+        # Verify each page has 0 or 1 photo
+        for i in range(15):
+            assert dist.get_photos_for_page(i) in [0, 1]
+    
+    def test_sparse_distribution_3_photos_10_pages(self):
+        """Test sparse distribution with 3 photos across 10 pages."""
+        dist = distribute_photos(total_photos=3, total_pages=10)
+        
+        assert dist.total_photos == 3
+        assert dist.total_pages == 10
+        assert dist.sparse_distribution is True
+        assert dist.photos_per_page == 1
+        
+        # Count total photos distributed
+        total_photos_placed = sum(dist.get_photos_for_page(i) for i in range(10))
+        assert total_photos_placed == 3
+        
+        # Verify each page has 0 or 1 photo
+        for i in range(10):
+            assert dist.get_photos_for_page(i) in [0, 1]
+    
+    def test_sparse_distribution_even_spacing(self):
+        """Test that photos are evenly spaced across page range."""
+        dist = distribute_photos(total_photos=5, total_pages=25)
+        
+        assert dist.sparse_distribution is True
+        
+        # Find pages with photos
+        pages_with_photos = [i for i in range(25) if dist.get_photos_for_page(i) == 1]
+        
+        assert len(pages_with_photos) == 5
+        
+        # Check spacing is even (interval = 5.0)
+        # Expected positions: 0, 5, 10, 15, 20
+        assert pages_with_photos == [0, 5, 10, 15, 20]
+        
+        # Calculate intervals between consecutive photos
+        intervals = [pages_with_photos[i+1] - pages_with_photos[i] 
+                    for i in range(len(pages_with_photos)-1)]
+        
+        # All intervals should be exactly 5
+        assert all(interval == 5 for interval in intervals)
+    
+    def test_sparse_distribution_single_photo_many_pages(self):
+        """Test edge case: 1 photo across many pages."""
+        dist = distribute_photos(total_photos=1, total_pages=20)
+        
+        assert dist.total_photos == 1
+        assert dist.total_pages == 20
+        assert dist.sparse_distribution is True
+        
+        # Exactly one page should have a photo
+        pages_with_photos = sum(dist.get_photos_for_page(i) for i in range(20))
+        assert pages_with_photos == 1
+        
+        # First page should have the photo (as per algorithm)
+        assert dist.get_photos_for_page(0) == 1
+    
+    def test_sparse_distribution_backward_compatibility_photos_gte_pages(self):
+        """Test that sparse distribution is NOT used when photos >= pages."""
+        # When photos >= pages, use normal distribution, not sparse
+        dist = distribute_photos(total_photos=10, total_pages=5)
+        
+        assert dist.sparse_distribution is False
+        assert dist.exact_page_count is True
+        
+        # Should distribute normally: 2 photos per page
+        assert dist.photos_per_page == 2
+        for i in range(5):
+            assert dist.get_photos_for_page(i) == 2
 
 
 class TestCalculatePhotosPerPage:
@@ -298,3 +390,119 @@ class TestCalculateGridDimensions:
         
         with pytest.raises(LayoutError):
             calculate_grid_dimensions(-1)
+
+
+class TestSparseDistributionIntegration:
+    """Integration tests for sparse distribution with real configurations."""
+    
+    def test_sparse_distribution_8_photos_15_pages_integration(self):
+        """Test sparse distribution with 8 photos across 15 pages (real scenario)."""
+        # This matches config-excess-pages.yaml
+        dist = distribute_photos(total_photos=8, total_pages=15)
+        
+        assert dist.sparse_distribution is True
+        assert dist.total_photos == 8
+        assert dist.total_pages == 15
+        
+        # Verify photos are distributed at expected intervals
+        # interval = 15 / 8 = 1.875
+        # Expected positions: round(0*1.875)=0, round(1*1.875)=2, round(2*1.875)=4, 
+        #                     round(3*1.875)=6, round(4*1.875)=8, round(5*1.875)=9,
+        #                     round(6*1.875)=11, round(7*1.875)=13
+        expected_pages_with_photos = [0, 2, 4, 6, 8, 9, 11, 13]
+        actual_pages_with_photos = [i for i in range(15) if dist.get_photos_for_page(i) == 1]
+        
+        assert actual_pages_with_photos == expected_pages_with_photos
+        
+        # Verify blank pages are truly blank (return 0 photos)
+        blank_pages = [1, 3, 5, 7, 10, 12, 14]
+        for page in blank_pages:
+            assert dist.get_photos_for_page(page) == 0
+    
+    def test_sparse_distribution_3_photos_10_pages_integration(self):
+        """Test sparse distribution with 3 photos across 10 pages."""
+        dist = distribute_photos(total_photos=3, total_pages=10)
+        
+        assert dist.sparse_distribution is True
+        
+        # interval = 10 / 3 = 3.333...
+        # Expected positions: 0, round(3.333)=3, round(6.667)=7
+        expected_pages_with_photos = [0, 3, 7]
+        actual_pages_with_photos = [i for i in range(10) if dist.get_photos_for_page(i) == 1]
+        
+        assert actual_pages_with_photos == expected_pages_with_photos
+        
+        # Verify all other pages are blank
+        blank_pages = [1, 2, 4, 5, 6, 8, 9]
+        for page in blank_pages:
+            assert dist.get_photos_for_page(page) == 0
+    
+    def test_sparse_distribution_2_photos_5_pages_integration(self):
+        """Test sparse distribution with 2 photos across 5 pages."""
+        dist = distribute_photos(total_photos=2, total_pages=5)
+        
+        assert dist.sparse_distribution is True
+        
+        # interval = 5 / 2 = 2.5
+        # Expected positions: 0, round(2.5)=2
+        expected_pages_with_photos = [0, 2]
+        actual_pages_with_photos = [i for i in range(5) if dist.get_photos_for_page(i) == 1]
+        
+        assert actual_pages_with_photos == expected_pages_with_photos
+        
+        # Verify blank pages
+        blank_pages = [1, 3, 4]
+        for page in blank_pages:
+            assert dist.get_photos_for_page(page) == 0
+    
+    def test_sparse_distribution_1_photo_10_pages_integration(self):
+        """Test sparse distribution with 1 photo across 10 pages."""
+        dist = distribute_photos(total_photos=1, total_pages=10)
+        
+        assert dist.sparse_distribution is True
+        
+        # Single photo should be on page 0
+        assert dist.get_photos_for_page(0) == 1
+        
+        # All other pages should be blank
+        for page in range(1, 10):
+            assert dist.get_photos_for_page(page) == 0
+    
+    def test_various_sparse_ratios(self):
+        """Test various photo/page ratios for correct sparse distribution."""
+        test_cases = [
+            (2, 5),   # 2:5 ratio
+            (1, 10),  # 1:10 ratio
+            (8, 15),  # 8:15 ratio
+            (5, 20),  # 1:4 ratio
+            (3, 12),  # 1:4 ratio
+        ]
+        
+        for photos, pages in test_cases:
+            dist = distribute_photos(total_photos=photos, total_pages=pages)
+            
+            # Verify it's sparse distribution
+            assert dist.sparse_distribution is True, f"Failed for {photos}:{pages}"
+            
+            # Verify total photos distributed
+            total_distributed = sum(dist.get_photos_for_page(i) for i in range(pages))
+            assert total_distributed == photos, f"Failed for {photos}:{pages}"
+            
+            # Verify each page has 0 or 1 photo
+            for i in range(pages):
+                assert dist.get_photos_for_page(i) in [0, 1], f"Failed for {photos}:{pages} page {i}"
+    
+    def test_memory_efficiency_with_sparse_distribution(self):
+        """Test that sparse distribution doesn't store excessive data."""
+        # Create distribution for a large sparse scenario
+        dist = distribute_photos(total_photos=100, total_pages=1000)
+        
+        assert dist.sparse_distribution is True
+        
+        # photo_to_page_map should only store 100 entries (one per photo)
+        assert len(dist.photo_to_page_map) == 100
+        
+        # Verify distribution still works correctly
+        total_distributed = sum(dist.get_photos_for_page(i) for i in range(1000))
+        assert total_distributed == 100
+
