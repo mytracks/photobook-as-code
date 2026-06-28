@@ -11,6 +11,12 @@
     },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
+    },
+    "ghcr.io/stu-bell/devcontainer-features/open-code:0": {
+      "version": "latest"
+    },
+    "ghcr.io/jrussellsmyth/devcontainer-features/openspec:1": {
+      "version": "latest"
     }
   },
   "customizations": {
@@ -26,6 +32,5 @@
       }
     }
   },
-  "postCreateCommand": "npm install -g @fission-ai/openspec@latest && openspec --version && swift --version",
   "remoteUser": "root"
 }
