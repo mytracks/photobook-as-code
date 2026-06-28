@@ -138,13 +138,9 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
     photos_per_page = layout_data.get('photos_per_page')
     pages = layout_data.get('pages')
     
-    if photos_per_page is not None and pages is not None:
-        raise ConfigurationError(
-            "Cannot specify both 'photos_per_page' and 'pages'. Choose one."
-        )
-    
+    # If both specified, pages takes precedence (will be handled in distribute_photos)
+    # If neither specified, default to 4 photos per page
     if photos_per_page is None and pages is None:
-        # Default to 4 photos per page
         layout_data['photos_per_page'] = 4
     
     # Build configuration objects
