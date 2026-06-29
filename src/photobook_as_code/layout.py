@@ -112,14 +112,17 @@ class PhotoDistribution:
                                 if page == page_num)
             return photos_on_page
         elif self.exact_page_count:
-            # In exact page count mode, distribute photos evenly then trail empty
-            photos_remaining = self.total_photos - (page_num * self.photos_per_page)
-            if photos_remaining <= 0:
-                return 0  # Empty page
-            elif photos_remaining < self.photos_per_page:
-                return photos_remaining  # Partial page
+            # In exact page count mode, use even distribution algorithm
+            # This ensures ALL pages are used, not just consecutive filling
+            base = self.total_photos // self.total_pages
+            remainder = self.total_photos % self.total_pages
+            
+            # First 'remainder' pages get base + 1 photos
+            # Remaining pages get base photos
+            if page_num < remainder:
+                return base + 1
             else:
-                return self.photos_per_page  # Full page
+                return base
         else:
             # Original behavior: all pages have photos_per_page except last
             if page_num < self.total_pages - 1:

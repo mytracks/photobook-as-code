@@ -88,7 +88,7 @@ The system SHALL handle photos with different aspect ratios (portrait, landscape
 - **THEN** system centers photo within cell with appropriate padding
 
 ### Requirement: Distribute photos across pages
-The system SHALL distribute all photos across the specified or calculated number of pages according to layout constraints, generating exactly the page count specified when an explicit page count is provided, with photos distributed evenly throughout when page count exceeds photos.
+The system SHALL distribute all photos across the specified or calculated number of pages according to layout constraints. When an explicit page count is provided, the system SHALL distribute photos evenly across ALL pages, ensuring maximum use of the requested page range.
 
 #### Scenario: Exact division
 - **WHEN** total photos divide evenly by photos-per-page
@@ -105,6 +105,10 @@ The system SHALL distribute all photos across the specified or calculated number
 #### Scenario: Exact page count with sufficient photos
 - **WHEN** configuration specifies exact page count (layout.pages) with enough photos to distribute
 - **THEN** system generates exactly that many pages with photos distributed as evenly as possible
+
+#### Scenario: Exact page count distributes across full range
+- **WHEN** configuration specifies exact page count with photos exceeding page count (e.g., 168 photos, 100 pages)
+- **THEN** system distributes photos across all 100 pages, with some pages getting multiple photos, ensuring no pages at the end remain empty
 
 #### Scenario: Exact page count with excess pages - sparse distribution
 - **WHEN** configuration specifies more pages than available photos (e.g., 8 photos, 15 pages)

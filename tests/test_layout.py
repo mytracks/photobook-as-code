@@ -151,12 +151,45 @@ class TestDistributePhotos:
         assert dist.total_pages == 5
         assert dist.photos_per_page == 5  # ceil(23/5)
         
-        # Pages should have: 5, 5, 5, 5, 3
+        # Even distribution: 23 // 5 = 4 base, 23 % 5 = 3 remainder
+        # First 3 pages get 5 photos (4+1), last 2 pages get 4 photos
         assert dist.get_photos_for_page(0) == 5
         assert dist.get_photos_for_page(1) == 5
         assert dist.get_photos_for_page(2) == 5
-        assert dist.get_photos_for_page(3) == 5
-        assert dist.get_photos_for_page(4) == 3
+        assert dist.get_photos_for_page(3) == 4
+        assert dist.get_photos_for_page(4) == 4
+        
+        # Verify total = 23
+        total = sum(dist.get_photos_for_page(i) for i in range(5))
+        assert total == 23
+    
+    def test_exact_page_count_168_photos_100_pages(self):
+        """Test bug fix: 168 photos across 100 pages should use ALL pages."""
+        dist = distribute_photos(total_photos=168, total_pages=100)
+        
+        assert dist.total_pages == 100
+        assert dist.exact_page_count is True
+        assert dist.sparse_distribution is False  # Dense distribution, not sparse
+        
+        # Even distribution: 168 // 100 = 1 base, 168 % 100 = 68 remainder
+        # First 68 pages get 2 photos, remaining 32 pages get 1 photo
+        base = 168 // 100  # 1
+        remainder = 168 % 100  # 68
+        
+        # Verify distribution
+        for i in range(remainder):
+            assert dist.get_photos_for_page(i) == base + 1  # 2 photos
+        
+        for i in range(remainder, 100):
+            assert dist.get_photos_for_page(i) == base  # 1 photo
+        
+        # Verify total photos distributed = 168
+        total = sum(dist.get_photos_for_page(i) for i in range(100))
+        assert total == 168
+        
+        # Verify NO empty pages (bug was: pages 84-99 were empty)
+        for i in range(100):
+            assert dist.get_photos_for_page(i) > 0, f"Page {i} should not be empty"
     
     def test_zero_photos_with_page_count(self):
         """Test edge case: zero photos but page count specified."""
