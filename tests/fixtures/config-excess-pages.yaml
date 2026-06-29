@@ -1,0 +1,11 @@
+# Test configuration with more pages than photos
+photos: ./sample-photos/
+output:
+  size: A4
+  format: pdf
+  filename: test-excess-pages.pdf
+  directory: tests/output/
+layout:
+  pages: 15  # More than the 8 photos available
+  order: alphabetical
+theme: clean

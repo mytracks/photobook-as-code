@@ -2,7 +2,8 @@
 
 # Path to directory containing photos
 # Can be relative or absolute
-photos: /mnt/pictures/2026/2026-04-30+ Hamburg
+#photos: /mnt/pictures/2026/2026-04-30+ Hamburg
+photos: /mnt/pictures/2026/Test
 
 # Output configuration
 output:
@@ -25,7 +26,7 @@ layout:
   # photos_per_page: 4
   
   # OR: Fixed total number of pages
-  pages: 100
+  pages: 8
   
   # Photo ordering (optional)
   # order: alphabetical  # alphabetical (default) or date
