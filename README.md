@@ -275,6 +275,55 @@ layout:
 theme: modern
 ```
 
+## Migration Guide (Breaking Changes)
+
+This update introduces a new, flexible template-based layout system that replaces the old grid-based layout. This is a **BREAKING CHANGE** for custom themes and configurations.
+
+**Key Changes:**
+
+1.  **`layouts` section is now required in all themes**:
+    -   Previously, themes implicitly used a grid-based layout.
+    -   Now, every theme (built-in or custom) **must** include a `layouts` section in its YAML definition. This section defines how photos are arranged on a page for different photo counts and orientation combinations.
+    -   Themes without a `layouts` section will now raise a `"Theme missing 'layouts' section"` error.
+
+2.  **Removal of grid-based layout options**:
+    -   The internal grid-based layout calculation code has been removed.
+    -   Layouts are now entirely driven by the templates defined in the `layouts` section of your theme.
+
+**Migration Steps for Custom Themes:**
+
+If you have custom themes, you need to update them to include the new `layouts` section.
+
+1.  **Add `layouts` section**:
+    -   Add a top-level `layouts:` key to your theme YAML file.
+    -   Under `layouts`, define a list of `LayoutTemplate` objects.
+
+2.  **Define Layout Templates**:
+    -   For each `LayoutTemplate`, specify:
+        -   `count`: The number of photos the template is designed for.
+        -   `photos`: A list of `PhotoSpec` objects, one for each photo.
+            -   `orientation`: (`landscape` or `portrait`) - used for matching and sizing.
+            -   `position`: `{x: 0.0-1.0, y: 0.0-1.0}` - center point of the photo, relative to the page. (0.0,0.0 is top-left, 0.5,0.5 is center).
+            -   `size`: `0.0-1.0` - relative size. For landscape photos, this is a percentage of the page width. For portrait photos, it's a percentage of the page height.
+
+**Example of a basic `layouts` section (for 1 photo):**
+
+```yaml
+layouts:
+  - count: 1
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.5}
+        size: 0.9 # 90% of page width
+  - count: 1
+    photos:
+      - orientation: portrait
+        position: {x: 0.5, y: 0.5}
+        size: 0.9 # 90% of page height
+```
+
+Refer to the built-in themes (`clean.yaml`, `modern.yaml`, `classic.yaml` in `src/photobook_as_code/themes/`) for more comprehensive examples covering various photo counts and orientation combinations.
+
 ## Troubleshooting
 
 ### "No supported image files found"
@@ -317,6 +366,45 @@ theme: modern
 - Some photos may lack EXIF date metadata
 - Tool falls back to file modification date
 - To fix: use photo management software to add EXIF dates
+
+### Layout and Theme Configuration Errors
+
+- **"Theme missing 'layouts' section"**:
+  - **Description**: The selected theme (built-in or custom) does not have a required `layouts` section in its YAML definition.
+  - **Resolution**: Ensure your theme YAML includes a `layouts` section that defines at least one layout template. Refer to "Theme Customization" for examples.
+
+- **"Layout template at index X is missing required fields: 'count' or 'photos'"**:
+  - **Description**: A layout template within the `layouts` section is missing either the `count` or `photos` field.
+  - **Resolution**: Each layout template must define `count` (the number of photos for this template) and `photos` (a list of photo specifications).
+
+- **"Photo spec at index X in layout Y is missing required field: 'orientation', 'position', or 'size'"**:
+  - **Description**: A photo specification within a layout template is missing a required field.
+  - **Resolution**: Each photo specification must include `orientation` (landscape/portrait), `position` (x,y coordinates), and `size` (relative percentage).
+
+- **"Photo spec orientation must be 'landscape' or 'portrait'"**:
+  - **Description**: An invalid value was provided for a photo's `orientation`.
+  - **Resolution**: Use either `'landscape'` or `'portrait'` for photo orientation.
+
+- **"Photo spec position coordinates must be in 0.0-1.0 range"**:
+  - **Description**: The `x` or `y` coordinate for a photo's position is outside the valid range of 0.0 to 1.0.
+  - **Resolution**: Ensure position coordinates are between 0.0 (top/left) and 1.0 (bottom/right).
+
+- **"Photo spec size must be in 0.0-1.0 range"**:
+  - **Description**: The `size` value for a photo is outside the valid range of 0.0 to 1.0.
+  - **Resolution**: Ensure the photo `size` is between 0.0 and 1.0.
+
+- **"No layout templates found for N photos."**:
+  - **Description**: The theme does not contain any layout templates designed for the current number of photos on a page (N).
+  - **Resolution**: Add a layout template to your theme with `count: N`, or adjust the number of photos on the page.
+
+- **"No layout templates found matching orientation types/counts for [...]"**:
+  - **Description**: The theme has templates for the correct photo count, but none match the combination of landscape and portrait photos on the current page.
+  - **Resolution**: Ensure your theme includes templates that support the specific mix of landscape and portrait photos for the given photo count.
+
+- **"No exact order-matching template found for orientations: [...]"**:
+  - **Description**: The theme has templates that match the photo count and types/counts of orientations, but none match the exact sequence of orientations on the page.
+  - **Resolution**: Review your theme's layout templates. If you need a specific order for photos (e.g., [L, P, P] vs. [P, L, P]), ensure there is a template that matches that exact sequence.
+
 
 ## License
 

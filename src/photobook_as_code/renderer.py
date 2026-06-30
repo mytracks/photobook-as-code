@@ -8,7 +8,7 @@ import logging
 
 from PIL import Image, ImageDraw
 
-from .layout import PageLayout, fit_photo_in_cell
+from .layout import LayoutTemplate, PhotoOrientation, TemplateMatcher
 from .photos import PhotoMetadata
 from .themes import Theme
 
@@ -42,9 +42,9 @@ def create_blank_page(width: int, height: int, background_color: str) -> Image.I
 
 
 def load_and_resize_photo(photo: PhotoMetadata, target_width: int, 
-                          target_height: int) -> Image.Image:
+                           target_height: int) -> Image.Image:
     """
-    Load photo and resize to fit target dimensions.
+    Load photo and resize to target dimensions, maintaining aspect ratio.
     
     Args:
         photo: Photo metadata
@@ -61,13 +61,21 @@ def load_and_resize_photo(photo: PhotoMetadata, target_width: int,
         if img.mode != 'RGB':
             img = img.convert('RGB')
         
-        # Calculate fitted dimensions
-        fitted_w, fitted_h, _, _ = fit_photo_in_cell(
-            img.width, img.height, target_width, target_height
-        )
+        # Calculate aspect ratio of the photo
+        photo_aspect_ratio = img.width / img.height
         
+        # Calculate dimensions to fit within target_width x target_height while maintaining aspect ratio
+        if (target_width / target_height) > photo_aspect_ratio:
+            # Target is wider than photo, fit by height
+            new_height = target_height
+            new_width = int(new_height * photo_aspect_ratio)
+        else:
+            # Target is taller than photo, fit by width
+            new_width = target_width
+            new_height = int(new_width / photo_aspect_ratio)
+            
         # Resize with high-quality resampling
-        img_resized = img.resize((fitted_w, fitted_h), Image.Resampling.LANCZOS)
+        img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
         
         return img_resized
         
@@ -135,8 +143,8 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
     return page_rgba.convert('RGB')
 
 
-def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
-                theme: Theme, page_number: int = 0) -> Image.Image:
+def render_page(layout_template: LayoutTemplate, photos: List[PhotoMetadata],
+                page_width: int, page_height: int, theme: Theme, page_number: int = 0) -> Image.Image:
     """
     Render a single page with photos and styling.
     
@@ -150,73 +158,84 @@ def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
         Rendered page as PIL Image
     """
     logger.info(f"Rendering page {page_number + 1} with {len(photos)} photos")
-    
+
     # Create blank page
     page = create_blank_page(
-        page_layout.page_width,
-        page_layout.page_height,
+        page_width,
+        page_height,
         theme.background.color
     )
-    
-    # Get cell positions
-    cells = page_layout.get_cell_positions()
-    
-    # Place each photo
-    for i, photo in enumerate(photos):
-        if i >= len(cells):
-            logger.warning(f"More photos than cells on page {page_number + 1}")
+
+    # Place each photo according to layout template
+    for i, photo_metadata in enumerate(photos):
+        if i >= len(layout_template.photos):
+            logger.warning(f"More photos than photo specs in template on page {page_number + 1}")
             break
-        
-        cell = cells[i]
-        
+
+        photo_spec = layout_template.photos[i]
+
         try:
+            # Calculate target dimensions based on orientation and size
+            if photo_spec.orientation == PhotoOrientation.LANDSCAPE:
+                target_width = int(page_width * photo_spec.size)
+                # Calculate height to maintain aspect ratio after loading
+                # Temporarily open image to get aspect ratio
+                with Image.open(photo_metadata.path) as temp_img:
+                    photo_aspect_ratio = temp_img.width / temp_img.height
+                target_height = int(target_width / photo_aspect_ratio)
+            else:  # PhotoOrientation.PORTRAIT
+                target_height = int(page_height * photo_spec.size)
+                # Calculate width to maintain aspect ratio after loading
+                # Temporarily open image to get aspect ratio
+                with Image.open(photo_metadata.path) as temp_img:
+                    photo_aspect_ratio = temp_img.width / temp_img.height
+                target_width = int(target_height * photo_aspect_ratio)
+
             # Load and resize photo
-            photo_img = load_and_resize_photo(photo, cell.width, cell.height)
-            
-            # Calculate centered position within cell
-            _, _, x_offset, y_offset = fit_photo_in_cell(
-                photo_img.width, photo_img.height,
-                cell.width, cell.height
-            )
-            
+            photo_img = load_and_resize_photo(photo_metadata, target_width, target_height)
+
+            # Calculate absolute position (center-point based)
+            abs_x = int(page_width * photo_spec.position.x - photo_img.width / 2)
+            abs_y = int(page_height * photo_spec.position.y - photo_img.height / 2)
+
             # Apply shadow if enabled
             if theme.borders.shadow:
                 page = draw_shadow(
                     page,
-                    cell.x_offset + x_offset,
-                    cell.y_offset + y_offset,
+                    abs_x,
+                    abs_y,
                     photo_img.width,
                     photo_img.height
                 )
-            
+
             # Paste photo onto page
             page.paste(
                 photo_img,
-                (cell.x_offset + x_offset, cell.y_offset + y_offset)
+                (abs_x, abs_y)
             )
-            
+
             # Draw border if enabled
             if theme.borders.enabled and theme.borders.width > 0:
                 draw = ImageDraw.Draw(page)
                 draw_border(
                     draw,
-                    cell.x_offset + x_offset,
-                    cell.y_offset + y_offset,
+                    abs_x,
+                    abs_y,
                     photo_img.width,
                     photo_img.height,
                     theme.borders.width,
                     theme.borders.color
                 )
-            
+
         except Exception as e:
-            logger.error(f"Failed to render photo {photo.filename} on page {page_number + 1}: {e}")
+            logger.error(f"Failed to render photo {photo_metadata.filename} on page {page_number + 1}: {e}")
             # Continue with other photos
-    
+
     return page
 
 
-def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
-                     distribution, theme: Theme):
+def render_all_pages(all_photos: List[PhotoMetadata], distribution, theme: Theme,
+                     template_matcher: TemplateMatcher, page_width: int, page_height: int):
     """
     Render all pages for the photobook incrementally.
     
@@ -233,18 +252,25 @@ def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
         Rendered page images (Iterator[Image.Image])
     """
     photo_index = 0
-    
+
     for page_num in range(distribution.total_pages):
         # Get photos for this page
         photos_on_page = distribution.get_photos_for_page(page_num)
         page_photos = all_photos[photo_index:photo_index + photos_on_page]
-        
+
+        # Detect photo orientations for the current page
+        photo_orientations = [photo.orientation for photo in page_photos]
+
+        # Match page photos to template from theme layouts
+        layout_template = template_matcher.find_best_template(photo_orientations)
+        # find_best_template will raise LayoutError if no template matches
+
         # Render page
-        page = render_page(page_layout, page_photos, theme, page_num)
-        
+        page = render_page(layout_template, page_photos, page_width, page_height, theme, page_num)
+
         # Yield page for processing (memory-efficient streaming)
         yield page
-        
+
         photo_index += photos_on_page
-    
+
     logger.info(f"Completed rendering {distribution.total_pages} pages")
