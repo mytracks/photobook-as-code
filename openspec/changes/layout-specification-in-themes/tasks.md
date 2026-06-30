@@ -1,21 +1,21 @@
 ## 1. Theme YAML Schema Extension
 
-- [x] 1.1 Add required `layouts` section to theme loading in `themes.py`
-- [x] 1.2 Parse layout template objects with count, and photos arrays
-- [x] 1.3 Validate layout template structure (required fields: count, photos)
-- [x] 1.4 Parse photo specifications with orientation, position (x, y), and size
-- [x] 1.5 Add validation for position coordinates (0.0-1.0 range)
-- [x] 1.6 Add validation for size percentages (0.0-1.0 range)
-- [x] 1.7 Store parsed layout templates in theme object
-- [x] 1.8 Add error message when layouts section is missing from theme
+- [ ] 1.1 Add required `layouts` section to theme loading in `themes.py`
+- [ ] 1.2 Parse layout template objects with count, and photos arrays
+- [ ] 1.3 Validate layout template structure (required fields: count, photos)
+- [ ] 1.4 Parse photo specifications with orientation, position (x, y), and size
+- [ ] 1.5 Add validation for position coordinates (0.0-1.0 range)
+- [ ] 1.6 Add validation for size percentages (0.0-1.0 range)
+- [ ] 1.7 Store parsed layout templates in theme object
+- [ ] 1.8 Add error message when layouts section is missing from theme
 
 ## 2. Photo Orientation Detection
 
-- [x] 2.1 Add orientation detection function in `photos.py`
-- [x] 2.2 Classify photos as landscape (width > height)
-- [x] 2.3 Classify photos as portrait (height > width)
-- [x] 2.4 Classify square photos (width == height) as landscape
-- [x] 2.5 Store orientation metadata with photo objects
+- [ ] 2.1 Add orientation detection function in `photos.py`
+- [ ] 2.2 Classify photos as landscape (width > height)
+- [ ] 2.3 Classify photos as portrait (height > width)
+- [ ] 2.4 Classify square photos (width == height) as landscape
+- [ ] 2.5 Store orientation metadata with photo objects
 
 ## 3. Template Matching Logic
 

@@ -31,7 +31,6 @@ class PhotoMetadata:
     width: int = 0
     height: int = 0
     file_modified: Optional[datetime] = None
-    orientation: str = ""
     
     @property
     def sort_date(self) -> datetime:
@@ -129,23 +128,6 @@ def read_exif_date(image_path: Path) -> Optional[datetime]:
         return None
 
 
-def detect_orientation(width: int, height: int) -> str:
-    """
-    Detect orientation from photo dimensions.
-    
-    Args:
-        width: Photo width
-        height: Photo height
-        
-    Returns:
-        'landscape' or 'portrait'
-    """
-    if width >= height:
-        return 'landscape'
-    else:
-        return 'portrait'
-
-
 def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
     """
     Read metadata for a single photo.
@@ -170,8 +152,6 @@ def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
     except Exception as e:
         logger.warning(f"Could not read dimensions from {photo_path}: {e}")
     
-    orientation = detect_orientation(width, height)
-    
     return PhotoMetadata(
         path=photo_path,
         filename=photo_path.name,
@@ -179,7 +159,6 @@ def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
         width=width,
         height=height,
         file_modified=file_modified,
-        orientation=orientation,
     )
 
 

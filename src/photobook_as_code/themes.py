@@ -31,28 +31,6 @@ class SpacingStyle:
 
 
 @dataclass
-class PhotoPosition:
-    """Coordinates for photo center point."""
-    x: float
-    y: float
-
-
-@dataclass
-class PhotoSpec:
-    """Specification for a single photo in a layout template."""
-    orientation: str
-    position: PhotoPosition
-    size: float
-
-
-@dataclass
-class LayoutTemplate:
-    """Layout template definition."""
-    count: int
-    photos: list[PhotoSpec]
-
-
-@dataclass
 class Theme:
     """Complete theme definition."""
     name: str
@@ -60,89 +38,16 @@ class Theme:
     background: BackgroundStyle
     borders: BorderStyle
     spacing: SpacingStyle
-    layouts: list[LayoutTemplate]
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Theme':
         """Create Theme from dictionary."""
-        if 'layouts' not in data:
-            raise ThemeError("Theme missing 'layouts' section")
-        
-        layouts_data = data.get('layouts', [])
-        if not isinstance(layouts_data, list):
-            raise ThemeError("Theme 'layouts' section must be a list of templates")
-        
-        parsed_layouts = []
-        for idx, l_data in enumerate(layouts_data):
-            if not isinstance(l_data, dict):
-                raise ThemeError(f"Layout template at index {idx} must be a dictionary")
-            if 'count' not in l_data or 'photos' not in l_data:
-                raise ThemeError(f"Layout template at index {idx} is missing required fields: 'count' or 'photos'")
-            
-            count = l_data['count']
-            if not isinstance(count, int) or count < 1:
-                raise ThemeError(f"Layout template at index {idx} 'count' must be a positive integer")
-            
-            photos_data = l_data['photos']
-            if not isinstance(photos_data, list):
-                raise ThemeError(f"Layout template at index {idx} 'photos' must be a list")
-            
-            if len(photos_data) != count:
-                raise ThemeError(f"Layout template at index {idx} 'photos' length must match 'count' ({count})")
-            
-            parsed_photos = []
-            for p_idx, p_data in enumerate(photos_data):
-                if not isinstance(p_data, dict):
-                    raise ThemeError(f"Photo spec at index {p_idx} in layout {idx} must be a dictionary")
-                
-                # required fields: orientation, position, size
-                for field in ('orientation', 'position', 'size'):
-                    if field not in p_data:
-                        raise ThemeError(f"Photo spec at index {p_idx} in layout {idx} is missing required field: '{field}'")
-                
-                orientation = p_data['orientation']
-                if orientation not in ('landscape', 'portrait'):
-                    raise ThemeError(f"Photo spec orientation must be 'landscape' or 'portrait', got '{orientation}'")
-                
-                pos_data = p_data['position']
-                if not isinstance(pos_data, dict) or 'x' not in pos_data or 'y' not in pos_data:
-                    raise ThemeError(f"Photo spec position must be a dictionary with 'x' and 'y' keys")
-                
-                try:
-                    x = float(pos_data['x'])
-                    y = float(pos_data['y'])
-                except (ValueError, TypeError):
-                    raise ThemeError(f"Photo spec position coordinates must be numeric")
-                
-                if not (0.0 <= x <= 1.0) or not (0.0 <= y <= 1.0):
-                    raise ThemeError(f"Photo spec position coordinates must be in 0.0-1.0 range, got ({x}, {y})")
-                
-                try:
-                    size = float(p_data['size'])
-                except (ValueError, TypeError):
-                    raise ThemeError(f"Photo spec size must be numeric")
-                
-                if not (0.0 <= size <= 1.0):
-                    raise ThemeError(f"Photo spec size must be in 0.0-1.0 range, got {size}")
-                
-                parsed_photos.append(PhotoSpec(
-                    orientation=orientation,
-                    position=PhotoPosition(x=x, y=y),
-                    size=size
-                ))
-            
-            parsed_layouts.append(LayoutTemplate(
-                count=count,
-                photos=parsed_photos
-            ))
-            
         return cls(
             name=data.get('name', 'Unnamed'),
             description=data.get('description', ''),
             background=BackgroundStyle(**data.get('background', {})),
             borders=BorderStyle(**data.get('borders', {})),
             spacing=SpacingStyle(**data.get('spacing', {})),
-            layouts=parsed_layouts,
         )
 
 
@@ -231,9 +136,6 @@ def load_theme_file(theme_path: Path) -> Theme:
     
     if 'spacing' not in data:
         raise ThemeError("Theme missing 'spacing' section")
-        
-    if 'layouts' not in data:
-        raise ThemeError("Theme missing 'layouts' section")
     
     try:
         theme = Theme.from_dict(data)
