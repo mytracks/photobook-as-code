@@ -3,7 +3,7 @@ Layout calculation for photo grid arrangements.
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any
 import math
 from enum import Enum
 
@@ -120,99 +120,6 @@ class TemplateMatcher:
         return best_template
 
 
-
-
-@dataclass
-class PageLayout:
-    """Layout specification for a page."""
-    page_width: int
-    page_height: int
-    photos_per_page: int
-    cell_width: float
-    cell_height: float
-    cols: int
-    rows: int
-
-
-def distribute_photos(total_photos: int, photos_per_page: Optional[int] = None,
-                      total_pages: Optional[int] = None) -> PhotoDistribution:
-    """
-    Distribute photos across pages.
-
-    Args:
-        total_photos: Total number of photos
-        photos_per_page: Photos per page (or None if total_pages is specified)
-        total_pages: Total number of pages (or None if photos_per_page is specified)
-
-    Returns:
-        PhotoDistribution instance
-
-    Raises:
-        LayoutError: If distribution calculation fails
-    """
-    if photos_per_page is not None and total_pages is not None:
-        raise LayoutError("Cannot specify both photos_per_page and total_pages")
-
-    if photos_per_page is not None:
-        if photos_per_page <= 0:
-            raise LayoutError("photos_per_page must be positive")
-        calc_total_pages = math.ceil(total_photos / photos_per_page)
-        photos_on_last_page = total_photos % photos_per_page
-        if photos_on_last_page == 0:
-            photos_on_last_page = photos_per_page
-        calc_photos_per_page = photos_per_page
-    elif total_pages is not None:
-        if total_pages <= 0:
-            raise LayoutError("total_pages must be positive")
-        calc_total_pages = total_pages
-        calc_photos_per_page = math.ceil(total_photos / total_pages)
-        photos_on_last_page = total_photos - (total_pages - 1) * calc_photos_per_page
-        if photos_on_last_page <= 0:
-            photos_on_last_page = calc_photos_per_page
-    else:
-        raise LayoutError("Must specify either photos_per_page or total_pages")
-
-    return PhotoDistribution(
-        total_photos=total_photos,
-        total_pages=calc_total_pages,
-        photos_per_page=calc_photos_per_page,
-        photos_on_last_page=photos_on_last_page,
-    )
-
-
-def calculate_page_layout(page_width: int, page_height: int, photos_per_page: int,
-                          page_margin: int, grid_gap: int) -> PageLayout:
-    """
-    Calculate grid layout for a page.
-
-    Args:
-        page_width: Page width in pixels
-        page_height: Page height in pixels
-        photos_per_page: Number of photos per page
-        page_margin: Margin around the page in pixels
-        grid_gap: Gap between grid cells in pixels
-
-    Returns:
-        PageLayout instance
-    """
-    cols = math.ceil(math.sqrt(photos_per_page))
-    rows = math.ceil(photos_per_page / cols)
-
-    available_width = page_width - 2 * page_margin
-    available_height = page_height - 2 * page_margin
-
-    cell_width = (available_width - (cols - 1) * grid_gap) / cols
-    cell_height = (available_height - (rows - 1) * grid_gap) / rows
-
-    return PageLayout(
-        page_width=page_width,
-        page_height=page_height,
-        photos_per_page=photos_per_page,
-        cell_width=cell_width,
-        cell_height=cell_height,
-        cols=cols,
-        rows=rows,
-    )
 
 
 class LayoutError(Exception):

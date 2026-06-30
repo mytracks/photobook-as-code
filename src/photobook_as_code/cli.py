@@ -15,7 +15,7 @@ from .config import load_config, validate_photos_path, ConfigurationError
 from .photos import collect_photos, PhotoCollectionError
 from .themes import load_theme, ThemeError
 from .layout import (
-    distribute_photos, calculate_page_layout, LayoutError, TemplateMatcher
+    distribute_photos, calculate_page_layout, LayoutError
 )
 from .renderer import render_all_pages
 from .output import generate_output, prepare_output_path, OutputError
@@ -119,15 +119,7 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         click.echo("🖼️  Rendering pages...")
         
         # Create page generator (memory-efficient streaming)
-        template_matcher = TemplateMatcher(theme.layouts)
-        pages_generator = render_all_pages(
-            all_photos=photos,
-            distribution=distribution,
-            theme=theme,
-            template_matcher=template_matcher,
-            page_width=page_width,
-            page_height=page_height,
-        )
+        pages_generator = render_all_pages(page_layout, photos, distribution, theme)
         
         # Stage 6: Generate output
         click.echo("💾 Generating output...")
