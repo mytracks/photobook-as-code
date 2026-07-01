@@ -153,7 +153,6 @@ borders:
   shadow: true/false
 
 spacing:
-  grid_gap: pixels
   page_margin: pixels
 ```
 

@@ -167,7 +167,6 @@ borders:
   shadow: false       # Drop shadow effect
 
 spacing:
-  grid_gap: 12        # Pixels between photos
   page_margin: 25     # Pixels around page edges
 ```
 

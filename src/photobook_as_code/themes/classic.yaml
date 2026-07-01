@@ -2,7 +2,7 @@ name: Classic
 description: Traditional style with cream background and visible borders
 background: {color: '#F5F5DC'}
 borders: {enabled: true, width: 4, color: '#8B7355', shadow: true}
-spacing: {grid_gap: 15, page_margin: 30}
+spacing: {page_margin: 30}
 layouts:
 - count: 1
   photos:

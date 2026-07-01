@@ -2,7 +2,7 @@ name: Modern
 description: Contemporary style with no borders and tight spacing
 background: {color: '#FFFFFF'}
 borders: {enabled: false, width: 0, color: '#000000', shadow: false}
-spacing: {grid_gap: 5, page_margin: 10}
+spacing: {page_margin: 10}
 layouts:
 - count: 1
   photos:

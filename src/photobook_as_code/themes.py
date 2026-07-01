@@ -54,7 +54,6 @@ class BorderStyle:
 @dataclass
 class SpacingStyle:
     """Spacing properties."""
-    grid_gap: int = 10
     page_margin: int = 20
 
 
@@ -221,9 +220,6 @@ def validate_theme(theme: Theme) -> None:
     # Validate numeric values
     if theme.borders.width < 0:
         raise ThemeError("Border width cannot be negative")
-    
-    if theme.spacing.grid_gap < 0:
-        raise ThemeError("Grid gap cannot be negative")
     
     if theme.spacing.page_margin < 0:
         raise ThemeError("Page margin cannot be negative")

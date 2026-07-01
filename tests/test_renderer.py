@@ -34,7 +34,7 @@ def test_renderer_applies_layout_templates(tmp_path):
         description="",
         background=BackgroundStyle("#FFFFFF"),
         borders=BorderStyle(enabled=False, width=0, color="#000000", shadow=False),
-        spacing=SpacingStyle(page_margin=10, grid_gap=10),
+        spacing=SpacingStyle(page_margin=10),
         layouts=[
             LayoutTemplate(
                 count=2,
