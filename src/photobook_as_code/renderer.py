@@ -172,14 +172,9 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
     # Place each photo
     for i, (photo, spec) in enumerate(zip(photos, template.photos)):
         try:
-            # Calculate target dimensions
-            if spec.orientation == 'landscape':
-                target_width = int(usable_width * spec.size)
-                # target_height could be anything large, fit_photo_in_cell will constrain
-                target_height = int(usable_height)
-            else:
-                target_height = int(usable_height * spec.size)
-                target_width = int(usable_width)
+            # Calculate target dimensions using dual boundaries
+            target_width = int(usable_width * spec.size.width)
+            target_height = int(usable_height * spec.size.height)
                 
             # Load and resize photo
             photo_img = load_and_resize_photo(photo, target_width, target_height)

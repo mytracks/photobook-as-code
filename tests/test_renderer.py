@@ -1,7 +1,7 @@
 import pytest
 from PIL import Image
 from photobook_as_code.renderer import render_page
-from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, LayoutTemplate, LayoutPhoto, LayoutPosition
+from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, LayoutTemplate, LayoutPhoto, LayoutPosition, LayoutPhotoSize
 from photobook_as_code.photos import PhotoMetadata
 from pathlib import Path
 from datetime import datetime
@@ -39,8 +39,8 @@ def test_renderer_applies_layout_templates(tmp_path):
             LayoutTemplate(
                 count=2,
                 photos=[
-                    LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), 0.5),
-                    LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), 0.5)
+                    LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), LayoutPhotoSize(width=0.5, height=1.0)),
+                    LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), LayoutPhotoSize(width=1.0, height=0.5))
                 ]
             )
         ]

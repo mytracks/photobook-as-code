@@ -14,11 +14,17 @@ class LayoutPosition:
     y: float
 
 @dataclass
+class LayoutPhotoSize:
+    """Maximum size bounds for a photo (0.0-1.0 percentage of page dimensions)."""
+    width: float
+    height: float
+
+@dataclass
 class LayoutPhoto:
     """Specification for a single photo in a layout template."""
     orientation: str  # 'portrait' or 'landscape'
     position: LayoutPosition
-    size: float  # Percentage of width (landscape) or height (portrait)
+    size: LayoutPhotoSize  # Maximum bounds for rendering
 
 @dataclass
 class LayoutTemplate:
@@ -71,10 +77,17 @@ class Theme:
             photos = []
             for photo_dict in layout_dict.get('photos', []):
                 pos = photo_dict.get('position', {})
+                size_data = photo_dict.get('size')
+                if not isinstance(size_data, dict) or 'width' not in size_data or 'height' not in size_data:
+                    raise ThemeError(f"Photo size must be an object with 'width' and 'height'. Got: {size_data}")
+
                 photos.append(LayoutPhoto(
                     orientation=photo_dict.get('orientation', 'landscape'),
                     position=LayoutPosition(x=pos.get('x', 0.5), y=pos.get('y', 0.5)),
-                    size=photo_dict.get('size', 1.0)
+                    size=LayoutPhotoSize(
+                        width=float(size_data['width']),
+                        height=float(size_data['height'])
+                    )
                 ))
             layouts.append(LayoutTemplate(
                 count=layout_dict.get('count', len(photos)),
