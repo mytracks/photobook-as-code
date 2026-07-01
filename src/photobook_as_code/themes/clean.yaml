@@ -1,7 +1,7 @@
 name: Clean
 description: Minimalist style with white background and thin borders
 background: {color: '#FFFFFF'}
-borders: {enabled: true, width: 2, color: '#CCCCCC', shadow: false}
+borders: {enabled: false, width: 2, color: '#CCCCCC', shadow: false}
 spacing: {page_margin: 0}
 layouts:
 - count: 1
@@ -18,10 +18,10 @@ layouts:
   photos:
   - orientation: landscape
     position: {x: 0.5, y: 0.25}
-    size: {width: 0.9, height: 0.45}
+    size: {width: 1.0, height: 0.5}
   - orientation: landscape
     position: {x: 0.5, y: 0.75}
-    size: {width: 0.9, height: 0.45}
+    size: {width: 1.0, height: 0.5}
 - count: 2
   photos:
   - orientation: portrait
