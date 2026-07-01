@@ -2,11 +2,33 @@
 Theme loading and management.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict
 import yaml
 
+@dataclass
+class LayoutPosition:
+    """Position coordinates for a photo (center point, 0.0-1.0)."""
+    x: float
+    y: float
+
+@dataclass
+class LayoutPhoto:
+    """Specification for a single photo in a layout template."""
+    orientation: str  # 'portrait' or 'landscape'
+    position: LayoutPosition
+    size: float  # Percentage of width (landscape) or height (portrait)
+
+@dataclass
+class LayoutTemplate:
+    """Layout template definition."""
+    count: int
+    photos: List[LayoutPhoto]
+
+    @property
+    def orientations(self) -> List[str]:
+        return [p.orientation for p in self.photos]
 
 @dataclass
 class BackgroundStyle:
@@ -38,16 +60,34 @@ class Theme:
     background: BackgroundStyle
     borders: BorderStyle
     spacing: SpacingStyle
+    layouts: List[LayoutTemplate] = field(default_factory=list)
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Theme':
         """Create Theme from dictionary."""
+        layouts_data = data.get('layouts', [])
+        layouts = []
+        for layout_dict in layouts_data:
+            photos = []
+            for photo_dict in layout_dict.get('photos', []):
+                pos = photo_dict.get('position', {})
+                photos.append(LayoutPhoto(
+                    orientation=photo_dict.get('orientation', 'landscape'),
+                    position=LayoutPosition(x=pos.get('x', 0.5), y=pos.get('y', 0.5)),
+                    size=photo_dict.get('size', 1.0)
+                ))
+            layouts.append(LayoutTemplate(
+                count=layout_dict.get('count', len(photos)),
+                photos=photos
+            ))
+
         return cls(
             name=data.get('name', 'Unnamed'),
             description=data.get('description', ''),
             background=BackgroundStyle(**data.get('background', {})),
             borders=BorderStyle(**data.get('borders', {})),
             spacing=SpacingStyle(**data.get('spacing', {})),
+            layouts=layouts,
         )
 
 
@@ -136,6 +176,9 @@ def load_theme_file(theme_path: Path) -> Theme:
     
     if 'spacing' not in data:
         raise ThemeError("Theme missing 'spacing' section")
+        
+    if 'layouts' not in data:
+        raise ThemeError("Theme missing 'layouts' section")
     
     try:
         theme = Theme.from_dict(data)

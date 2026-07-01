@@ -13,3 +13,129 @@ borders:
 spacing:
   grid_gap: 30  # pixels between photos
   page_margin: 100  # pixels around page edges
+layouts:
+  - count: 1
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.5}
+        size: 0.9
+  - count: 1
+    photos:
+      - orientation: portrait
+        position: {x: 0.5, y: 0.5}
+        size: 0.9
+  - count: 2
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.25}
+        size: 0.9
+      - orientation: landscape
+        position: {x: 0.5, y: 0.75}
+        size: 0.9
+  - count: 2
+    photos:
+      - orientation: portrait
+        position: {x: 0.25, y: 0.5}
+        size: 0.9
+      - orientation: portrait
+        position: {x: 0.75, y: 0.5}
+        size: 0.9
+  - count: 2
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.3}
+        size: 0.7
+      - orientation: portrait
+        position: {x: 0.5, y: 0.75}
+        size: 0.9
+  - count: 2
+    photos:
+      - orientation: portrait
+        position: {x: 0.5, y: 0.25}
+        size: 0.4
+      - orientation: landscape
+        position: {x: 0.5, y: 0.7}
+        size: 0.6
+  - count: 3
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.15}
+        size: 0.7
+      - orientation: landscape
+        position: {x: 0.5, y: 0.5}
+        size: 0.7
+      - orientation: landscape
+        position: {x: 0.5, y: 0.85}
+        size: 0.7
+  - count: 3
+    photos:
+      - orientation: portrait
+        position: {x: 0.2, y: 0.5}
+        size: 0.6
+      - orientation: portrait
+        position: {x: 0.5, y: 0.5}
+        size: 0.6
+      - orientation: portrait
+        position: {x: 0.8, y: 0.5}
+        size: 0.6
+  - count: 4
+    photos:
+      - orientation: landscape
+        position: {x: 0.25, y: 0.25}
+        size: 0.45
+      - orientation: landscape
+        position: {x: 0.75, y: 0.25}
+        size: 0.45
+      - orientation: landscape
+        position: {x: 0.25, y: 0.75}
+        size: 0.45
+      - orientation: landscape
+        position: {x: 0.75, y: 0.75}
+        size: 0.45
+  - count: 4
+    photos:
+      - orientation: portrait
+        position: {x: 0.25, y: 0.25}
+        size: 0.45
+      - orientation: portrait
+        position: {x: 0.75, y: 0.25}
+        size: 0.45
+      - orientation: portrait
+        position: {x: 0.25, y: 0.75}
+        size: 0.45
+      - orientation: portrait
+        position: {x: 0.75, y: 0.75}
+        size: 0.45
+  - count: 3
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.2}
+        size: 0.6
+      - orientation: landscape
+        position: {x: 0.5, y: 0.5}
+        size: 0.6
+      - orientation: portrait
+        position: {x: 0.5, y: 0.8}
+        size: 0.3
+  - count: 3
+    photos:
+      - orientation: landscape
+        position: {x: 0.5, y: 0.2}
+        size: 0.6
+      - orientation: portrait
+        position: {x: 0.5, y: 0.5}
+        size: 0.3
+      - orientation: landscape
+        position: {x: 0.5, y: 0.8}
+        size: 0.6
+  - count: 3
+    photos:
+      - orientation: landscape
+        position: {x: 0.25, y: 0.5}
+        size: 0.45
+      - orientation: portrait
+        position: {x: 0.75, y: 0.3}
+        size: 0.4
+      - orientation: portrait
+        position: {x: 0.75, y: 0.7}
+        size: 0.4

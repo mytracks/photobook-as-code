@@ -8,10 +8,66 @@ from photobook_as_code.layout import (
     PhotoDistribution,
     distribute_photos,
     calculate_photos_per_page,
-    calculate_grid_dimensions,
+    match_template,
     LayoutError,
 )
+from photobook_as_code.themes import LayoutTemplate, LayoutPhoto, LayoutPosition
+from photobook_as_code.photos import PhotoMetadata
+from pathlib import Path
+from datetime import datetime
 
+def make_photo(orientation: str) -> PhotoMetadata:
+    width = 1920 if orientation == 'landscape' else 1080
+    height = 1080 if orientation == 'landscape' else 1920
+    return PhotoMetadata(
+        path=Path("dummy.jpg"),
+        filename="dummy.jpg",
+        date_taken=datetime.now(),
+        width=width,
+        height=height
+    )
+
+class TestMatchTemplate:
+    """Tests for match_template function."""
+    
+    def test_match_exact_order(self):
+        t1 = LayoutTemplate(count=2, photos=[
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), 0.7),
+            LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), 0.7)
+        ])
+        t2 = LayoutTemplate(count=2, photos=[
+            LayoutPhoto('portrait', LayoutPosition(0.5, 0.25), 0.7),
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.75), 0.7)
+        ])
+        photos = [make_photo('landscape'), make_photo('portrait')]
+        matched = match_template([t1, t2], photos)
+        assert matched is t1
+
+    def test_match_any_order_fallback(self):
+        t1 = LayoutTemplate(count=2, photos=[
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), 0.7),
+            LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), 0.7)
+        ])
+        photos = [make_photo('portrait'), make_photo('landscape')]
+        matched = match_template([t1], photos)
+        assert matched is t1
+
+    def test_error_no_matching_count(self):
+        t1 = LayoutTemplate(count=1, photos=[
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.5), 0.8)
+        ])
+        photos = [make_photo('landscape'), make_photo('portrait')]
+        with pytest.raises(LayoutError, match="No layout template found for 2 photos"):
+            match_template([t1], photos)
+
+    def test_error_no_matching_orientation(self):
+        t1 = LayoutTemplate(count=2, photos=[
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), 0.7),
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.75), 0.7)
+        ])
+        photos = [make_photo('landscape'), make_photo('portrait')]
+        with pytest.raises(LayoutError, match="with orientations"):
+            match_template([t1], photos)
 
 class TestPhotoDistribution:
     """Tests for PhotoDistribution dataclass."""
@@ -389,40 +445,6 @@ class TestCalculatePhotosPerPage:
         """Test error with invalid page count."""
         with pytest.raises(LayoutError):
             calculate_photos_per_page(10, 0)
-
-
-class TestCalculateGridDimensions:
-    """Tests for calculate_grid_dimensions function."""
-    
-    def test_single_photo(self):
-        """Test grid for single photo."""
-        grid = calculate_grid_dimensions(1)
-        assert grid.rows == 1
-        assert grid.cols == 1
-    
-    def test_perfect_square(self):
-        """Test grid for perfect square."""
-        grid = calculate_grid_dimensions(4)
-        assert grid.rows == 2
-        assert grid.cols == 2
-        
-        grid = calculate_grid_dimensions(9)
-        assert grid.rows == 3
-        assert grid.cols == 3
-    
-    def test_rectangular_grid(self):
-        """Test grid for non-square layouts."""
-        grid = calculate_grid_dimensions(6)
-        assert grid.rows * grid.cols == 6
-        assert grid.rows >= grid.cols  # Portrait orientation preferred
-    
-    def test_error_invalid_count(self):
-        """Test error with invalid photo count."""
-        with pytest.raises(LayoutError):
-            calculate_grid_dimensions(0)
-        
-        with pytest.raises(LayoutError):
-            calculate_grid_dimensions(-1)
 
 
 class TestSparseDistributionIntegration:
