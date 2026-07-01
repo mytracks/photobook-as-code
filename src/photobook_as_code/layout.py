@@ -3,58 +3,10 @@ Layout calculation for photo grid arrangements.
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import math
-
-
-@dataclass
-class GridLayout:
-    """Grid layout specification."""
-    rows: int
-    cols: int
-    photos_per_page: int
-    
-
-@dataclass
-class CellDimensions:
-    """Dimensions for a grid cell."""
-    width: int
-    height: int
-    x_offset: int
-    y_offset: int
-
-
-@dataclass
-class PageLayout:
-    """Complete layout specification for a page."""
-    page_width: int
-    page_height: int
-    usable_width: int
-    usable_height: int
-    grid: GridLayout
-    cell_width: int
-    cell_height: int
-    grid_gap: int
-    page_margin: int
-    
-    def get_cell_positions(self) -> List[CellDimensions]:
-        """Calculate position and size for each grid cell."""
-        cells = []
-        
-        for row in range(self.grid.rows):
-            for col in range(self.grid.cols):
-                # Calculate position including grid gaps
-                x = self.page_margin + col * (self.cell_width + self.grid_gap)
-                y = self.page_margin + row * (self.cell_height + self.grid_gap)
-                
-                cells.append(CellDimensions(
-                    width=self.cell_width,
-                    height=self.cell_height,
-                    x_offset=x,
-                    y_offset=y,
-                ))
-        
-        return cells
+from photobook_as_code.themes import LayoutTemplate
+from photobook_as_code.photos import PhotoMetadata
 
 
 @dataclass
@@ -156,49 +108,48 @@ class LayoutError(Exception):
     pass
 
 
-def calculate_grid_dimensions(photos_per_page: int) -> GridLayout:
+def match_template(templates: List[LayoutTemplate], photos: List[PhotoMetadata]) -> LayoutTemplate:
     """
-    Calculate optimal grid dimensions for given photos per page.
+    Match photos to a layout template based on count and orientation.
+    Prefers exact orientation order match.
     
     Args:
-        photos_per_page: Target number of photos per page
+        templates: Available layout templates from theme
+        photos: Photos for a specific page
         
     Returns:
-        GridLayout with rows and columns
+        Matched LayoutTemplate
         
     Raises:
-        LayoutError: If photos_per_page is invalid
+        LayoutError: If no matching template is found
     """
-    if photos_per_page < 1:
-        raise LayoutError("photos_per_page must be at least 1")
+    photo_count = len(photos)
+    orientations = [p.orientation for p in photos]
     
-    if photos_per_page == 1:
-        return GridLayout(rows=1, cols=1, photos_per_page=1)
+    # Filter by count
+    matching_count = [t for t in templates if t.count == photo_count]
     
-    # Find factors that create most square-like grid
-    # Prefer layouts where rows >= cols (portrait orientation)
-    sqrt = math.sqrt(photos_per_page)
-    
-    if sqrt == int(sqrt):
-        # Perfect square
-        dim = int(sqrt)
-        return GridLayout(rows=dim, cols=dim, photos_per_page=photos_per_page)
-    
-    # Find best factorization
-    best_rows, best_cols = 1, photos_per_page
-    min_difference = photos_per_page
-    
-    for cols in range(1, photos_per_page + 1):
-        if photos_per_page % cols == 0:
-            rows = photos_per_page // cols
+    if not matching_count:
+        raise LayoutError(f"No layout template found for {photo_count} photos.")
+        
+    # Filter by orientations (independent of order first)
+    valid_templates = []
+    for t in matching_count:
+        if sorted(t.orientations) == sorted(orientations):
+            valid_templates.append(t)
             
-            if rows >= cols:  # Prefer portrait orientation
-                difference = abs(rows - cols)
-                if difference < min_difference:
-                    min_difference = difference
-                    best_rows, best_cols = rows, cols
-    
-    return GridLayout(rows=best_rows, cols=best_cols, photos_per_page=photos_per_page)
+    if not valid_templates:
+        raise LayoutError(
+            f"No layout template found for {photo_count} photos with orientations: {orientations}."
+        )
+        
+    # Prefer exact order match
+    for t in valid_templates:
+        if t.orientations == orientations:
+            return t
+            
+    # Fallback to any template with correct orientations
+    return valid_templates[0]
 
 
 def calculate_photos_per_page(total_photos: int, total_pages: int) -> int:
@@ -325,81 +276,6 @@ def distribute_photos(total_photos: int, photos_per_page: int = None,
             photos_on_last_page=photos_on_last,
             exact_page_count=True,  # Enable exact page count mode
         )
-
-
-def calculate_cell_dimensions(usable_width: int, usable_height: int,
-                              grid: GridLayout, grid_gap: int) -> Tuple[int, int]:
-    """
-    Calculate individual cell dimensions within grid.
-    
-    Args:
-        usable_width: Available width after margins
-        usable_height: Available height after margins
-        grid: Grid layout specification
-        grid_gap: Gap between grid cells in pixels
-        
-    Returns:
-        Tuple of (cell_width, cell_height) in pixels
-    """
-    # Calculate total gap space
-    horizontal_gaps = (grid.cols - 1) * grid_gap
-    vertical_gaps = (grid.rows - 1) * grid_gap
-    
-    # Calculate cell dimensions
-    cell_width = (usable_width - horizontal_gaps) // grid.cols
-    cell_height = (usable_height - vertical_gaps) // grid.rows
-    
-    return (cell_width, cell_height)
-
-
-def calculate_page_layout(page_width: int, page_height: int,
-                          photos_per_page: int, page_margin: int,
-                          grid_gap: int) -> PageLayout:
-    """
-    Calculate complete page layout.
-    
-    Args:
-        page_width: Page width in pixels
-        page_height: Page height in pixels
-        photos_per_page: Number of photos per page
-        page_margin: Margin around page edges in pixels
-        grid_gap: Gap between grid cells in pixels
-        
-    Returns:
-        PageLayout instance
-        
-    Raises:
-        LayoutError: If layout is invalid
-    """
-    # Calculate usable area
-    usable_width = page_width - (2 * page_margin)
-    usable_height = page_height - (2 * page_margin)
-    
-    if usable_width <= 0 or usable_height <= 0:
-        raise LayoutError("Page margins too large for page size")
-    
-    # Calculate grid
-    grid = calculate_grid_dimensions(photos_per_page)
-    
-    # Calculate cell dimensions
-    cell_width, cell_height = calculate_cell_dimensions(
-        usable_width, usable_height, grid, grid_gap
-    )
-    
-    if cell_width <= 0 or cell_height <= 0:
-        raise LayoutError("Grid too large for available space")
-    
-    return PageLayout(
-        page_width=page_width,
-        page_height=page_height,
-        usable_width=usable_width,
-        usable_height=usable_height,
-        grid=grid,
-        cell_width=cell_width,
-        cell_height=cell_height,
-        grid_gap=grid_gap,
-        page_margin=page_margin,
-    )
 
 
 def fit_photo_in_cell(photo_width: int, photo_height: int,

@@ -33,6 +33,11 @@ class PhotoMetadata:
     file_modified: Optional[datetime] = None
     
     @property
+    def orientation(self) -> str:
+        """Get photo orientation ('landscape' or 'portrait')."""
+        return 'landscape' if self.width >= self.height else 'portrait'
+    
+    @property
     def sort_date(self) -> datetime:
         """Get the best available date for sorting."""
         return self.date_taken or self.file_modified or datetime.min

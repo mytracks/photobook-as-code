@@ -8,9 +8,9 @@ import logging
 
 from PIL import Image, ImageDraw
 
-from .layout import PageLayout, fit_photo_in_cell
+from .layout import fit_photo_in_cell, match_template
 from .photos import PhotoMetadata
-from .themes import Theme
+from .themes import Theme, LayoutTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -135,13 +135,14 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
     return page_rgba.convert('RGB')
 
 
-def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
+def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                 theme: Theme, page_number: int = 0) -> Image.Image:
     """
     Render a single page with photos and styling.
     
     Args:
-        page_layout: Page layout specification
+        page_width: Page width in pixels
+        page_height: Page height in pixels
         photos: List of photos to place on this page
         theme: Theme to apply
         page_number: Page number for logging (0-indexed)
@@ -153,38 +154,50 @@ def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
     
     # Create blank page
     page = create_blank_page(
-        page_layout.page_width,
-        page_layout.page_height,
+        page_width,
+        page_height,
         theme.background.color
     )
     
-    # Get cell positions
-    cells = page_layout.get_cell_positions()
+    if not photos:
+        return page
+        
+    # Match template
+    template = match_template(theme.layouts, photos)
+    
+    # Calculate usable area
+    usable_width = page_width - (2 * theme.spacing.page_margin)
+    usable_height = page_height - (2 * theme.spacing.page_margin)
     
     # Place each photo
-    for i, photo in enumerate(photos):
-        if i >= len(cells):
-            logger.warning(f"More photos than cells on page {page_number + 1}")
-            break
-        
-        cell = cells[i]
-        
+    for i, (photo, spec) in enumerate(zip(photos, template.photos)):
         try:
+            # Calculate target dimensions
+            if spec.orientation == 'landscape':
+                target_width = int(usable_width * spec.size)
+                # target_height could be anything large, fit_photo_in_cell will constrain
+                target_height = int(usable_height)
+            else:
+                target_height = int(usable_height * spec.size)
+                target_width = int(usable_width)
+                
             # Load and resize photo
-            photo_img = load_and_resize_photo(photo, cell.width, cell.height)
+            photo_img = load_and_resize_photo(photo, target_width, target_height)
             
-            # Calculate centered position within cell
-            _, _, x_offset, y_offset = fit_photo_in_cell(
-                photo_img.width, photo_img.height,
-                cell.width, cell.height
-            )
+            # Calculate center position
+            center_x = theme.spacing.page_margin + int(usable_width * spec.position.x)
+            center_y = theme.spacing.page_margin + int(usable_height * spec.position.y)
+            
+            # Calculate top-left corner
+            pos_x = center_x - (photo_img.width // 2)
+            pos_y = center_y - (photo_img.height // 2)
             
             # Apply shadow if enabled
             if theme.borders.shadow:
                 page = draw_shadow(
                     page,
-                    cell.x_offset + x_offset,
-                    cell.y_offset + y_offset,
+                    pos_x,
+                    pos_y,
                     photo_img.width,
                     photo_img.height
                 )
@@ -192,7 +205,7 @@ def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
             # Paste photo onto page
             page.paste(
                 photo_img,
-                (cell.x_offset + x_offset, cell.y_offset + y_offset)
+                (pos_x, pos_y)
             )
             
             # Draw border if enabled
@@ -200,8 +213,8 @@ def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
                 draw = ImageDraw.Draw(page)
                 draw_border(
                     draw,
-                    cell.x_offset + x_offset,
-                    cell.y_offset + y_offset,
+                    pos_x,
+                    pos_y,
                     photo_img.width,
                     photo_img.height,
                     theme.borders.width,
@@ -215,7 +228,7 @@ def render_page(page_layout: PageLayout, photos: List[PhotoMetadata],
     return page
 
 
-def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
+def render_all_pages(page_width: int, page_height: int, all_photos: List[PhotoMetadata],
                      distribution, theme: Theme):
     """
     Render all pages for the photobook incrementally.
@@ -224,7 +237,8 @@ def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
     memory usage. The generator can only be consumed once.
     
     Args:
-        page_layout: Page layout specification
+        page_width: Page width in pixels
+        page_height: Page height in pixels
         all_photos: All photos in order
         distribution: PhotoDistribution instance
         theme: Theme to apply
@@ -238,7 +252,7 @@ def render_all_pages(page_layout: PageLayout, all_photos: List[PhotoMetadata],
         page_photos = [all_photos[i] for i in photo_indices]
         
         # Render page
-        page = render_page(page_layout, page_photos, theme, page_num)
+        page = render_page(page_width, page_height, page_photos, theme, page_num)
         
         # Yield page for processing (memory-efficient streaming)
         yield page

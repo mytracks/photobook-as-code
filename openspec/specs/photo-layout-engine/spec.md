@@ -57,35 +57,32 @@ The system SHALL order photos consistently for layout placement.
 - **WHEN** photos lack EXIF date information
 - **THEN** system falls back to file modification date
 
-### Requirement: Calculate grid layout
-The system SHALL calculate grid dimensions that accommodate the specified photos-per-page count.
+### Requirement: Match Layouts by Photo Count and Orientation
+The system SHALL select a layout template that matches the number and orientation of photos for a given page.
 
-#### Scenario: Perfect square grid
-- **WHEN** photos-per-page is 4
-- **THEN** system creates 2x2 grid layout
+#### Scenario: Successful match
+- **WHEN** a set of photos (e.g., 2 landscape, 1 portrait) is passed to the layout engine
+- **AND** a corresponding layout template exists in the theme
+- **THEN** the system SHALL select that template for rendering.
 
-#### Scenario: Rectangular grid
-- **WHEN** photos-per-page is 6
-- **THEN** system creates appropriate rectangular grid (e.g., 2x3 or 3x2)
+#### Scenario: No matching template
+- **WHEN** no layout template matches the photo count and orientation
+- **THEN** the system SHALL raise a clear error message.
 
-#### Scenario: Single photo per page
-- **WHEN** photos-per-page is 1
-- **THEN** system creates single-photo layout maximizing photo size
+### Requirement: Prioritize Exact Orientation Order
+The system SHALL prefer layout templates that match the exact order of photo orientations.
+
+#### Scenario: Exact order preference
+- **WHEN** photos are in the order [landscape, portrait, landscape]
+- **AND** two templates exist: one for [landscape, portrait, landscape] and one for [landscape, landscape, portrait]
+- **THEN** the system SHALL select the template with the exact order match.
 
 ### Requirement: Handle aspect ratio variations
-The system SHALL handle photos with different aspect ratios (portrait, landscape, square) within the same layout.
+The system SHALL handle photos with different aspect ratios (portrait, landscape, square) by matching them to the orientations specified in the layout templates.
 
-#### Scenario: Mixed orientations in grid
-- **WHEN** page contains both portrait and landscape photos
-- **THEN** system fits each photo within its grid cell preserving aspect ratio
-
-#### Scenario: Consistent cell sizes
-- **WHEN** grid layout is applied
-- **THEN** all grid cells have equal dimensions regardless of photo aspect ratios
-
-#### Scenario: Letterboxing or pillarboxing
-- **WHEN** photo aspect ratio doesn't match cell aspect ratio
-- **THEN** system centers photo within cell with appropriate padding
+#### Scenario: Mixed orientations with templates
+- **WHEN** a page contains both portrait and landscape photos
+- **THEN** the system fits each photo into the position and size defined by the corresponding entry in the layout template, preserving aspect ratio.
 
 ### Requirement: Distribute photos across pages
 The system SHALL distribute all photos across the specified or calculated number of pages according to layout constraints. When an explicit page count is provided, the system SHALL distribute photos evenly across ALL pages, ensuring maximum use of the requested page range.

@@ -15,7 +15,7 @@ from .config import load_config, validate_photos_path, ConfigurationError
 from .photos import collect_photos, PhotoCollectionError
 from .themes import load_theme, ThemeError
 from .layout import (
-    distribute_photos, calculate_page_layout, LayoutError
+    distribute_photos, LayoutError
 )
 from .renderer import render_all_pages
 from .output import generate_output, prepare_output_path, OutputError
@@ -106,20 +106,11 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         click.echo(f"   {distribution.total_pages} pages, "
                   f"{distribution.photos_per_page} photos per page")
         
-        # Calculate page layout
-        page_layout = calculate_page_layout(
-            page_width=page_width,
-            page_height=page_height,
-            photos_per_page=distribution.photos_per_page,
-            page_margin=theme.spacing.page_margin,
-            grid_gap=theme.spacing.grid_gap
-        )
-        
         # Stage 5: Render pages
         click.echo("🖼️  Rendering pages...")
         
         # Create page generator (memory-efficient streaming)
-        pages_generator = render_all_pages(page_layout, photos, distribution, theme)
+        pages_generator = render_all_pages(page_width, page_height, photos, distribution, theme)
         
         # Stage 6: Generate output
         click.echo("💾 Generating output...")
