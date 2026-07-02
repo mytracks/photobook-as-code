@@ -154,6 +154,7 @@ borders:
 
 spacing:
   page_margin: pixels
+  photo_margin: pixels
 ```
 
 2. Test your theme with various photo counts and layouts

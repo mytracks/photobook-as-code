@@ -168,6 +168,7 @@ borders:
 
 spacing:
   page_margin: 25     # Pixels around page edges
+  photo_margin: 10    # Pixels to shrink each photo on each edge
 ```
 
 Use your custom theme:

@@ -23,10 +23,10 @@ output:
 # Specify EITHER photos_per_page OR pages (not both)
 layout:
   # Fixed number of photos per page
-  # photos_per_page: 4
+  photos_per_page: 4
   
   # OR: Fixed total number of pages
-  pages: 8
+  # pages: 8
   
   # Photo ordering (optional)
   # order: alphabetical  # alphabetical (default) or date

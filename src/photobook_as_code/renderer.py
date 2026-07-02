@@ -173,8 +173,8 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
     for i, (photo, spec) in enumerate(zip(photos, template.photos)):
         try:
             # Calculate target dimensions using dual boundaries
-            target_width = int(usable_width * spec.size.width)
-            target_height = int(usable_height * spec.size.height)
+            target_width = max(1, int(usable_width * spec.size.width) - (2 * theme.spacing.photo_margin))
+            target_height = max(1, int(usable_height * spec.size.height) - (2 * theme.spacing.photo_margin))
                 
             # Load and resize photo
             photo_img = load_and_resize_photo(photo, target_width, target_height)

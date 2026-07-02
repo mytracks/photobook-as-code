@@ -55,6 +55,7 @@ class BorderStyle:
 class SpacingStyle:
     """Spacing properties."""
     page_margin: int = 20
+    photo_margin: int = 0
 
 
 @dataclass
@@ -223,6 +224,9 @@ def validate_theme(theme: Theme) -> None:
     
     if theme.spacing.page_margin < 0:
         raise ThemeError("Page margin cannot be negative")
+    
+    if theme.spacing.photo_margin < 0:
+        raise ThemeError("Photo margin cannot be negative")
 
 
 def get_default_theme() -> Theme:
