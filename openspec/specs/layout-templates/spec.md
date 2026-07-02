@@ -45,12 +45,8 @@ The renderer SHALL position photos on the page based on the `position` coordinat
 - **THEN** the center of the photo SHALL be at the center of the page.
 
 ### Requirement: Photo Sizing
-The renderer SHALL size photos on the page based on the `size` value in the selected layout template.
+The renderer SHALL size photos on the page based on the `size` object (`{width, height}`) in the selected layout template, applying both dimensions as maximum boundaries and proportionally fitting the photo within them.
 
-#### Scenario: Landscape photo sizing
-- **WHEN** a landscape photo is placed with `size: 0.8`
-- **THEN** the width of the photo SHALL be 80% of the page width.
-
-#### Scenario: Portrait photo sizing
-- **WHEN** a portrait photo is placed with `size: 0.6`
-- **THEN** the height of the photo SHALL be 60% of the page height.
+#### Scenario: Photo sizing with dual boundaries
+- **WHEN** a photo is placed with `size: {width: 0.8, height: 0.5}`
+- **THEN** the photo SHALL be scaled proportionally to fit within 80% of the page width and 50% of the page height, using the smaller scaling factor.

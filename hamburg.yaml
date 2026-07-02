@@ -1,0 +1,11 @@
+photos: /mnt/pictures/2026/2026-04-30+ Hamburg
+output:
+  size: A4
+  format: pdf
+  filename: my-photobook.pdf
+
+layout:
+  #photos_per_page: 4
+  pages: 64
+
+theme: clean
