@@ -3,14 +3,15 @@ Page rendering with photos and styling.
 """
 
 from pathlib import Path
-from typing import Iterator, List, Optional
+from typing import Iterator, List, Optional, Tuple
 import logging
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from .layout import fit_photo_in_cell, match_template
 from .photos import PhotoMetadata
 from .themes import Theme, LayoutTemplate
+from .text_labels import TextLabel, parse_markdown_text
 
 logger = logging.getLogger(__name__)
 
@@ -135,8 +136,102 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
     return page_rgba.convert('RGB')
 
 
+def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'TextPosition',
+                      page_width: int, page_height: int, base_font_size: int = 14,
+                      text_color: str = "#000000") -> None:
+    """
+    Render text label with markdown formatting.
+    
+    Args:
+        draw: ImageDraw instance
+        text_label: TextLabel with text content
+        text_pos: TextPosition specifying where to draw text
+        page_width: Page width in pixels
+        page_height: Page height in pixels
+        base_font_size: Base font size in points
+        text_color: Hex color for text
+    """
+    # Calculate bounding box from percentages
+    box_x = int(page_width * text_pos.x / 100)
+    box_y = int(page_height * text_pos.y / 100)
+    box_width = int(page_width * text_pos.width / 100)
+    box_height = int(page_height * text_pos.height / 100)
+    
+    # Parse markdown
+    parsed_lines = parse_markdown_text(text_label.text)
+    
+    # Try to load fonts (fall back to default if not available)
+    try:
+        font_regular = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", base_font_size)
+        font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", base_font_size)
+        font_italic = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf", base_font_size)
+        font_bold_italic = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf", base_font_size)
+    except:
+        # Fall back to default font
+        font_regular = ImageFont.load_default()
+        font_bold = font_regular
+        font_italic = font_regular
+        font_bold_italic = font_regular
+    
+    rgb = hex_to_rgb(text_color)
+    current_y = box_y
+    line_spacing = 4
+    
+    for segments, heading_level in parsed_lines:
+        if current_y > box_y + box_height:
+            break  # Clip at boundary
+        
+        current_x = box_x
+        max_line_height = 0
+        
+        for segment in segments:
+            # Select font based on style
+            if segment.bold and segment.italic:
+                font = font_bold_italic
+            elif segment.bold:
+                font = font_bold
+            elif segment.italic:
+                font = font_italic
+            else:
+                font = font_regular
+            
+            # Apply size multiplier for headings
+            if segment.font_size_multiplier != 1.0:
+                try:
+                    font_size = int(base_font_size * segment.font_size_multiplier)
+                    if segment.bold and segment.italic:
+                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf", font_size)
+                    elif segment.bold:
+                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+                    elif segment.italic:
+                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf", font_size)
+                    else:
+                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+                except:
+                    pass  # Keep default if loading fails
+            
+            # Get text bounding box
+            bbox = draw.textbbox((current_x, current_y), segment.text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            
+            # Check if text fits in box
+            if current_x + text_width > box_x + box_width:
+                break  # Clip horizontally
+            
+            # Draw text
+            draw.text((current_x, current_y), segment.text, fill=rgb, font=font)
+            
+            current_x += text_width
+            max_line_height = max(max_line_height, text_height)
+        
+        # Move to next line
+        current_y += max_line_height + line_spacing
+
+
 def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
-                theme: Theme, page_number: int = 0) -> Image.Image:
+                theme: Theme, page_number: int = 0, 
+                text_labels: Optional[List[Optional[TextLabel]]] = None) -> Image.Image:
     """
     Render a single page with photos and styling.
     
@@ -146,6 +241,7 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
         photos: List of photos to place on this page
         theme: Theme to apply
         page_number: Page number for logging (0-indexed)
+        text_labels: Optional list of text labels for each photo (same length as photos)
         
     Returns:
         Rendered page as PIL Image
@@ -168,6 +264,9 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
     # Calculate usable area
     usable_width = page_width - (2 * theme.spacing.page_margin)
     usable_height = page_height - (2 * theme.spacing.page_margin)
+    
+    # Draw object for text rendering
+    draw = ImageDraw.Draw(page)
     
     # Place each photo
     for i, (photo, spec) in enumerate(zip(photos, template.photos)):
@@ -205,7 +304,6 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
             
             # Draw border if enabled
             if theme.borders.enabled and theme.borders.width > 0:
-                draw = ImageDraw.Draw(page)
                 draw_border(
                     draw,
                     pos_x,
@@ -216,6 +314,16 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                     theme.borders.color
                 )
             
+            # Render text label if present
+            if text_labels and i < len(text_labels) and text_labels[i] and spec.text:
+                render_text_label(
+                    draw,
+                    text_labels[i],
+                    spec.text,
+                    page_width,
+                    page_height
+                )
+            
         except Exception as e:
             logger.error(f"Failed to render photo {photo.filename} on page {page_number + 1}: {e}")
             # Continue with other photos
@@ -224,7 +332,8 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
 
 
 def render_all_pages(page_width: int, page_height: int, all_photos: List[PhotoMetadata],
-                     distribution, theme: Theme):
+                     distribution, theme: Theme, 
+                     text_label_associations: Optional[List[Tuple[PhotoMetadata, Optional[TextLabel]]]] = None):
     """
     Render all pages for the photobook incrementally.
     
@@ -237,17 +346,29 @@ def render_all_pages(page_width: int, page_height: int, all_photos: List[PhotoMe
         all_photos: All photos in order
         distribution: PhotoDistribution instance
         theme: Theme to apply
+        text_label_associations: Optional list of (photo, text_label) tuples
         
     Yields:
         Rendered page images (Iterator[Image.Image])
     """
+    # Create a lookup dictionary for text labels
+    text_labels_map = {}
+    if text_label_associations:
+        for photo, label in text_label_associations:
+            text_labels_map[photo.path] = label
+    
     for page_num in range(distribution.total_pages):
         # Get photo indices for this page (handles both sparse and normal distribution)
         photo_indices = distribution.get_photo_indices_for_page(page_num)
         page_photos = [all_photos[i] for i in photo_indices]
         
+        # Get corresponding text labels
+        page_text_labels = None
+        if text_labels_map:
+            page_text_labels = [text_labels_map.get(photo.path) for photo in page_photos]
+        
         # Render page
-        page = render_page(page_width, page_height, page_photos, theme, page_num)
+        page = render_page(page_width, page_height, page_photos, theme, page_num, page_text_labels)
         
         # Yield page for processing (memory-efficient streaming)
         yield page

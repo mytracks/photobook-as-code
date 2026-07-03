@@ -1,36 +1,36 @@
 ## 1. YAML Configuration Parsing
 
-- [ ] 1.1 Add `text_labels` field to configuration schema in config.py
-- [ ] 1.2 Implement text label parsing with timestamp and text fields
-- [ ] 1.3 Add validation for timestamp formats (ISO 8601 and Unix epoch)
-- [ ] 1.4 Add validation for required fields (timestamp, text)
-- [ ] 1.5 Add validation for data types (timestamp as string/number, text as string)
-- [ ] 1.6 Add unit tests for text label parsing with valid entries
-- [ ] 1.7 Add unit tests for validation errors (missing fields, invalid formats)
+- [x] 1.1 Add `text_labels` field to configuration schema in config.py
+- [x] 1.2 Implement text label parsing with timestamp and text fields
+- [x] 1.3 Add validation for timestamp formats (ISO 8601 and Unix epoch)
+- [x] 1.4 Add validation for required fields (timestamp, text)
+- [x] 1.5 Add validation for data types (timestamp as string/number, text as string)
+- [x] 1.6 Add unit tests for text label parsing with valid entries
+- [x] 1.7 Add unit tests for validation errors (missing fields, invalid formats)
 
 ## 2. Text Label Data Model
 
-- [ ] 2.1 Create TextLabel class to store timestamp and text content
-- [ ] 2.2 Create TextSegment class to store formatted text with style attributes
-- [ ] 2.3 Implement markdown parser for italic (*text*)
-- [ ] 2.4 Implement markdown parser for bold (**text**)
-- [ ] 2.5 Implement markdown parser for heading levels (#, ##, ###)
-- [ ] 2.6 Handle nested formatting (bold within italic, etc.)
-- [ ] 2.7 Implement graceful degradation for malformed markdown
-- [ ] 2.8 Add unit tests for markdown parsing with various combinations
-- [ ] 2.9 Add unit tests for edge cases (unclosed markers, nested formatting)
+- [x] 2.1 Create TextLabel class to store timestamp and text content
+- [x] 2.2 Create TextSegment class to store formatted text with style attributes
+- [x] 2.3 Implement markdown parser for italic (*text*)
+- [x] 2.4 Implement markdown parser for bold (**text**)
+- [x] 2.5 Implement markdown parser for heading levels (#, ##, ###)
+- [x] 2.6 Handle nested formatting (bold within italic, etc.)
+- [x] 2.7 Implement graceful degradation for malformed markdown
+- [x] 2.8 Add unit tests for markdown parsing with various combinations
+- [x] 2.9 Add unit tests for edge cases (unclosed markers, nested formatting)
 
 ## 3. Photo-Text Association Logic
 
-- [ ] 3.1 Extract EXIF timestamps from photos in photos.py
-- [ ] 3.2 Implement timestamp matching algorithm (find closest photo)
-- [ ] 3.3 Implement deterministic tiebreaker for equidistant timestamps
-- [ ] 3.4 Create function to associate text labels with photos by timestamp
-- [ ] 3.5 Handle case where text label has no matching photo
-- [ ] 3.6 Handle case where photo has no text label
-- [ ] 3.7 Add unit tests for timestamp matching with single label/photo
-- [ ] 3.8 Add unit tests for equidistant timestamp tiebreaker
-- [ ] 3.9 Add unit tests for multiple labels on same page
+- [x] 3.1 Extract EXIF timestamps from photos in photos.py
+- [x] 3.2 Implement timestamp matching algorithm (find closest photo)
+- [x] 3.3 Implement deterministic tiebreaker for equidistant timestamps
+- [x] 3.4 Create function to associate text labels with photos by timestamp
+- [x] 3.5 Handle case where text label has no matching photo
+- [x] 3.6 Handle case where photo has no text label
+- [x] 3.7 Add unit tests for timestamp matching with single label/photo
+- [x] 3.8 Add unit tests for equidistant timestamp tiebreaker
+- [x] 3.9 Add unit tests for multiple labels on same page
 
 ## 4. Theme System Text Positioning
 

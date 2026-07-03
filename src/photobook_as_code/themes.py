@@ -20,11 +20,22 @@ class LayoutPhotoSize:
     height: float
 
 @dataclass
+class TextPosition:
+    """Text position and alignment specification."""
+    x: float  # percentage 0-100
+    y: float  # percentage 0-100
+    width: float  # percentage 0-100
+    height: float  # percentage 0-100
+    align: str = "left"  # left, center, right
+    valign: str = "top"  # top, middle, bottom
+
+@dataclass
 class LayoutPhoto:
     """Specification for a single photo in a layout template."""
     orientation: str  # 'portrait' or 'landscape'
     position: LayoutPosition
     size: LayoutPhotoSize  # Maximum bounds for rendering
+    text: Optional[TextPosition] = None  # Optional text positioning
 
 @dataclass
 class LayoutTemplate:
@@ -81,13 +92,27 @@ class Theme:
                 if not isinstance(size_data, dict) or 'width' not in size_data or 'height' not in size_data:
                     raise ThemeError(f"Photo size must be an object with 'width' and 'height'. Got: {size_data}")
 
+                # Parse optional text position
+                text_pos = None
+                text_data = photo_dict.get('text')
+                if text_data and isinstance(text_data, dict):
+                    text_pos = TextPosition(
+                        x=float(text_data.get('x', 0)),
+                        y=float(text_data.get('y', 0)),
+                        width=float(text_data.get('width', 100)),
+                        height=float(text_data.get('height', 100)),
+                        align=text_data.get('align', 'left'),
+                        valign=text_data.get('valign', 'top')
+                    )
+
                 photos.append(LayoutPhoto(
                     orientation=photo_dict.get('orientation', 'landscape'),
                     position=LayoutPosition(x=pos.get('x', 0.5), y=pos.get('y', 0.5)),
                     size=LayoutPhotoSize(
                         width=float(size_data['width']),
                         height=float(size_data['height'])
-                    )
+                    ),
+                    text=text_pos
                 ))
             layouts.append(LayoutTemplate(
                 count=layout_dict.get('count', len(photos)),

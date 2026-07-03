@@ -19,6 +19,7 @@ from .layout import (
 )
 from .renderer import render_all_pages
 from .output import generate_output, prepare_output_path, OutputError
+from .text_labels import associate_text_labels_with_photos
 
 
 # Configure logging
@@ -90,6 +91,13 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         click.echo(f"🎨 Loading theme '{pb_config.theme}'...")
         theme = load_theme(pb_config.theme)
         
+        # Stage 3.5: Associate text labels with photos
+        text_label_associations = None
+        if pb_config.text_labels:
+            click.echo("📝 Associating text labels with photos...")
+            text_label_associations = associate_text_labels_with_photos(pb_config.text_labels, photos)
+            click.echo(f"   {len([label for _, label in text_label_associations if label is not None])} text labels associated")
+        
         # Stage 4: Calculate layout
         click.echo("📐 Calculating layout...")
         
@@ -110,7 +118,7 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         click.echo("🖼️  Rendering pages...")
         
         # Create page generator (memory-efficient streaming)
-        pages_generator = render_all_pages(page_width, page_height, photos, distribution, theme)
+        pages_generator = render_all_pages(page_width, page_height, photos, distribution, theme, text_label_associations)
         
         # Stage 6: Generate output
         click.echo("💾 Generating output...")

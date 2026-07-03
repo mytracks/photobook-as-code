@@ -1,0 +1,17 @@
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+  format: pdf
+  filename: demo-with-text-labels.pdf
+layout:
+  photos_per_page: 2
+theme: clean
+text_labels:
+  - timestamp: "2026-07-03T17:32:20"
+    text: "# Summer Adventures\nOur trip begins!"
+  - timestamp: "2026-07-03T17:32:24"
+    text: "Beautiful scenery with *amazing* views"
+  - timestamp: "2026-07-03T17:32:25"
+    text: "**Highlight of the day**\nThis was incredible"
+  - timestamp: "2026-07-03T17:32:26"
+    text: "Relaxing by the water"

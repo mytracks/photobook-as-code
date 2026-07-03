@@ -27,9 +27,23 @@ layouts:
   - orientation: landscape
     position: {x: 0.5, y: 0.25}
     size: {width: 1.0, height: 0.5}
+    text:
+      x: 10
+      y: 55
+      width: 80
+      height: 15
+      align: left
+      valign: top
   - orientation: landscape
     position: {x: 0.5, y: 0.75}
     size: {width: 1.0, height: 0.5}
+    text:
+      x: 10
+      y: 95
+      width: 80
+      height: 4
+      align: left
+      valign: top
 - count: 2
   photos:
   - orientation: portrait

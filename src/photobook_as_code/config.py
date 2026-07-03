@@ -4,7 +4,8 @@ Configuration parsing and validation for photobook generation.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Union, Literal
+from typing import Optional, Union, Literal, List, Dict, Any
+from datetime import datetime
 import yaml
 
 
@@ -40,6 +41,7 @@ class PhotobookConfig:
     output: OutputConfig
     layout: LayoutConfig
     theme: str = "clean"
+    text_labels: List[Dict[str, Any]] = field(default_factory=list)
     config_file_path: Optional[Path] = field(default=None, repr=False)
     
     def resolve_photos_path(self) -> Path:
@@ -90,6 +92,76 @@ class PhotobookConfig:
 class ConfigurationError(Exception):
     """Raised when configuration is invalid."""
     pass
+
+
+def validate_text_labels(text_labels: List[Dict[str, Any]]) -> None:
+    """
+    Validate text label entries.
+    
+    Args:
+        text_labels: List of text label dictionaries
+        
+    Raises:
+        ConfigurationError: If text labels are invalid
+    """
+    if not isinstance(text_labels, list):
+        raise ConfigurationError("text_labels must be a list")
+    
+    for i, label in enumerate(text_labels):
+        if not isinstance(label, dict):
+            raise ConfigurationError(
+                f"Text label entry {i} must be an object, got {type(label).__name__}"
+            )
+        
+        # Check required fields
+        if 'timestamp' not in label:
+            raise ConfigurationError(
+                f"Text label entry {i} is missing required field 'timestamp'"
+            )
+        
+        if 'text' not in label:
+            raise ConfigurationError(
+                f"Text label entry {i} is missing required field 'text'"
+            )
+        
+        # Validate timestamp type and format
+        timestamp = label['timestamp']
+        if isinstance(timestamp, bool):
+            # Boolean is a subclass of int, so check explicitly
+            raise ConfigurationError(
+                f"Text label entry {i} has invalid timestamp type: bool. "
+                f"Must be string (ISO 8601) or number (Unix epoch)"
+            )
+        elif isinstance(timestamp, str):
+            # Try to parse as ISO 8601
+            try:
+                datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                raise ConfigurationError(
+                    f"Text label entry {i} has invalid timestamp format: {timestamp}. "
+                    f"Must be ISO 8601 string or Unix epoch number"
+                )
+        elif isinstance(timestamp, (int, float)):
+            # Unix epoch timestamp
+            try:
+                datetime.fromtimestamp(timestamp)
+            except (ValueError, OSError):
+                raise ConfigurationError(
+                    f"Text label entry {i} has invalid Unix epoch timestamp: {timestamp}"
+                )
+        else:
+            raise ConfigurationError(
+                f"Text label entry {i} has invalid timestamp type: {type(timestamp).__name__}. "
+                f"Must be string (ISO 8601) or number (Unix epoch)"
+            )
+        
+        # Validate text type
+        text = label['text']
+        if not isinstance(text, str):
+            raise ConfigurationError(
+                f"Text label entry {i} has invalid text type: {type(text).__name__}. "
+                f"Must be string"
+            )
 
 
 def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
@@ -143,6 +215,11 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
     if photos_per_page is None and pages is None:
         layout_data['photos_per_page'] = 4
     
+    # Parse and validate text labels
+    text_labels = data.get('text_labels', [])
+    if text_labels:
+        validate_text_labels(text_labels)
+    
     # Build configuration objects
     try:
         output_config = OutputConfig(
@@ -164,6 +241,7 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
             output=output_config,
             layout=layout_config,
             theme=data.get('theme', 'clean'),
+            text_labels=text_labels,
             config_file_path=config_path,
         )
         
