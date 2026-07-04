@@ -171,6 +171,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
         font_bold_italic = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-BoldOblique.ttf", base_font_size)
     except:
         # Fall back to default font
+        logger.warning(f"Font {font_family} with size {base_font_size} not found.")
         font_regular = ImageFont.load_default()
         font_bold = font_regular
         font_italic = font_regular
@@ -179,6 +180,75 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
     rgb = hex_to_rgb(text_color)
     current_y = box_y
     line_spacing = 4
+    
+    # Draw semi-transparent background if enabled
+    if theme.text.text_background_enabled:
+        # Calculate actual text bounds
+        total_height = 0
+        max_width = 0
+        for segments, heading_level in parsed_lines:
+            line_width = 0
+            line_height = 0
+            for segment in segments:
+                # Select font
+                if segment.bold and segment.italic:
+                    font = font_bold_italic
+                elif segment.bold:
+                    font = font_bold
+                elif segment.italic:
+                    font = font_italic
+                else:
+                    font = font_regular
+                
+                # Apply size multiplier
+                if segment.font_size_multiplier != 1.0:
+                    try:
+                        font_size = int(base_font_size * segment.font_size_multiplier)
+                        if segment.bold and segment.italic:
+                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-BoldOblique.ttf", font_size)
+                        elif segment.bold:
+                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Bold.ttf", font_size)
+                        elif segment.italic:
+                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Oblique.ttf", font_size)
+                        else:
+                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}.ttf", font_size)
+                    except:
+                        pass
+                
+                bbox = draw.textbbox((0, 0), segment.text, font=font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                line_width += text_width
+                line_height = max(line_height, text_height)
+            
+            max_width = max(max_width, line_width)
+            total_height += line_height + line_spacing
+        
+        # Remove last line spacing
+        if total_height > 0:
+            total_height -= line_spacing
+        
+        # Draw background rectangle with padding
+        padding = theme.text.text_padding
+        bg_x = box_x - padding
+        bg_y = box_y - padding
+        bg_width = min(max_width + 2 * padding, box_width + 2 * padding)
+        bg_height = min(total_height + 2 * padding, box_height + 2 * padding)
+        
+        # Create semi-transparent overlay
+        bg_color = hex_to_rgb(theme.text.text_background_color)
+        opacity = int(255 * theme.text.text_background_opacity / 100)
+        
+        # Draw rectangle with transparency
+        overlay = Image.new('RGBA', (int(bg_width), int(bg_height)), bg_color + (opacity,))
+        # Get the page as RGBA for compositing
+        page_img = draw._image
+        if page_img.mode != 'RGBA':
+            page_img = page_img.convert('RGBA')
+        page_img.paste(overlay, (int(bg_x), int(bg_y)), overlay)
+        # Update draw to use the new image
+        if draw._image.mode == 'RGB':
+            draw._image.paste(page_img.convert('RGB'), (0, 0))
     
     for segments, heading_level in parsed_lines:
         if current_y > box_y + box_height:
@@ -282,10 +352,10 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
     usable_width = page_width - (2 * theme.spacing.page_margin)
     usable_height = page_height - (2 * theme.spacing.page_margin)
     
-    # Draw object for text rendering
-    draw = ImageDraw.Draw(page)
+    # PHASE 1: Draw all photos first
+    # Store photo positions and dimensions for later border/text rendering
+    photo_placements = []  # List of (pos_x, pos_y, width, height)
     
-    # Place each photo
     for i, (photo, spec) in enumerate(zip(photos, template.photos)):
         try:
             # Calculate target dimensions using dual boundaries
@@ -303,6 +373,9 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
             pos_x = center_x - (photo_img.width // 2)
             pos_y = center_y - (photo_img.height // 2)
             
+            # Store placement for later use
+            photo_placements.append((pos_x, pos_y, photo_img.width, photo_img.height))
+            
             # Apply shadow if enabled
             if theme.borders.shadow:
                 page = draw_shadow(
@@ -319,14 +392,34 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                 (pos_x, pos_y)
             )
             
+        except Exception as e:
+            logger.error(f"Failed to render photo {photo.filename} on page {page_number + 1}: {e}")
+            # Store empty placement to maintain index alignment
+            photo_placements.append((0, 0, 0, 0))
+            # Continue with other photos
+    
+    # PHASE 2: Draw borders and text labels on top of all photos
+    # Create draw object after all photos are pasted
+    draw = ImageDraw.Draw(page)
+    
+    for i, spec in enumerate(template.photos):
+        if i >= len(photo_placements):
+            break
+            
+        pos_x, pos_y, width, height = photo_placements[i]
+        
+        if width == 0 or height == 0:
+            continue  # Skip if photo failed to load
+        
+        try:
             # Draw border if enabled
             if theme.borders.enabled and theme.borders.width > 0:
                 draw_border(
                     draw,
                     pos_x,
                     pos_y,
-                    photo_img.width,
-                    photo_img.height,
+                    width,
+                    height,
                     theme.borders.width,
                     theme.borders.color
                 )
@@ -343,8 +436,8 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                 )
             
         except Exception as e:
-            logger.error(f"Failed to render photo {photo.filename} on page {page_number + 1}: {e}")
-            # Continue with other photos
+            logger.error(f"Failed to render border/text for photo on page {page_number + 1}: {e}")
+            # Continue with other elements
     
     return page
 

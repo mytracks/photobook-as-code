@@ -115,11 +115,11 @@ def read_exif_date(image_path: Path) -> Optional[datetime]:
             if not exif_data:
                 return None
             
-            # Look for DateTimeOriginal (36867) or DateTime (306)
-            for tag_id, value in exif_data.items():
-                tag = TAGS.get(tag_id, tag_id)
-                
-                if tag in ('DateTimeOriginal', 'DateTime'):
+            # Prioritize DateTimeOriginal (36867) over DateTime (306)
+            # DateTimeOriginal is the actual capture time, DateTime may be modification time
+            for tag_id in [36867, 306]:  # DateTimeOriginal, then DateTime
+                if tag_id in exif_data:
+                    value = exif_data[tag_id]
                     # Parse EXIF datetime format: "YYYY:MM:DD HH:MM:SS"
                     try:
                         return datetime.strptime(value, "%Y:%m:%d %H:%M:%S")

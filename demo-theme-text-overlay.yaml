@@ -1,0 +1,56 @@
+name: Demo Theme with Text on Photos
+description: Example theme showing text positioned directly over photos
+background: {color: '#FFFFFF'}
+borders:
+  enabled: false
+  width: 0
+  color: '#CCCCCC'
+  shadow: false
+spacing: 
+  page_margin: 90
+  photo_margin: 20
+text:
+  base_font_size: 16
+  font_family: DejaVuSans
+  text_color: "#000000"
+  text_background_enabled: true
+  text_background_color: "#FFFFFF"
+  text_background_opacity: 85
+  text_padding: 10
+layouts:
+# 1 Photo with text overlay
+- count: 1
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.5}
+    size: {width: 0.9, height: 1.0}
+    text:
+      x: 5      # Position text over the photo
+      y: 70     # Bottom portion of photo
+      width: 90
+      height: 25
+      align: left
+      valign: top
+# 2 Photos with text overlays
+- count: 2
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 5      # Text positioned over first photo
+      y: 35     # Bottom of first photo
+      width: 90
+      height: 15
+      align: left
+      valign: top
+  - orientation: landscape
+    position: {x: 0.5, y: 0.75}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 5      # Text positioned over second photo
+      y: 85     # Bottom of second photo
+      width: 90
+      height: 10
+      align: left
+      valign: top

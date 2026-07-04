@@ -240,31 +240,33 @@ def associate_text_labels_with_photos(
         # No text labels - return photos with None labels
         return [(photo, None) for photo in photos]
     
-    # Build associations
-    associations = []
-    used_label_indices = set()
+    # Build mapping: photo index -> text label
+    # For each text label, find the closest photo
+    photo_idx_to_label = {}
     
-    for photo in photos:
-        # Find closest unused label for this photo
-        closest_label = None
-        closest_label_idx = None
-        min_diff = None
-        
-        for idx, label in enumerate(parsed_labels):
-            if idx in used_label_indices:
-                continue
+    for label in parsed_labels:
+        # Find the closest photo for this label
+        closest_photo = find_closest_photo(label, photos)
+        if closest_photo:
+            # Find the index of this photo
+            closest_idx = photos.index(closest_photo)
             
-            time_diff = abs((photo.sort_date - label.timestamp).total_seconds())
-            
-            if min_diff is None or time_diff < min_diff:
-                min_diff = time_diff
-                closest_label = label
-                closest_label_idx = idx
-        
-        # Associate the closest label (or None if all used)
-        associations.append((photo, closest_label))
-        if closest_label_idx is not None:
-            used_label_indices.add(closest_label_idx)
+            # Associate this label with the closest photo
+            # If the photo already has a label, keep the one with closer timestamp
+            if closest_idx in photo_idx_to_label:
+                existing_label = photo_idx_to_label[closest_idx]
+                existing_diff = abs((closest_photo.sort_date - existing_label.timestamp).total_seconds())
+                new_diff = abs((closest_photo.sort_date - label.timestamp).total_seconds())
+                if new_diff < existing_diff:
+                    photo_idx_to_label[closest_idx] = label
+            else:
+                photo_idx_to_label[closest_idx] = label
+    
+    # Build result list in the same order as photos
+    associations = []
+    for idx, photo in enumerate(photos):
+        label = photo_idx_to_label.get(idx, None)
+        associations.append((photo, label))
     
     return associations
 

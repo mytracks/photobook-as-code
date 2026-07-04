@@ -35,3 +35,7 @@ layout:
 # Available: clean, classic, modern
 # Or path to custom theme file
 theme: clean
+
+text_labels:
+  - timestamp: "2026-04-30T14:04:00"
+    text: "# Hamburger Spendenparlament"

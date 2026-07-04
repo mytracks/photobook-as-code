@@ -425,6 +425,10 @@ class TestThemeTextStyling:
         assert theme.text.base_font_size == 14
         assert theme.text.font_family == 'DejaVuSans'
         assert theme.text.text_color == '#000000'
+        assert theme.text.text_background_enabled == True
+        assert theme.text.text_background_color == '#FFFFFF'
+        assert theme.text.text_background_opacity == 85
+        assert theme.text.text_padding == 8
     
     def test_parse_text_styling_custom(self):
         """Test custom text styling values."""
@@ -434,7 +438,11 @@ class TestThemeTextStyling:
             'text': {
                 'base_font_size': 18,
                 'font_family': 'Arial',
-                'text_color': '#333333'
+                'text_color': '#333333',
+                'text_background_enabled': False,
+                'text_background_color': '#000000',
+                'text_background_opacity': 50,
+                'text_padding': 12
             },
             'layouts': []
         }
@@ -443,3 +451,7 @@ class TestThemeTextStyling:
         assert theme.text.base_font_size == 18
         assert theme.text.font_family == 'Arial'
         assert theme.text.text_color == '#333333'
+        assert theme.text.text_background_enabled == False
+        assert theme.text.text_background_color == '#000000'
+        assert theme.text.text_background_opacity == 50
+        assert theme.text.text_padding == 12

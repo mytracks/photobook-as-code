@@ -161,10 +161,16 @@ Customize text appearance at the theme level:
 
 ```yaml
 text:
-  base_font_size: 14         # Base font size in points
-  font_family: "DejaVuSans"  # Font family name
-  text_color: "#000000"      # Text color (hex)
+  base_font_size: 14                # Base font size in points
+  font_family: "DejaVuSans"         # Font family name
+  text_color: "#000000"             # Text color (hex)
+  text_background_enabled: true     # Enable semi-transparent background for readability
+  text_background_color: "#FFFFFF"  # Background color (hex)
+  text_background_opacity: 85       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_padding: 8                   # Padding around text in pixels
 ```
+
+**Text Background for Readability**: By default, text is rendered with a semi-transparent white background (85% opacity) to ensure readability when text is positioned over photos. You can customize the background color and opacity, or disable it entirely by setting `text_background_enabled: false`.
 
 ### Example with Multiple Labels
 

@@ -97,7 +97,16 @@ def main(config: Path, output: Optional[Path], verbose: bool):
             click.echo("📝 Associating text labels with photos...")
             text_label_associations = associate_text_labels_with_photos(pb_config.text_labels, photos)
             click.echo(f"   {len([label for _, label in text_label_associations if label is not None])} text labels associated")
+            
+            # Log each association
+            for photo, text_label in text_label_associations:
+                if text_label:
+                    logger.info(f"Association: Photo '{photo.path.name}' (date: {photo.sort_date}) -> Text label at {text_label.timestamp}: {text_label.text[:50]}...")
+                else:
+                    logger.info(f"Association: Photo '{photo.path.name}' (date: {photo.sort_date}) -> No text label")
         
+            
+
         # Stage 4: Calculate layout
         click.echo("📐 Calculating layout...")
         

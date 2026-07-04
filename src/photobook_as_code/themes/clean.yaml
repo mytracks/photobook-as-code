@@ -1,6 +1,6 @@
 name: Clean
-description: Minimalist style with white background and thin borders
-background: {color: '#FFFFFF'}
+description: Minimalist style with black background and thin borders
+background: {color: '#000000'}
 borders:
   enabled: false
   width: 0
@@ -9,6 +9,14 @@ borders:
 spacing: 
   page_margin: 90
   photo_margin: 20
+text:
+  font_family: DejaVuSansMono
+  base_font_size: 40
+  text_color: "#FFFFFF"
+  text_background_enabled: true     # Enable semi-transparent background for readability
+  text_background_color: "#000000"  # Background color (hex)
+  text_background_opacity: 50       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_padding: 32                  # Padding around text in pixels  
 layouts:
 # 1 Photo
 - count: 1
@@ -169,29 +177,85 @@ layouts:
   - orientation: landscape
     position: {x: 0.5, y: 0.165}
     size: {width: 1.0, height: 0.33}
+    text:
+      x: 0          # Left edge (% of page width)
+      y: 16          # Top edge (% of page height)
+      width: 50      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.5, y: 0.495}
     size: {width: 1.0, height: 0.33}
+    text:
+      x: 0          # Left edge (% of page width)
+      y: 49          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
   - orientation: portrait
     position: {x: 0.165, y: 0.825}
     size: {width: 0.33, height: 0.33}
+    text:
+      x: 0          # Left edge (% of page width)
+      y: 82          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.66, y: 0.825}
     size: {width: 0.66, height: 0.33}
+    text:
+      x: 50          # Left edge (% of page width)
+      y: 82          # Top edge (% of page height)
+      width: 50      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: right    # left, center, or right
+      valign: top    # top, middle, or bottom    
 - count: 4
   photos:
   - orientation: landscape
     position: {x: 0.5, y: 0.165}
     size: {width: 1.0, height: 0.33}
+    text:
+      x: 10          # Left edge (% of page width)
+      y: 55          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.5, y: 0.495}
     size: {width: 1.0, height: 0.33}
+    text:
+      x: 10          # Left edge (% of page width)
+      y: 55          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.33, y: 0.825}
     size: {width: 0.66, height: 0.33}
+    text:
+      x: 10          # Left edge (% of page width)
+      y: 55          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
   - orientation: portrait
     position: {x: 0.835, y: 0.825}
     size: {width: 0.33, height: 0.33}
+    text:
+      x: 10          # Left edge (% of page width)
+      y: 55          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom    
 - count: 4
   photos:
   - orientation: landscape

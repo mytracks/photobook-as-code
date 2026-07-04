@@ -75,6 +75,10 @@ class TextStyle:
     base_font_size: int = 14
     font_family: str = "DejaVuSans"
     text_color: str = "#000000"
+    text_background_enabled: bool = True
+    text_background_color: str = "#FFFFFF"
+    text_background_opacity: int = 85  # 0-100, where 100 is fully opaque
+    text_padding: int = 8  # Padding in pixels around text
 
 
 @dataclass

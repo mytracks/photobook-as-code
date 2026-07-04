@@ -1,0 +1,17 @@
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+  format: pdf
+  filename: demo-text-on-photos.pdf
+layout:
+  photos_per_page: 2
+theme: demo-theme-text-overlay.yaml
+text_labels:
+  - timestamp: "2026-07-03T17:32:20"
+    text: "# Summer Adventures\nOur trip begins with beautiful weather!"
+  - timestamp: "2026-07-03T17:32:24"
+    text: "Exploring the city with *amazing* architecture"
+  - timestamp: "2026-07-03T17:32:25"
+    text: "**Best photo spot**\nFound this hidden gem downtown"
+  - timestamp: "2026-07-03T17:32:26"
+    text: "Sunset views were absolutely ***stunning***"

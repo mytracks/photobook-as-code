@@ -94,3 +94,28 @@
 - [x] 8.5 Document text styling theme properties
 - [x] 8.6 Add example photobook configuration with text labels
 - [x] 8.7 Update theme documentation with text position examples
+
+## 9. Text Background Overlay for Readability
+
+- [x] 9.1 Add text background properties to TextStyle (enabled, color, opacity, padding)
+- [x] 9.2 Implement semi-transparent background rendering before text
+- [x] 9.3 Calculate actual text bounds for proper background sizing
+- [x] 9.4 Add padding around text within background overlay
+- [x] 9.5 Support configurable background color (hex format)
+- [x] 9.6 Support configurable background opacity (0-100 range)
+- [x] 9.7 Enable text background by default for readability
+- [x] 9.8 Update unit tests for text styling with background properties
+- [x] 9.9 Add spec requirements for text background overlay
+- [x] 9.10 Document text background properties in README
+- [x] 9.11 Create demo showing text rendered on top of photos
+
+## 10. Text Rendering Order Fix
+
+- [x] 10.1 Restructure render_page to use two-phase rendering
+- [x] 10.2 Phase 1: Render all photos first
+- [x] 10.3 Phase 2: Render all borders and text labels on top
+- [x] 10.4 Store photo placements for efficient border/text rendering
+- [x] 10.5 Ensure text labels are never obscured by subsequent photos
+- [x] 10.6 Update spec with rendering order requirements
+- [x] 10.7 Verify all tests pass with new rendering order
+- [x] 10.8 Regenerate demos to verify fix

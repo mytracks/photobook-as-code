@@ -61,3 +61,42 @@ The system SHALL support optional text styling properties at the theme level for
 #### Scenario: Invalid color format
 - **WHEN** theme specifies text_color that is not a valid color (hex, rgb, or name)
 - **THEN** system reports validation error indicating invalid color
+
+### Requirement: Support text background overlay for readability
+The system SHALL support optional text background overlay properties to ensure text remains readable when rendered over photos.
+
+#### Scenario: Theme with text background
+- **WHEN** theme specifies text_background_enabled as true
+- **THEN** system renders semi-transparent background behind text
+
+#### Scenario: Theme with text background color
+- **WHEN** theme specifies text_background_color property
+- **THEN** system uses specified color for text background overlay
+
+#### Scenario: Theme with text background opacity
+- **WHEN** theme specifies text_background_opacity (0-100)
+- **THEN** system uses specified opacity for text background (0=transparent, 100=opaque)
+
+#### Scenario: Theme with text padding
+- **WHEN** theme specifies text_padding property
+- **THEN** system adds specified padding around text within background overlay
+
+#### Scenario: Theme without text background
+- **WHEN** theme does not enable text_background or uses default
+- **THEN** system renders text with semi-transparent background (default enabled for readability)
+
+#### Scenario: Text background covers entire bounding box
+- **WHEN** text is rendered with background enabled
+- **THEN** background overlay is drawn first, then text is drawn on top
+
+#### Scenario: Text labels rendered on top of all photos
+- **WHEN** page contains multiple photos with text labels
+- **THEN** system renders all photos first, then all text labels on top
+
+#### Scenario: Text not obscured by other photos
+- **WHEN** text label is positioned over first photo and second photo is rendered
+- **THEN** text from first photo remains visible (not covered by second photo)
+
+#### Scenario: Invalid text background opacity
+- **WHEN** theme specifies text_background_opacity outside 0-100 range
+- **THEN** system reports validation error indicating invalid opacity value

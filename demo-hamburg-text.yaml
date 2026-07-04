@@ -1,0 +1,21 @@
+photos: /mnt/pictures/2026/2026-04-30+ Hamburg
+output:
+  size: A4
+  format: pdf
+  filename: demo-hamburg-text.pdf
+
+layout:
+  photos_per_page: 2
+  pages: 3
+
+theme: clean
+
+text_labels:
+  - timestamp: "2026-04-30 10:30:00"
+    text: "# Morning in Hamburg\nStarting our day exploring the city"
+  
+  - timestamp: "2026-04-30 12:30:00"
+    text: "**Lunch break**\nFound a great spot by the harbor"
+  
+  - timestamp: "2026-04-30 14:10:00"
+    text: "Afternoon *adventures* continue..."
