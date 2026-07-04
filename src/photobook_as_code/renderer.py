@@ -178,62 +178,25 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
         font_bold_italic = font_regular
     
     rgb = hex_to_rgb(text_color)
-    current_y = box_y
+    padding = theme.text.text_padding
+    
+    # Calculate text area with padding
+    text_box_x = box_x + padding
+    text_box_y = box_y + padding
+    text_box_width = box_width - 2 * padding
+    text_box_height = box_height - 2 * padding
+    
+    current_y = text_box_y
     line_spacing = 4
     
     # Draw semi-transparent background if enabled
     if theme.text.text_background_enabled:
-        # Calculate actual text bounds
-        total_height = 0
-        max_width = 0
-        for segments, heading_level in parsed_lines:
-            line_width = 0
-            line_height = 0
-            for segment in segments:
-                # Select font
-                if segment.bold and segment.italic:
-                    font = font_bold_italic
-                elif segment.bold:
-                    font = font_bold
-                elif segment.italic:
-                    font = font_italic
-                else:
-                    font = font_regular
-                
-                # Apply size multiplier
-                if segment.font_size_multiplier != 1.0:
-                    try:
-                        font_size = int(base_font_size * segment.font_size_multiplier)
-                        if segment.bold and segment.italic:
-                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-BoldOblique.ttf", font_size)
-                        elif segment.bold:
-                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Bold.ttf", font_size)
-                        elif segment.italic:
-                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Oblique.ttf", font_size)
-                        else:
-                            font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}.ttf", font_size)
-                    except:
-                        pass
-                
-                bbox = draw.textbbox((0, 0), segment.text, font=font)
-                text_width = bbox[2] - bbox[0]
-                text_height = bbox[3] - bbox[1]
-                line_width += text_width
-                line_height = max(line_height, text_height)
-            
-            max_width = max(max_width, line_width)
-            total_height += line_height + line_spacing
-        
-        # Remove last line spacing
-        if total_height > 0:
-            total_height -= line_spacing
-        
-        # Draw background rectangle with padding
-        padding = theme.text.text_padding
-        bg_x = box_x - padding
-        bg_y = box_y - padding
-        bg_width = min(max_width + 2 * padding, box_width + 2 * padding)
-        bg_height = min(total_height + 2 * padding, box_height + 2 * padding)
+        # Use template-specified dimensions for background
+        # This ensures background matches the template size regardless of text width
+        bg_x = box_x
+        bg_y = box_y
+        bg_width = box_width
+        bg_height = box_height
         
         # Create semi-transparent overlay
         bg_color = hex_to_rgb(theme.text.text_background_color)
@@ -251,7 +214,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
             draw._image.paste(page_img.convert('RGB'), (0, 0))
     
     for segments, heading_level in parsed_lines:
-        if current_y > box_y + box_height:
+        if current_y > text_box_y + text_box_height:
             break  # Clip at boundary
         
         # Calculate line width for alignment
@@ -294,18 +257,18 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
             line_width += text_width
             line_height = max(line_height, text_height)
         
-        # Apply horizontal alignment
+        # Apply horizontal alignment within padded text box
         if text_pos.align == 'center':
-            current_x = box_x + (box_width - line_width) // 2
+            current_x = text_box_x + (text_box_width - line_width) // 2
         elif text_pos.align == 'right':
-            current_x = box_x + box_width - line_width
+            current_x = text_box_x + text_box_width - line_width
         else:  # left
-            current_x = box_x
+            current_x = text_box_x
         
         # Draw segments
         for segment, font, seg_width, seg_height in segment_infos:
-            # Check if text fits in box
-            if current_x + seg_width > box_x + box_width:
+            # Check if text fits in padded box
+            if current_x + seg_width > text_box_x + text_box_width:
                 break  # Clip horizontally
             
             # Draw text

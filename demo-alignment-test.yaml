@@ -1,0 +1,15 @@
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+  format: pdf
+  filename: demo-alignment-test.pdf
+layout:
+  photos_per_page: 3
+theme: test-alignment-theme.yaml
+text_labels:
+  - timestamp: "2026-07-03T17:32:24.812221"
+    text: "Short"
+  - timestamp: "2026-07-03T17:32:24.812368"
+    text: "Medium text"
+  - timestamp: "2026-07-03T17:32:24.812504"
+    text: "Longer text example"
