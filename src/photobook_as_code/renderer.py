@@ -137,8 +137,7 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
 
 
 def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'TextPosition',
-                      page_width: int, page_height: int, base_font_size: int = 14,
-                      text_color: str = "#000000") -> None:
+                      page_width: int, page_height: int, theme: Theme) -> None:
     """
     Render text label with markdown formatting.
     
@@ -148,8 +147,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
         text_pos: TextPosition specifying where to draw text
         page_width: Page width in pixels
         page_height: Page height in pixels
-        base_font_size: Base font size in points
-        text_color: Hex color for text
+        theme: Theme with text styling properties
     """
     # Calculate bounding box from percentages
     box_x = int(page_width * text_pos.x / 100)
@@ -160,12 +158,17 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
     # Parse markdown
     parsed_lines = parse_markdown_text(text_label.text)
     
+    # Get theme text styling
+    base_font_size = theme.text.base_font_size
+    font_family = theme.text.font_family
+    text_color = theme.text.text_color
+    
     # Try to load fonts (fall back to default if not available)
     try:
-        font_regular = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", base_font_size)
-        font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", base_font_size)
-        font_italic = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf", base_font_size)
-        font_bold_italic = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf", base_font_size)
+        font_regular = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}.ttf", base_font_size)
+        font_bold = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Bold.ttf", base_font_size)
+        font_italic = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Oblique.ttf", base_font_size)
+        font_bold_italic = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-BoldOblique.ttf", base_font_size)
     except:
         # Fall back to default font
         font_regular = ImageFont.load_default()
@@ -181,8 +184,10 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
         if current_y > box_y + box_height:
             break  # Clip at boundary
         
-        current_x = box_x
-        max_line_height = 0
+        # Calculate line width for alignment
+        line_width = 0
+        line_height = 0
+        segment_infos = []
         
         for segment in segments:
             # Select font based on style
@@ -200,33 +205,45 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
                 try:
                     font_size = int(base_font_size * segment.font_size_multiplier)
                     if segment.bold and segment.italic:
-                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf", font_size)
+                        font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-BoldOblique.ttf", font_size)
                     elif segment.bold:
-                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+                        font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Bold.ttf", font_size)
                     elif segment.italic:
-                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf", font_size)
+                        font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Oblique.ttf", font_size)
                     else:
-                        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
+                        font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}.ttf", font_size)
                 except:
                     pass  # Keep default if loading fails
             
             # Get text bounding box
-            bbox = draw.textbbox((current_x, current_y), segment.text, font=font)
+            bbox = draw.textbbox((0, 0), segment.text, font=font)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             
+            segment_infos.append((segment, font, text_width, text_height))
+            line_width += text_width
+            line_height = max(line_height, text_height)
+        
+        # Apply horizontal alignment
+        if text_pos.align == 'center':
+            current_x = box_x + (box_width - line_width) // 2
+        elif text_pos.align == 'right':
+            current_x = box_x + box_width - line_width
+        else:  # left
+            current_x = box_x
+        
+        # Draw segments
+        for segment, font, seg_width, seg_height in segment_infos:
             # Check if text fits in box
-            if current_x + text_width > box_x + box_width:
+            if current_x + seg_width > box_x + box_width:
                 break  # Clip horizontally
             
             # Draw text
             draw.text((current_x, current_y), segment.text, fill=rgb, font=font)
-            
-            current_x += text_width
-            max_line_height = max(max_line_height, text_height)
+            current_x += seg_width
         
         # Move to next line
-        current_y += max_line_height + line_spacing
+        current_y += line_height + line_spacing
 
 
 def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
@@ -321,7 +338,8 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                     text_labels[i],
                     spec.text,
                     page_width,
-                    page_height
+                    page_height,
+                    theme
                 )
             
         except Exception as e:

@@ -70,6 +70,14 @@ class SpacingStyle:
 
 
 @dataclass
+class TextStyle:
+    """Text styling properties for text labels."""
+    base_font_size: int = 14
+    font_family: str = "DejaVuSans"
+    text_color: str = "#000000"
+
+
+@dataclass
 class Theme:
     """Complete theme definition."""
     name: str
@@ -77,6 +85,7 @@ class Theme:
     background: BackgroundStyle
     borders: BorderStyle
     spacing: SpacingStyle
+    text: TextStyle = field(default_factory=TextStyle)
     layouts: List[LayoutTemplate] = field(default_factory=list)
     
     @classmethod
@@ -96,13 +105,40 @@ class Theme:
                 text_pos = None
                 text_data = photo_dict.get('text')
                 if text_data and isinstance(text_data, dict):
+                    # Validate coordinates
+                    x = float(text_data.get('x', 0))
+                    y = float(text_data.get('y', 0))
+                    width = float(text_data.get('width', 100))
+                    height = float(text_data.get('height', 100))
+                    
+                    if not (0 <= x <= 100):
+                        raise ThemeError(f"Text x coordinate must be 0-100, got: {x}")
+                    if not (0 <= y <= 100):
+                        raise ThemeError(f"Text y coordinate must be 0-100, got: {y}")
+                    if not (0 <= width <= 100):
+                        raise ThemeError(f"Text width must be 0-100, got: {width}")
+                    if not (0 <= height <= 100):
+                        raise ThemeError(f"Text height must be 0-100, got: {height}")
+                    
+                    # Validate alignment
+                    align = text_data.get('align', 'left')
+                    valign = text_data.get('valign', 'top')
+                    
+                    valid_align = ['left', 'center', 'right']
+                    valid_valign = ['top', 'middle', 'bottom']
+                    
+                    if align not in valid_align:
+                        raise ThemeError(f"Text align must be one of {valid_align}, got: {align}")
+                    if valign not in valid_valign:
+                        raise ThemeError(f"Text valign must be one of {valid_valign}, got: {valign}")
+                    
                     text_pos = TextPosition(
-                        x=float(text_data.get('x', 0)),
-                        y=float(text_data.get('y', 0)),
-                        width=float(text_data.get('width', 100)),
-                        height=float(text_data.get('height', 100)),
-                        align=text_data.get('align', 'left'),
-                        valign=text_data.get('valign', 'top')
+                        x=x,
+                        y=y,
+                        width=width,
+                        height=height,
+                        align=align,
+                        valign=valign
                     )
 
                 photos.append(LayoutPhoto(
@@ -125,6 +161,7 @@ class Theme:
             background=BackgroundStyle(**data.get('background', {})),
             borders=BorderStyle(**data.get('borders', {})),
             spacing=SpacingStyle(**data.get('spacing', {})),
+            text=TextStyle(**data.get('text', {})),
             layouts=layouts,
         )
 

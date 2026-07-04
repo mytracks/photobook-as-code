@@ -88,6 +88,106 @@ theme: clean                 # clean, classic, or modern
 - **classic**: Traditional with cream background and visible borders  
 - **modern**: Contemporary with no borders and tight spacing
 
+## Text Labels
+
+Add descriptive text to your photobook pages! Text labels are automatically associated with photos based on timestamps and can include markdown formatting for styling.
+
+### Basic Usage
+
+Add text labels to your configuration:
+
+```yaml
+photos: ./my-photos/
+output:
+  size: A4
+  format: pdf
+layout:
+  photos_per_page: 2
+theme: clean
+text_labels:
+  - timestamp: "2024-06-15T10:30:00"
+    text: "# Beach Day\nOur amazing summer vacation!"
+  - timestamp: "2024-06-15T14:00:00"
+    text: "Beautiful sunset with *stunning* colors"
+  - timestamp: "2024-06-16T09:00:00"
+    text: "**Best breakfast ever**\nLocal cafe in town"
+```
+
+### Timestamp Format
+
+Text labels use timestamps to match with photos. Two formats are supported:
+
+- **ISO 8601**: `"2024-06-15T10:30:00"` (recommended)
+- **Unix epoch**: `1718450400` (seconds since 1970-01-01)
+
+The system automatically matches each text label to the photo with the closest timestamp based on EXIF data or file modification time.
+
+### Markdown Formatting
+
+Text labels support a subset of markdown for styling:
+
+- **Headings**: `# Heading 1`, `## Heading 2`, `### Heading 3`
+  - H1 = 1.5x base font size
+  - H2 = 1.3x base font size
+  - H3 = 1.2x base font size
+- **Bold**: `**bold text**`
+- **Italic**: `*italic text*`
+- **Bold + Italic**: `***bold and italic***`
+- **Multiple lines**: Use `\n` for line breaks
+
+### Theme Text Positioning
+
+Themes control where text appears on the page. The `clean` theme includes text positioning for some layouts. You can customize text position in your own themes:
+
+```yaml
+layouts:
+- count: 2
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 10          # Left edge (% of page width)
+      y: 55          # Top edge (% of page height)
+      width: 80      # Text box width (%)
+      height: 15     # Text box height (%)
+      align: left    # left, center, or right
+      valign: top    # top, middle, or bottom
+```
+
+### Theme Text Styling
+
+Customize text appearance at the theme level:
+
+```yaml
+text:
+  base_font_size: 14         # Base font size in points
+  font_family: "DejaVuSans"  # Font family name
+  text_color: "#000000"      # Text color (hex)
+```
+
+### Example with Multiple Labels
+
+```yaml
+photos: ./vacation-photos/
+output:
+  size: A4
+  format: pdf
+  filename: vacation-with-captions.pdf
+layout:
+  photos_per_page: 2
+theme: clean
+text_labels:
+  - timestamp: "2024-06-15T08:00:00"
+    text: "# Day 1: Arrival\nChecked into our hotel"
+  - timestamp: "2024-06-15T12:30:00"
+    text: "Lunch at the *best* local restaurant"
+  - timestamp: "2024-06-15T18:00:00"
+    text: "**Sunset view** from the beach"
+  - timestamp: "2024-06-16T10:00:00"
+    text: "## Day 2\nExploring the old town"
+```
+
 ## Output Formats
 
 - **PDF**: Single file with all pages (ideal for printing)
