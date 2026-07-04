@@ -149,11 +149,11 @@ layouts:
     text:
       x: 10          # Left edge (% of page width)
       y: 55          # Top edge (% of page height)
-      width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
+      width: 80      # Text box width (%) - required
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom
 ```
+
+**Note**: Text height is automatically calculated based on content. Only width needs to be specified.
 
 ### Theme Text Styling
 

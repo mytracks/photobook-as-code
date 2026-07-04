@@ -1,0 +1,27 @@
+# Demo configuration showcasing automatic height calculation for text labels
+
+# Using photos from the test fixtures
+photos: tests/fixtures/sample-photos-subset-1
+
+output:
+  size: A4
+  format: pdf
+  filename: demo-auto-height.pdf
+
+layout:
+  pages: 2
+
+text_labels:
+  - timestamp: "2023-06-15T10:00:00"
+    text: |
+      # Hamburg Harbor
+      A beautiful sunny day at the port
+  - timestamp: "2023-06-15T14:30:00"
+    text: |
+      ## Afternoon Walk
+      Exploring the *historic* waterfront
+      *Multiple lines* of text with **different formatting**
+      to demonstrate automatic height calculation
+
+# Theme with text specifications (height will be auto-calculated)
+theme: clean

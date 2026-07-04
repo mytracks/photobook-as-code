@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .layout import fit_photo_in_cell, match_template
 from .photos import PhotoMetadata
-from .themes import Theme, LayoutTemplate
+from .themes import Theme, LayoutTemplate, TextPosition
 from .text_labels import TextLabel, parse_markdown_text
 
 logger = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
     return page_rgba.convert('RGB')
 
 
-def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'TextPosition',
+def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: TextPosition,
                       page_width: int, page_height: int, theme: Theme) -> None:
     """
     Render text label with markdown formatting.
@@ -144,7 +144,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
     Args:
         draw: ImageDraw instance
         text_label: TextLabel with text content
-        text_pos: TextPosition specifying where to draw text
+        text_pos: TextPosition specifying where to draw text (height is optional)
         page_width: Page width in pixels
         page_height: Page height in pixels
         theme: Theme with text styling properties
@@ -153,7 +153,6 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
     box_x = int(page_width * text_pos.x / 100)
     box_y = int(page_height * text_pos.y / 100)
     box_width = int(page_width * text_pos.width / 100)
-    box_height = int(page_height * text_pos.height / 100)
     
     # Parse markdown
     parsed_lines = parse_markdown_text(text_label.text)
@@ -179,45 +178,13 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
     
     rgb = hex_to_rgb(text_color)
     padding = theme.text.text_padding
-    
-    # Calculate text area with padding
-    text_box_x = box_x + padding
-    text_box_y = box_y + padding
-    text_box_width = box_width - 2 * padding
-    text_box_height = box_height - 2 * padding
-    
-    current_y = text_box_y
     line_spacing = 4
     
-    # Draw semi-transparent background if enabled
-    if theme.text.text_background_enabled:
-        # Use template-specified dimensions for background
-        # This ensures background matches the template size regardless of text width
-        bg_x = box_x
-        bg_y = box_y
-        bg_width = box_width
-        bg_height = box_height
-        
-        # Create semi-transparent overlay
-        bg_color = hex_to_rgb(theme.text.text_background_color)
-        opacity = int(255 * theme.text.text_background_opacity / 100)
-        
-        # Draw rectangle with transparency
-        overlay = Image.new('RGBA', (int(bg_width), int(bg_height)), bg_color + (opacity,))
-        # Get the page as RGBA for compositing
-        page_img = draw._image
-        if page_img.mode != 'RGBA':
-            page_img = page_img.convert('RGBA')
-        page_img.paste(overlay, (int(bg_x), int(bg_y)), overlay)
-        # Update draw to use the new image
-        if draw._image.mode == 'RGB':
-            draw._image.paste(page_img.convert('RGB'), (0, 0))
+    # FIRST PASS: Calculate dimensions for all lines to determine actual text height
+    all_lines_info = []
+    total_text_height = 0
     
     for segments, heading_level in parsed_lines:
-        if current_y > text_box_y + text_box_height:
-            break  # Clip at boundary
-        
-        # Calculate line width for alignment
         line_width = 0
         line_height = 0
         segment_infos = []
@@ -257,6 +224,63 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
             line_width += text_width
             line_height = max(line_height, text_height)
         
+        all_lines_info.append((segment_infos, line_height))
+        total_text_height += line_height
+        if all_lines_info:  # Add line spacing between lines, but not after the last line
+            total_text_height += line_spacing
+    
+    # Remove the last line spacing since it was added after the last line
+    if all_lines_info:
+        total_text_height -= line_spacing
+    
+    # Calculate box height: use calculated height if not specified, otherwise use specified height
+    if text_pos.height is None:
+        # Auto-calculate height based on actual text + padding
+        box_height = int(total_text_height + 2 * padding)
+    else:
+        # Use specified height from template
+        box_height = int(page_height * text_pos.height / 100)
+    
+    # Calculate text area with padding
+    text_box_x = box_x + padding
+    text_box_y = box_y + padding
+    text_box_width = box_width - 2 * padding
+    text_box_height = box_height - 2 * padding
+    
+    # Draw semi-transparent background if enabled
+    if theme.text.text_background_enabled:
+        # Use calculated dimensions for background
+        bg_x = box_x
+        bg_y = box_y
+        bg_width = box_width
+        bg_height = box_height
+        
+        # Create semi-transparent overlay
+        bg_color = hex_to_rgb(theme.text.text_background_color)
+        opacity = int(255 * theme.text.text_background_opacity / 100)
+        
+        # Draw rectangle with transparency
+        overlay = Image.new('RGBA', (int(bg_width), int(bg_height)), bg_color + (opacity,))
+        # Get the page as RGBA for compositing
+        page_img = draw._image
+        if page_img.mode != 'RGBA':
+            page_img = page_img.convert('RGBA')
+        page_img.paste(overlay, (int(bg_x), int(bg_y)), overlay)
+        # Update draw to use the new image
+        if draw._image.mode == 'RGB':
+            draw._image.paste(page_img.convert('RGB'), (0, 0))
+    
+    # SECOND PASS: Render the text using pre-calculated dimensions
+    current_y = text_box_y
+    
+    for (segment_infos, line_height) in all_lines_info:
+        # Check if we've exceeded the available height (when height is specified)
+        if text_pos.height is not None and current_y > text_box_y + text_box_height:
+            break  # Clip at boundary
+        
+        # Calculate total line width for alignment
+        line_width = sum(seg_width for _, _, seg_width, _ in segment_infos)
+        
         # Apply horizontal alignment within padded text box
         if text_pos.align == 'center':
             current_x = text_box_x + (text_box_width - line_width) // 2
@@ -267,7 +291,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: 'Te
         
         # Draw segments
         for segment, font, seg_width, seg_height in segment_infos:
-            # Check if text fits in padded box
+            # Check if text fits in padded box (width constraint always applies)
             if current_x + seg_width > text_box_x + text_box_width:
                 break  # Clip horizontally
             

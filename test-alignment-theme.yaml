@@ -39,7 +39,6 @@ layouts:
       width: 80
       height: 20
       align: left
-      valign: top
   - orientation: landscape
     position: {x: 0.5, y: 0.5}
     size: {width: 1.0, height: 0.33}
@@ -49,7 +48,6 @@ layouts:
       width: 80
       height: 20
       align: center
-      valign: top
   - orientation: landscape
     position: {x: 0.5, y: 0.835}
     size: {width: 1.0, height: 0.33}
@@ -59,4 +57,3 @@ layouts:
       width: 80
       height: 20
       align: right
-      valign: top

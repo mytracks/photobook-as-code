@@ -14,19 +14,18 @@ class TestTextPosition:
     
     def test_text_position_creation(self):
         """Test creating a TextPosition."""
-        text_pos = TextPosition(x=10, y=20, width=80, height=15, align='left', valign='top')
+        text_pos = TextPosition(x=10, y=20, width=80, height=15, align='left')
         assert text_pos.x == 10
         assert text_pos.y == 20
         assert text_pos.width == 80
         assert text_pos.height == 15
         assert text_pos.align == 'left'
-        assert text_pos.valign == 'top'
     
     def test_text_position_defaults(self):
         """Test TextPosition default values."""
-        text_pos = TextPosition(x=0, y=0, width=100, height=100)
+        text_pos = TextPosition(x=0, y=0, width=100)
         assert text_pos.align == 'left'
-        assert text_pos.valign == 'top'
+        assert text_pos.height is None
 
 
 class TestTextStyle:
@@ -66,8 +65,7 @@ class TestThemeTextPositionParsing:
                         'y': 20,
                         'width': 80,
                         'height': 15,
-                        'align': 'center',
-                        'valign': 'middle'
+                        'align': 'center'
                     }
                 }]
             }]
@@ -84,7 +82,6 @@ class TestThemeTextPositionParsing:
         assert photo.text.width == 80
         assert photo.text.height == 15
         assert photo.text.align == 'center'
-        assert photo.text.valign == 'middle'
     
     def test_parse_text_position_defaults(self):
         """Test text position with default values."""
@@ -100,8 +97,7 @@ class TestThemeTextPositionParsing:
                     'text': {
                         'x': 10,
                         'y': 20,
-                        'width': 80,
-                        'height': 15
+                        'width': 80
                     }
                 }]
             }]
@@ -110,7 +106,7 @@ class TestThemeTextPositionParsing:
         theme = Theme.from_dict(theme_data)
         photo = theme.layouts[0].photos[0]
         assert photo.text.align == 'left'
-        assert photo.text.valign == 'top'
+        assert photo.text.height is None
     
     def test_parse_without_text_position(self):
         """Test photo without text position."""
@@ -331,82 +327,6 @@ class TestThemeAlignmentValidation:
         }
         
         with pytest.raises(ThemeError, match="Text align must be one of"):
-            Theme.from_dict(theme_data)
-    
-    def test_validate_vertical_align_top(self):
-        """Test top vertical alignment is accepted."""
-        theme_data = {
-            'name': 'Test',
-            'description': 'Test theme',
-            'layouts': [{
-                'count': 1,
-                'photos': [{
-                    'orientation': 'landscape',
-                    'position': {'x': 0.5, 'y': 0.5},
-                    'size': {'width': 0.8, 'height': 0.8},
-                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'valign': 'top'}
-                }]
-            }]
-        }
-        
-        theme = Theme.from_dict(theme_data)
-        assert theme.layouts[0].photos[0].text.valign == 'top'
-    
-    def test_validate_vertical_align_middle(self):
-        """Test middle vertical alignment is accepted."""
-        theme_data = {
-            'name': 'Test',
-            'description': 'Test theme',
-            'layouts': [{
-                'count': 1,
-                'photos': [{
-                    'orientation': 'landscape',
-                    'position': {'x': 0.5, 'y': 0.5},
-                    'size': {'width': 0.8, 'height': 0.8},
-                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'valign': 'middle'}
-                }]
-            }]
-        }
-        
-        theme = Theme.from_dict(theme_data)
-        assert theme.layouts[0].photos[0].text.valign == 'middle'
-    
-    def test_validate_vertical_align_bottom(self):
-        """Test bottom vertical alignment is accepted."""
-        theme_data = {
-            'name': 'Test',
-            'description': 'Test theme',
-            'layouts': [{
-                'count': 1,
-                'photos': [{
-                    'orientation': 'landscape',
-                    'position': {'x': 0.5, 'y': 0.5},
-                    'size': {'width': 0.8, 'height': 0.8},
-                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'valign': 'bottom'}
-                }]
-            }]
-        }
-        
-        theme = Theme.from_dict(theme_data)
-        assert theme.layouts[0].photos[0].text.valign == 'bottom'
-    
-    def test_validate_vertical_align_invalid(self):
-        """Test invalid vertical alignment is rejected."""
-        theme_data = {
-            'name': 'Test',
-            'description': 'Test theme',
-            'layouts': [{
-                'count': 1,
-                'photos': [{
-                    'orientation': 'landscape',
-                    'position': {'x': 0.5, 'y': 0.5},
-                    'size': {'width': 0.8, 'height': 0.8},
-                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'valign': 'invalid'}
-                }]
-            }]
-        }
-        
-        with pytest.raises(ThemeError, match="Text valign must be one of"):
             Theme.from_dict(theme_data)
 
 

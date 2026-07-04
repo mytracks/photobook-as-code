@@ -194,9 +194,10 @@ class TestLayoutWithTextPositions:
                     assert 0 <= photo_spec.text.x <= 100
                     assert 0 <= photo_spec.text.y <= 100
                     assert 0 <= photo_spec.text.width <= 100
-                    assert 0 <= photo_spec.text.height <= 100
+                    # Height is optional - if specified, must be in range
+                    if photo_spec.text.height is not None:
+                        assert 0 <= photo_spec.text.height <= 100
                     assert photo_spec.text.align in ['left', 'center', 'right']
-                    assert photo_spec.text.valign in ['top', 'middle', 'bottom']
         
         # Clean theme should have at least one layout with text positioning
         assert has_text_position
@@ -283,14 +284,13 @@ class TestTextRendering:
         
         # Test different alignments
         for align in ['left', 'center', 'right']:
-            for valign in ['top', 'middle', 'bottom']:
-                text_pos = TextPosition(
-                    x=10, y=10, width=80, height=20,
-                    align=align, valign=valign
-                )
-                
-                # Should not raise an error
-                render_text_label(draw, label, text_pos, 800, 600, theme)
+            text_pos = TextPosition(
+                x=10, y=10, width=80,
+                align=align
+            )
+            
+            # Should not raise an error
+            render_text_label(draw, label, text_pos, 800, 600, theme)
 
 
 class TestOutputFormats:

@@ -25,9 +25,8 @@ class TextPosition:
     x: float  # percentage 0-100
     y: float  # percentage 0-100
     width: float  # percentage 0-100
-    height: float  # percentage 0-100
+    height: Optional[float] = None  # percentage 0-100, calculated automatically if not specified
     align: str = "left"  # left, center, right
-    valign: str = "top"  # top, middle, bottom
 
 @dataclass
 class LayoutPhoto:
@@ -109,11 +108,15 @@ class Theme:
                 text_pos = None
                 text_data = photo_dict.get('text')
                 if text_data and isinstance(text_data, dict):
+                    # Validate required width field
+                    if 'width' not in text_data:
+                        raise ThemeError(f"Text specification must include 'width' field")
+                    
                     # Validate coordinates
                     x = float(text_data.get('x', 0))
                     y = float(text_data.get('y', 0))
-                    width = float(text_data.get('width', 100))
-                    height = float(text_data.get('height', 100))
+                    width = float(text_data.get('width'))
+                    height = float(text_data['height']) if 'height' in text_data else None
                     
                     if not (0 <= x <= 100):
                         raise ThemeError(f"Text x coordinate must be 0-100, got: {x}")
@@ -121,28 +124,23 @@ class Theme:
                         raise ThemeError(f"Text y coordinate must be 0-100, got: {y}")
                     if not (0 <= width <= 100):
                         raise ThemeError(f"Text width must be 0-100, got: {width}")
-                    if not (0 <= height <= 100):
+                    if height is not None and not (0 <= height <= 100):
                         raise ThemeError(f"Text height must be 0-100, got: {height}")
                     
                     # Validate alignment
                     align = text_data.get('align', 'left')
-                    valign = text_data.get('valign', 'top')
                     
                     valid_align = ['left', 'center', 'right']
-                    valid_valign = ['top', 'middle', 'bottom']
                     
                     if align not in valid_align:
                         raise ThemeError(f"Text align must be one of {valid_align}, got: {align}")
-                    if valign not in valid_valign:
-                        raise ThemeError(f"Text valign must be one of {valid_valign}, got: {valign}")
                     
                     text_pos = TextPosition(
                         x=x,
                         y=y,
                         width=width,
                         height=height,
-                        align=align,
-                        valign=valign
+                        align=align
                     )
 
                 photos.append(LayoutPhoto(

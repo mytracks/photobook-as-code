@@ -39,9 +39,7 @@ layouts:
       x: 10
       y: 55
       width: 80
-      height: 15
       align: left
-      valign: top
   - orientation: landscape
     position: {x: 0.5, y: 0.75}
     size: {width: 1.0, height: 0.5}
@@ -49,9 +47,7 @@ layouts:
       x: 10
       y: 95
       width: 80
-      height: 4
       align: left
-      valign: top
 - count: 2
   photos:
   - orientation: portrait
@@ -181,9 +177,7 @@ layouts:
       x: 0          # Left edge (% of page width)
       y: 16          # Top edge (% of page height)
       width: 50      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.5, y: 0.495}
     size: {width: 1.0, height: 0.33}
@@ -191,9 +185,7 @@ layouts:
       x: 0          # Left edge (% of page width)
       y: 49          # Top edge (% of page height)
       width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
   - orientation: portrait
     position: {x: 0.165, y: 0.825}
     size: {width: 0.33, height: 0.33}
@@ -201,19 +193,15 @@ layouts:
       x: 0          # Left edge (% of page width)
       y: 82          # Top edge (% of page height)
       width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.66, y: 0.825}
     size: {width: 0.66, height: 0.33}
     text:
       x: 50          # Left edge (% of page width)
-      y: 82          # Top edge (% of page height)
+      y: 88          # Top edge (% of page height)
       width: 50      # Text box width (%)
-      height: 15     # Text box height (%)
-      align: right    # left, center, or right
-      valign: top    # top, middle, or bottom    
+      align: left    # left, center, or right
 - count: 4
   photos:
   - orientation: landscape
@@ -223,9 +211,7 @@ layouts:
       x: 10          # Left edge (% of page width)
       y: 55          # Top edge (% of page height)
       width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.5, y: 0.495}
     size: {width: 1.0, height: 0.33}
@@ -233,9 +219,7 @@ layouts:
       x: 10          # Left edge (% of page width)
       y: 55          # Top edge (% of page height)
       width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
   - orientation: landscape
     position: {x: 0.33, y: 0.825}
     size: {width: 0.66, height: 0.33}
@@ -243,9 +227,7 @@ layouts:
       x: 10          # Left edge (% of page width)
       y: 55          # Top edge (% of page height)
       width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
   - orientation: portrait
     position: {x: 0.835, y: 0.825}
     size: {width: 0.33, height: 0.33}
@@ -253,9 +235,7 @@ layouts:
       x: 10          # Left edge (% of page width)
       y: 55          # Top edge (% of page height)
       width: 80      # Text box width (%)
-      height: 15     # Text box height (%)
       align: left    # left, center, or right
-      valign: top    # top, middle, or bottom    
 - count: 4
   photos:
   - orientation: landscape

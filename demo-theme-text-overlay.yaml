@@ -30,7 +30,6 @@ layouts:
       width: 90
       height: 25
       align: left
-      valign: top
 # 2 Photos with text overlays
 - count: 2
   photos:
@@ -43,7 +42,6 @@ layouts:
       width: 90
       height: 15
       align: left
-      valign: top
   - orientation: landscape
     position: {x: 0.5, y: 0.75}
     size: {width: 1.0, height: 0.5}
@@ -53,4 +51,3 @@ layouts:
       width: 90
       height: 10
       align: left
-      valign: top
