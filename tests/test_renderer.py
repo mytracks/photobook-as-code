@@ -1,8 +1,9 @@
 import pytest
-from PIL import Image
-from photobook_as_code.renderer import render_page
-from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, LayoutTemplate, LayoutPhoto, LayoutPosition, LayoutPhotoSize
+from PIL import Image, ImageDraw
+from photobook_as_code.renderer import render_page, render_text_label
+from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, TextStyle, TextPosition, LayoutTemplate, LayoutPhoto, LayoutPosition, LayoutPhotoSize
 from photobook_as_code.photos import PhotoMetadata
+from photobook_as_code.text_labels import TextLabel
 from pathlib import Path
 from datetime import datetime
 
@@ -113,4 +114,65 @@ def test_renderer_with_photo_margin(tmp_path):
     # Pixel at (105, 105) should be red (photo)
     r, g, b = page.getpixel((105, 105))
     assert r > 250 and g < 5 and b < 5, f"Expected red at (105, 105), got {r},{g},{b}"
+
+
+def _render_text_box(y, photo_pos_y, photo_height, page_height=1000):
+    """Render a text label with an opaque background and return the resulting image.
+
+    Uses an explicit `text.height` (20% of page_height = 200px) so box_height is
+    deterministic, and a fully opaque background so its rectangle is pixel-exact.
+    Boundary checks use x=195 (far right of the "Hi" label) to avoid glyph pixels.
+    """
+    img = Image.new("RGB", (200, page_height), color="white")
+    draw = ImageDraw.Draw(img)
+    theme = Theme(
+        name="text-test",
+        description="",
+        background=BackgroundStyle("#FFFFFF"),
+        borders=BorderStyle(enabled=False, width=0, color="#000000", shadow=False),
+        spacing=SpacingStyle(page_margin=0, photo_margin=0),
+        text=TextStyle(
+            base_font_size=10,
+            font_family="DejaVuSans",
+            text_color="#FFFFFF",
+            text_background_enabled=True,
+            text_background_color="#000000",
+            text_background_opacity=100,
+            text_padding=0,
+        ),
+    )
+    label = TextLabel(datetime.now(), "Hi")
+    text_pos = TextPosition(x=0, y=y, width=100, height=20)
+    render_text_label(draw, label, text_pos, page_width=200, page_height=page_height,
+                       photo_pos_y=photo_pos_y, photo_height=photo_height, theme=theme)
+    return img
+
+
+def test_text_label_y_zero_aligns_label_top_with_photo_top():
+    img = _render_text_box(y=0, photo_pos_y=300, photo_height=400)
+    assert img.getpixel((195, 299)) == (255, 255, 255)  # above box: background
+    assert img.getpixel((195, 305)) == (0, 0, 0)  # inside box
+
+
+def test_text_label_y_hundred_aligns_label_bottom_with_photo_bottom():
+    # box_height=200, photo_height=400, slack=200 -> box_y=300+200=500, box bottom=700=photo bottom
+    img = _render_text_box(y=100, photo_pos_y=300, photo_height=400)
+    assert img.getpixel((195, 699)) == (0, 0, 0)  # inside box, last row
+    assert img.getpixel((195, 700)) == (255, 255, 255)  # below box: background
+
+
+def test_text_label_y_fifty_centers_label_in_photo():
+    # slack=200, offset=100 -> box_y=400, box spans rows 400-599, photo spans 300-700 (center 500)
+    img = _render_text_box(y=50, photo_pos_y=300, photo_height=400)
+    assert img.getpixel((195, 399)) == (255, 255, 255)
+    assert img.getpixel((195, 400)) == (0, 0, 0)
+    assert img.getpixel((195, 599)) == (0, 0, 0)
+    assert img.getpixel((195, 600)) == (255, 255, 255)
+
+
+def test_text_label_taller_than_photo_clamps_to_top_aligned():
+    # box_height=200 > photo_height=100 -> slack=0, so y is ignored and label top-aligns
+    img = _render_text_box(y=100, photo_pos_y=300, photo_height=100)
+    assert img.getpixel((195, 299)) == (255, 255, 255)  # above box: background
+    assert img.getpixel((195, 305)) == (0, 0, 0)  # inside box, top-aligned to photo_pos_y
 

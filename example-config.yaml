@@ -14,7 +14,7 @@ output:
   format: pdf
   
   # Output filename (optional - defaults to config filename)
-  filename: my-photobook.pdf
+  filename: /mnt/downloads/my-photobook.pdf
   
   # Output directory (optional - defaults to current directory)
   # directory: ./output/
@@ -37,5 +37,9 @@ layout:
 theme: clean
 
 text_labels:
+  - timestamp: "2026-04-30T10:24:00"
+    text: "# Auf nach Hamburg"
+  - timestamp: "2026-04-30T12:23:00"
+    text: "# Ladepause"
   - timestamp: "2026-04-30T14:04:00"
     text: "# Hamburger Spendenparlament"

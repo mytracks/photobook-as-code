@@ -137,21 +137,23 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
 
 
 def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: TextPosition,
-                      page_width: int, page_height: int, theme: Theme) -> None:
+                      page_width: int, page_height: int, photo_pos_y: int, photo_height: int,
+                      theme: Theme) -> None:
     """
     Render text label with markdown formatting.
-    
+
     Args:
         draw: ImageDraw instance
         text_label: TextLabel with text content
         text_pos: TextPosition specifying where to draw text (height is optional)
         page_width: Page width in pixels
         page_height: Page height in pixels
+        photo_pos_y: Associated photo's top edge in pixels (y is relative to this photo)
+        photo_height: Associated photo's height in pixels
         theme: Theme with text styling properties
     """
-    # Calculate bounding box from percentages
+    # Calculate horizontal bounding box from page percentages
     box_x = int(page_width * text_pos.x / 100)
-    box_y = int(page_height * text_pos.y / 100)
     box_width = int(page_width * text_pos.width / 100)
     
     # Parse markdown
@@ -240,7 +242,14 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
     else:
         # Use specified height from template
         box_height = int(page_height * text_pos.height / 100)
-    
+
+    # Calculate vertical position relative to the associated photo: y=0 aligns the
+    # label's top edge with the photo's top edge, y=100 aligns the label's bottom
+    # edge with the photo's bottom edge. Slack is floored at 0 so a label taller
+    # than the photo top-aligns regardless of y.
+    slack = max(0, photo_height - box_height)
+    box_y = photo_pos_y + int(text_pos.y / 100 * slack)
+
     # Calculate text area with padding
     text_box_x = box_x + padding
     text_box_y = box_y + padding
@@ -419,6 +428,8 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                     spec.text,
                     page_width,
                     page_height,
+                    pos_y,
+                    height,
                     theme
                 )
             

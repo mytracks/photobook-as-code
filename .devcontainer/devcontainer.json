@@ -20,7 +20,8 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "latest"
-    }
+    },
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
   "customizations": {
     "vscode": {
@@ -37,7 +38,11 @@
   },
   "mounts": [
     "source=${localEnv:HOME}/Pictures,target=/mnt/pictures,type=bind,readonly",
-    "source=${localEnv:HOME}/Downloads,target=/mnt/downloads,type=bind"
+    "source=${localEnv:HOME}/Downloads,target=/mnt/downloads,type=bind",
+    "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind"
   ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/root/.claude"
+  },
   "remoteUser": "root"
 }
