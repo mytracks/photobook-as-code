@@ -1,0 +1,868 @@
+name: Clean Two
+description: Minimalist style with black background and thin borders
+background: {color: '#000000'}
+borders:
+  enabled: false
+  width: 0
+  color: '#CCCCCC'
+  shadow: false
+spacing: 
+  page_margin: 90
+  photo_margin: 20
+text:
+  font_family: DejaVuSansMono
+  base_font_size: 42
+  text_color: "#000000"
+  text_background_enabled: true     # Enable semi-transparent background for readability
+  text_background_color: "#ffffff"  # Background color (hex)
+  text_background_opacity: 50       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_padding: 12                  # Padding around text in pixels  
+layouts:
+# 1 Photo - all orientation combinations
+- count: 1
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.5}
+    size: {width: 0.9, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 1
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.9}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+# 2 Photos - all orientation combinations
+- count: 2
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.75}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 2
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.75}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 2
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.75}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 2
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.75}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+# 3 Photos - all orientation combinations
+- count: 3
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 3
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 3
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 3
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 3
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 3
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 3
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 3
+  photos:
+  - orientation: portrait
+    position: {x: 0.5, y: 0.165}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.5}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.5, y: 0.835}
+    size: {width: 1.0, height: 0.33}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+# 4 Photos - all orientation combinations
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: landscape
+    position: {x: 0.25, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.25}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.25, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: landscape
+    position: {x: 0.75, y: 0.75}
+    size: {width: 0.45, height: 1.0}
+    text:
+      x: 50
+      y: 98
+      width: 50
+      align: center
+- count: 4
+  photos:
+  - orientation: portrait
+    position: {x: 0.25, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.25}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.25, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center
+  - orientation: portrait
+    position: {x: 0.75, y: 0.75}
+    size: {width: 1.0, height: 0.45}
+    text:
+      x: 50
+      y: 98
+      width: 80
+      align: center

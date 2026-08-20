@@ -23,7 +23,7 @@ output:
 # Specify EITHER photos_per_page OR pages (not both)
 layout:
   # Fixed number of photos per page
-  photos_per_page: 4
+  photos_per_page: 3
   
   # OR: Fixed total number of pages
   # pages: 8
@@ -34,7 +34,7 @@ layout:
 # Theme selection
 # Available: clean, classic, modern
 # Or path to custom theme file
-theme: clean
+theme: clean2
 
 text_labels:
   - timestamp: "2026-04-30T10:24:00"
