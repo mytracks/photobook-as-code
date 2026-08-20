@@ -11,12 +11,12 @@ spacing:
   photo_margin: 20
 text:
   font_family: DejaVuSansMono
-  base_font_size: 32
+  base_font_size: 42
   text_color: "#000000"
   text_background_enabled: true     # Enable semi-transparent background for readability
   text_background_color: "#ffffff"  # Background color (hex)
   text_background_opacity: 50       # Background opacity 0-100 (0=transparent, 100=opaque)
-  text_padding: 16                  # Padding around text in pixels  
+  text_padding: 12                  # Padding around text in pixels  
 layouts:
 # 1 Photo
 - count: 1
@@ -174,67 +174,67 @@ layouts:
     position: {x: 0.5, y: 0.165}
     size: {width: 1.0, height: 0.33}
     text:
-      x: 0
-      y: 0
-      width: 30
-      align: right
+      x: 50
+      y: 98
+      width: 50
+      align: center
   - orientation: landscape
     position: {x: 0.5, y: 0.495}
     size: {width: 1.0, height: 0.33}
     text:
-      x: 0
-      y: 100
-      width: 30      # Text box width (%)
-      align: right    # left, center, or right
+      x: 50
+      y: 98
+      width: 50
+      align: center
   - orientation: portrait
     position: {x: 0.165, y: 0.825}
     size: {width: 0.33, height: 0.33}
     text:
-      x: 0          # Left edge (% of page width)
-      y: 82          # Top edge (% of page height)
-      width: 80      # Text box width (%)
-      align: left    # left, center, or right
+      x: 50
+      y: 98
+      width: 90
+      align: center
   - orientation: landscape
     position: {x: 0.66, y: 0.825}
     size: {width: 0.66, height: 0.33}
     text:
-      x: 75          # Left edge (% of page width)
-      y: 95          # Top edge (% of page height)
-      width: 25      # Text box width (%)
-      align: left    # left, center, or right
+      y: 95
+      width: 80
+      align: left
+      dock: right
 - count: 4
   photos:
   - orientation: landscape
     position: {x: 0.5, y: 0.165}
     size: {width: 1.0, height: 0.33}
     text:
-      x: 10          # Left edge (% of page width)
-      y: 55          # Top edge (% of page height)
-      width: 80      # Text box width (%)
+      x: 10          # Left edge (% of this photo's rendered width)
+      y: 55          # Top edge (% of this photo's rendered height)
+      width: 80      # Text box width (% of this photo's rendered width)
       align: left    # left, center, or right
   - orientation: landscape
     position: {x: 0.5, y: 0.495}
     size: {width: 1.0, height: 0.33}
     text:
-      x: 10          # Left edge (% of page width)
-      y: 55          # Top edge (% of page height)
-      width: 80      # Text box width (%)
+      x: 10          # Left edge (% of this photo's rendered width)
+      y: 55          # Top edge (% of this photo's rendered height)
+      width: 80      # Text box width (% of this photo's rendered width)
       align: left    # left, center, or right
   - orientation: landscape
     position: {x: 0.33, y: 0.825}
     size: {width: 0.66, height: 0.33}
     text:
-      x: 10          # Left edge (% of page width)
-      y: 55          # Top edge (% of page height)
-      width: 80      # Text box width (%)
+      x: 10          # Left edge (% of this photo's rendered width)
+      y: 55          # Top edge (% of this photo's rendered height)
+      width: 80      # Text box width (% of this photo's rendered width)
       align: left    # left, center, or right
   - orientation: portrait
     position: {x: 0.835, y: 0.825}
     size: {width: 0.33, height: 0.33}
     text:
-      x: 10          # Left edge (% of page width)
-      y: 55          # Top edge (% of page height)
-      width: 80      # Text box width (%)
+      x: 10          # Left edge (% of this photo's rendered width)
+      y: 55          # Top edge (% of this photo's rendered height)
+      width: 80      # Text box width (% of this photo's rendered width)
       align: left    # left, center, or right
 - count: 4
   photos:

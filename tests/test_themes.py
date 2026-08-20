@@ -330,6 +330,86 @@ class TestThemeAlignmentValidation:
             Theme.from_dict(theme_data)
 
 
+class TestThemeDockValidation:
+    """Tests for text dock validation."""
+
+    def test_dock_defaults_to_none(self):
+        """Test dock is None when not specified."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'layouts': [{
+                'count': 1,
+                'photos': [{
+                    'orientation': 'landscape',
+                    'position': {'x': 0.5, 'y': 0.5},
+                    'size': {'width': 0.8, 'height': 0.8},
+                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15}
+                }]
+            }]
+        }
+
+        theme = Theme.from_dict(theme_data)
+        assert theme.layouts[0].photos[0].text.dock is None
+
+    def test_validate_dock_left(self):
+        """Test dock: left is accepted."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'layouts': [{
+                'count': 1,
+                'photos': [{
+                    'orientation': 'landscape',
+                    'position': {'x': 0.5, 'y': 0.5},
+                    'size': {'width': 0.8, 'height': 0.8},
+                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'dock': 'left'}
+                }]
+            }]
+        }
+
+        theme = Theme.from_dict(theme_data)
+        assert theme.layouts[0].photos[0].text.dock == 'left'
+
+    def test_validate_dock_right(self):
+        """Test dock: right is accepted."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'layouts': [{
+                'count': 1,
+                'photos': [{
+                    'orientation': 'landscape',
+                    'position': {'x': 0.5, 'y': 0.5},
+                    'size': {'width': 0.8, 'height': 0.8},
+                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'dock': 'right'}
+                }]
+            }]
+        }
+
+        theme = Theme.from_dict(theme_data)
+        assert theme.layouts[0].photos[0].text.dock == 'right'
+
+    def test_validate_dock_invalid(self):
+        """Test invalid dock value is rejected."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'layouts': [{
+                'count': 1,
+                'photos': [{
+                    'orientation': 'landscape',
+                    'position': {'x': 0.5, 'y': 0.5},
+                    'size': {'width': 0.8, 'height': 0.8},
+                    'text': {'x': 10, 'y': 20, 'width': 80, 'height': 15, 'dock': 'top'}
+                }]
+            }]
+        }
+
+        with pytest.raises(ThemeError, match="Text dock must be one of"):
+            Theme.from_dict(theme_data)
+
+
 class TestThemeTextStyling:
     """Tests for theme-level text styling properties."""
     

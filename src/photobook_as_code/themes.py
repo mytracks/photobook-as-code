@@ -22,11 +22,12 @@ class LayoutPhotoSize:
 @dataclass
 class TextPosition:
     """Text position and alignment specification."""
-    x: float  # percentage 0-100
-    y: float  # percentage 0-100
-    width: float  # percentage 0-100
+    x: float  # percentage 0-100 of the associated photo's width; ignored when dock is set
+    y: float  # percentage 0-100 of the associated photo's height
+    width: float  # percentage 0-100 of the associated photo's width
     height: Optional[float] = None  # percentage 0-100, calculated automatically if not specified
     align: str = "left"  # left, center, right
+    dock: Optional[str] = None  # left, right: pin to the page's literal border instead of the photo
 
 @dataclass
 class LayoutPhoto:
@@ -112,12 +113,12 @@ class Theme:
                     if 'width' not in text_data:
                         raise ThemeError(f"Text specification must include 'width' field")
                     
-                    # Validate coordinates
+                    # Validate coordinates (percentages of the associated photo's dimensions)
                     x = float(text_data.get('x', 0))
                     y = float(text_data.get('y', 0))
                     width = float(text_data.get('width'))
                     height = float(text_data['height']) if 'height' in text_data else None
-                    
+
                     if not (0 <= x <= 100):
                         raise ThemeError(f"Text x coordinate must be 0-100, got: {x}")
                     if not (0 <= y <= 100):
@@ -126,21 +127,30 @@ class Theme:
                         raise ThemeError(f"Text width must be 0-100, got: {width}")
                     if height is not None and not (0 <= height <= 100):
                         raise ThemeError(f"Text height must be 0-100, got: {height}")
-                    
+
                     # Validate alignment
                     align = text_data.get('align', 'left')
-                    
+
                     valid_align = ['left', 'center', 'right']
-                    
+
                     if align not in valid_align:
                         raise ThemeError(f"Text align must be one of {valid_align}, got: {align}")
-                    
+
+                    # Validate dock: overrides the horizontal anchor to the page's literal border
+                    dock = text_data.get('dock')
+
+                    valid_dock = ['left', 'right']
+
+                    if dock is not None and dock not in valid_dock:
+                        raise ThemeError(f"Text dock must be one of {valid_dock}, got: {dock}")
+
                     text_pos = TextPosition(
                         x=x,
                         y=y,
                         width=width,
                         height=height,
-                        align=align
+                        align=align,
+                        dock=dock
                     )
 
                 photos.append(LayoutPhoto(

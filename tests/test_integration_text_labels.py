@@ -290,7 +290,9 @@ class TestTextRendering:
             )
             
             # Should not raise an error
-            render_text_label(draw, label, text_pos, 800, 600, photo_pos_y=50, photo_height=400, theme=theme)
+            render_text_label(draw, label, text_pos, 800, 600,
+                               photo_pos_x=100, photo_pos_y=50, photo_width=600, photo_height=400,
+                               theme=theme)
 
 
 class TestOutputFormats:

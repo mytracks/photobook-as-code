@@ -137,7 +137,8 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
 
 
 def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: TextPosition,
-                      page_width: int, page_height: int, photo_pos_y: int, photo_height: int,
+                      page_width: int, page_height: int,
+                      photo_pos_x: int, photo_pos_y: int, photo_width: int, photo_height: int,
                       theme: Theme) -> None:
     """
     Render text label with markdown formatting.
@@ -148,14 +149,25 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
         text_pos: TextPosition specifying where to draw text (height is optional)
         page_width: Page width in pixels
         page_height: Page height in pixels
+        photo_pos_x: Associated photo's left edge in pixels (x is relative to this photo, unless docked)
         photo_pos_y: Associated photo's top edge in pixels (y is relative to this photo)
+        photo_width: Associated photo's width in pixels
         photo_height: Associated photo's height in pixels
         theme: Theme with text styling properties
     """
-    # Calculate horizontal bounding box from page percentages
-    box_x = int(page_width * text_pos.x / 100)
-    box_width = int(page_width * text_pos.width / 100)
-    
+    # Calculate box width from the associated photo's pixel width
+    box_width = int(photo_width * text_pos.width / 100)
+
+    # Calculate horizontal position: dock pins to the page's literal border,
+    # otherwise x interpolates within the photo's width (slack floored at 0).
+    if text_pos.dock == 'left':
+        box_x = 0
+    elif text_pos.dock == 'right':
+        box_x = page_width - box_width
+    else:
+        slack_x = max(0, photo_width - box_width)
+        box_x = photo_pos_x + int(text_pos.x / 100 * slack_x)
+
     # Parse markdown
     parsed_lines = parse_markdown_text(text_label.text)
     
@@ -181,16 +193,29 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
     rgb = hex_to_rgb(text_color)
     padding = theme.text.text_padding
     line_spacing = 4
-    
-    # FIRST PASS: Calculate dimensions for all lines to determine actual text height
-    all_lines_info = []
+
+    # Text box width is needed up front so word-wrapping can use it during the
+    # first (measurement) pass, not just for drawing in the second pass.
+    text_box_width = box_width - 2 * padding
+
+    space_width_cache = {}
+
+    def space_width_for(font) -> int:
+        if font not in space_width_cache:
+            bbox = draw.textbbox((0, 0), ' ', font=font)
+            space_width_cache[font] = bbox[2] - bbox[0]
+        return space_width_cache[font]
+
+    # FIRST PASS: Tokenize each line into words and word-wrap them into display
+    # lines bounded by text_box_width, measuring each display line's dimensions.
+    all_lines_info = []  # list of (word_infos, line_height, line_width)
     total_text_height = 0
-    
+
     for segments, heading_level in parsed_lines:
-        line_width = 0
-        line_height = 0
-        segment_infos = []
-        
+        current_words = []
+        current_width = 0
+        current_height = 0
+
         for segment in segments:
             # Select font based on style
             if segment.bold and segment.italic:
@@ -201,7 +226,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
                 font = font_italic
             else:
                 font = font_regular
-            
+
             # Apply size multiplier for headings
             if segment.font_size_multiplier != 1.0:
                 try:
@@ -216,25 +241,41 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
                         font = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}.ttf", font_size)
                 except:
                     pass  # Keep default if loading fails
-            
-            # Get text bounding box
-            bbox = draw.textbbox((0, 0), segment.text, font=font)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            
-            segment_infos.append((segment, font, text_width, text_height))
-            line_width += text_width
-            line_height = max(line_height, text_height)
-        
-        all_lines_info.append((segment_infos, line_height))
-        total_text_height += line_height
-        if all_lines_info:  # Add line spacing between lines, but not after the last line
-            total_text_height += line_spacing
-    
+
+            # Tokenize this segment into words, each keeping the segment's style
+            for word in segment.text.split():
+                bbox = draw.textbbox((0, 0), word, font=font)
+                word_width = bbox[2] - bbox[0]
+                word_height = bbox[3] - bbox[1]
+
+                added_width = word_width
+                if current_words:
+                    added_width += space_width_for(font)
+
+                if current_words and current_width + added_width > text_box_width:
+                    # Wrap: finish the current display line, start a new one.
+                    # A lone word wider than text_box_width is never split or
+                    # dropped - it simply becomes the only word on its line.
+                    all_lines_info.append((current_words, current_height, current_width))
+                    total_text_height += current_height + line_spacing
+                    current_words = []
+                    current_width = 0
+                    current_height = 0
+                    added_width = word_width
+
+                current_words.append((word, font, word_width, word_height))
+                current_width += added_width
+                current_height = max(current_height, word_height)
+
+        # Flush this source line's final (or only) display line, preserving
+        # blank-line spacing when a line has no words.
+        all_lines_info.append((current_words, current_height, current_width))
+        total_text_height += current_height + line_spacing
+
     # Remove the last line spacing since it was added after the last line
     if all_lines_info:
         total_text_height -= line_spacing
-    
+
     # Calculate box height: use calculated height if not specified, otherwise use specified height
     if text_pos.height is None:
         # Auto-calculate height based on actual text + padding
@@ -250,10 +291,10 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
     slack = max(0, photo_height - box_height)
     box_y = photo_pos_y + int(text_pos.y / 100 * slack)
 
-    # Calculate text area with padding
+    # Calculate text area with padding (text_box_width was already computed
+    # above, before the first pass, since word-wrapping needs it early)
     text_box_x = box_x + padding
     text_box_y = box_y + padding
-    text_box_width = box_width - 2 * padding
     text_box_height = box_height - 2 * padding
     
     # Draw semi-transparent background if enabled
@@ -279,35 +320,36 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
         if draw._image.mode == 'RGB':
             draw._image.paste(page_img.convert('RGB'), (0, 0))
     
-    # SECOND PASS: Render the text using pre-calculated dimensions
+    # SECOND PASS: Render each wrapped display line using pre-calculated dimensions
     current_y = text_box_y
-    
-    for (segment_infos, line_height) in all_lines_info:
+
+    for (word_infos, line_height, line_width) in all_lines_info:
         # Check if we've exceeded the available height (when height is specified)
         if text_pos.height is not None and current_y > text_box_y + text_box_height:
             break  # Clip at boundary
-        
-        # Calculate total line width for alignment
-        line_width = sum(seg_width for _, _, seg_width, _ in segment_infos)
-        
-        # Apply horizontal alignment within padded text box
+
+        # Apply horizontal alignment within padded text box. line_width already
+        # accounts for inter-word spacing (computed during packing), so this
+        # works whether or not the line was actually wrapped.
         if text_pos.align == 'center':
             current_x = text_box_x + (text_box_width - line_width) // 2
         elif text_pos.align == 'right':
             current_x = text_box_x + text_box_width - line_width
         else:  # left
             current_x = text_box_x
-        
-        # Draw segments
-        for segment, font, seg_width, seg_height in segment_infos:
-            # Check if text fits in padded box (width constraint always applies)
-            if current_x + seg_width > text_box_x + text_box_width:
-                break  # Clip horizontally
-            
-            # Draw text
-            draw.text((current_x, current_y), segment.text, fill=rgb, font=font)
-            current_x += seg_width
-        
+
+        # Draw each word. No width clip here: the packing pass already
+        # guaranteed the line fits text_box_width, except for a lone word
+        # wider than the box on its own, which is drawn anyway rather than
+        # dropped (see design.md).
+        first_word = True
+        for word, font, word_width, word_height in word_infos:
+            if not first_word:
+                current_x += space_width_for(font)
+            draw.text((current_x, current_y), word, fill=rgb, font=font)
+            current_x += word_width
+            first_word = False
+
         # Move to next line
         current_y += line_height + line_spacing
 
@@ -428,7 +470,9 @@ def render_page(page_width: int, page_height: int, photos: List[PhotoMetadata],
                     spec.text,
                     page_width,
                     page_height,
+                    pos_x,
                     pos_y,
+                    width,
                     height,
                     theme
                 )

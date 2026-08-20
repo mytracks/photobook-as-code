@@ -136,7 +136,7 @@ The system SHALL render text labels on photobook pages according to template pos
 - **THEN** system renders text at specified position with proper formatting
 
 #### Scenario: Multi-line text rendering
-- **WHEN** text label contains multiple lines
+- **WHEN** text label contains multiple lines, whether from literal line breaks in the source text or from word-wrapping a line that exceeds the bounding box's width
 - **THEN** system renders each line with proper line spacing
 
 #### Scenario: Text with italic formatting
@@ -180,8 +180,20 @@ The system SHALL render text labels on photobook pages according to template pos
 - **THEN** system aligns text to bottom of bounding box
 
 #### Scenario: Text exceeds bounding box
-- **WHEN** rendered text exceeds template-defined bounding box dimensions
-- **THEN** system clips text at boundary
+- **WHEN** a line of text is wider than the bounding box's width
+- **THEN** system wraps the line onto additional display lines at word boundaries instead of omitting it, growing the box's height to fit when `height` is not explicitly set
+
+#### Scenario: Wrapped line preserves word styling
+- **WHEN** a line containing bold, italic, or heading-styled segments is wrapped onto multiple display lines
+- **THEN** each word retains the style of the segment it came from, on whichever display line it lands on
+
+#### Scenario: Single word wider than bounding box
+- **WHEN** a single word's rendered width alone exceeds the bounding box's width
+- **THEN** system still draws the word rather than omitting it, even though it extends past the box's width
+
+#### Scenario: Wrapped content exceeds a fixed height
+- **WHEN** template specifies an explicit `height` and word-wrapped content still exceeds it
+- **THEN** system clips the remaining display lines at the height boundary, same as today's per-line clipping behavior
 
 #### Scenario: Theme text color
 - **WHEN** theme specifies text_color property
