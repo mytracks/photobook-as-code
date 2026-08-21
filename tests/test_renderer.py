@@ -490,6 +490,51 @@ def test_text_label_wrapped_content_clips_at_fixed_height():
     assert not _has_ink(img, 0, narrow_width, line3_y0, line3_y1)  # "CCCC" clipped away
 
 
+def test_text_label_blank_line_adds_real_vertical_gap():
+    # An interior blank line must widen the auto-computed box by roughly one
+    # normal line of height, not just the ~4px line_spacing sliver it used
+    # to contribute before blank lines had real height.
+    w1, h1 = _measure("AAAA")
+    box_width_px = w1 + 20  # wide enough that neither "AAAA" nor "BBBB" wraps
+    photo_pos_y = 300
+
+    no_blank_img = _render_wrap_box("AAAA\nBBBB", box_width_px=box_width_px,
+                                     photo_pos_y=photo_pos_y, photo_height=900)
+    one_blank_img = _render_wrap_box("AAAA\n\nBBBB", box_width_px=box_width_px,
+                                      photo_pos_y=photo_pos_y, photo_height=900)
+
+    no_blank_height = _box_height_at(no_blank_img, x=box_width_px - 1, start_y=photo_pos_y)
+    one_blank_height = _box_height_at(one_blank_img, x=box_width_px - 1, start_y=photo_pos_y)
+
+    # Old (buggy) behavior added only ~4px for the blank line; a real fix
+    # adds something on the order of a full text line's height.
+    assert one_blank_height - no_blank_height > h1 * 0.5
+
+
+def test_text_label_consecutive_blank_lines_stack_additively():
+    # Each extra consecutive blank line should add the same amount of height
+    # as the first one - gaps stack rather than collapsing to one gap.
+    w1, _ = _measure("AAAA")
+    box_width_px = w1 + 20
+    photo_pos_y = 300
+
+    zero_img = _render_wrap_box("AAAA\nBBBB", box_width_px=box_width_px,
+                                 photo_pos_y=photo_pos_y, photo_height=900)
+    one_img = _render_wrap_box("AAAA\n\nBBBB", box_width_px=box_width_px,
+                                photo_pos_y=photo_pos_y, photo_height=900)
+    two_img = _render_wrap_box("AAAA\n\n\nBBBB", box_width_px=box_width_px,
+                                photo_pos_y=photo_pos_y, photo_height=900)
+
+    zero_height = _box_height_at(zero_img, x=box_width_px - 1, start_y=photo_pos_y)
+    one_height = _box_height_at(one_img, x=box_width_px - 1, start_y=photo_pos_y)
+    two_height = _box_height_at(two_img, x=box_width_px - 1, start_y=photo_pos_y)
+
+    first_blank_gap = one_height - zero_height
+    second_blank_gap = two_height - one_height
+    assert first_blank_gap > 0
+    assert second_blank_gap == first_blank_gap
+
+
 def test_text_label_wrap_bug_reproduction_with_clean_theme():
     """Direct reproduction of the reported bug: a heading too wide for its
     photo's box must render visibly (wrapped), not vanish entirely."""

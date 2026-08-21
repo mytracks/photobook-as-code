@@ -1,6 +1,6 @@
 {
   "name": "photobook-as-code",
-  "image": "swift:latest",
+  "image": "ubuntu:26.04",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22",
@@ -26,7 +26,6 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "swiftlang.swift-vscode",
         "redhat.vscode-yaml",
         "ms-vscode.vscode-json"
       ],

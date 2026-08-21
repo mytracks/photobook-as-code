@@ -211,7 +211,38 @@ class TestMarkdownParsing:
         segments, heading = parse_markdown_line("")
         assert len(segments) == 1
         assert segments[0].text == ""
-    
+
+    def test_leading_blank_line_trimmed(self):
+        """A blank line at the very start of the content is trimmed."""
+        lines = parse_markdown_text("\nLine 1\nLine 2")
+        assert len(lines) == 2
+        assert lines[0][0][0].text == "Line 1"
+        assert lines[1][0][0].text == "Line 2"
+
+    def test_trailing_blank_line_trimmed(self):
+        """A blank line at the very end of the content is trimmed - this is
+        what YAML's `|` block scalar produces via its trailing newline."""
+        lines = parse_markdown_text("Line 1\nLine 2\n")
+        assert len(lines) == 2
+        assert lines[0][0][0].text == "Line 1"
+        assert lines[1][0][0].text == "Line 2"
+
+    def test_interior_blank_line_preserved(self):
+        """A blank line between non-blank lines is preserved."""
+        lines = parse_markdown_text("Line 1\n\nLine 2")
+        assert len(lines) == 3
+        assert lines[0][0][0].text == "Line 1"
+        assert lines[1][0][0].text == ""
+        assert lines[2][0][0].text == "Line 2"
+
+    def test_no_blank_lines_unaffected(self):
+        """Content without leading/trailing blank lines is unchanged."""
+        lines = parse_markdown_text("Line 1\nLine 2")
+        assert len(lines) == 2
+        assert lines[0][0][0].text == "Line 1"
+        assert lines[1][0][0].text == "Line 2"
+
+
     def test_multiple_formatting_on_same_line(self):
         """Test multiple formatting markers on same line."""
         segments, heading = parse_markdown_line("Start *italic* middle **bold** end")

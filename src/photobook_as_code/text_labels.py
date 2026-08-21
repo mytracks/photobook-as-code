@@ -204,20 +204,34 @@ def parse_markdown_line(line: str) -> tuple[List[TextSegment], int]:
 def parse_markdown_text(text: str) -> List[tuple[List[TextSegment], int]]:
     """
     Parse multi-line text with markdown formatting.
-    
+
+    Leading and trailing blank lines are trimmed before parsing - these are
+    typically formatting artifacts (e.g. the trailing newline YAML's `|`
+    block scalar always keeps) rather than intentional spacing. Blank lines
+    between non-blank lines are preserved.
+
     Args:
         text: Text content with markdown markers
-        
+
     Returns:
         List of tuples (segments, heading_level) for each line
     """
     lines = text.split('\n')
+
+    start = 0
+    while start < len(lines) and lines[start] == '':
+        start += 1
+    end = len(lines)
+    while end > start and lines[end - 1] == '':
+        end -= 1
+    lines = lines[start:end]
+
     parsed_lines = []
-    
+
     for line in lines:
         segments, heading_level = parse_markdown_line(line)
         parsed_lines.append((segments, heading_level))
-    
+
     return parsed_lines
 
 

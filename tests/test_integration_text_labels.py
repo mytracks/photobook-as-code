@@ -9,17 +9,19 @@ import tempfile
 import shutil
 import os
 from datetime import datetime, timedelta
-from PIL import Image
+from PIL import Image, ImageDraw
+import yaml
 
 from src.photobook_as_code.config import load_config
 from src.photobook_as_code.photos import collect_photos
 from src.photobook_as_code.themes import load_theme
 from src.photobook_as_code.layout import distribute_photos
-from src.photobook_as_code.renderer import render_all_pages
+from src.photobook_as_code.renderer import render_all_pages, render_title_slot
 from src.photobook_as_code.text_labels import (
     associate_text_labels_with_photos,
     parse_title_labels,
     merge_titles_with_photos,
+    parse_markdown_text,
     TitleLabel,
 )
 
@@ -507,3 +509,57 @@ text_labels:
         for page in pages:
             assert page.width == page_width
             assert page.height == page_height
+
+
+class TestExampleConfigBlankLineTitle:
+    """Regression test for the motivating case: example-config.yaml's title
+    entry (`# **Hamburg**` / blank line / `30. April 2026`) uses an interior
+    blank line to separate heading from date, written as a YAML `|` block
+    scalar - which also appends a trailing newline nobody typed."""
+
+    def _load_example_title_text(self):
+        config_path = Path(__file__).resolve().parent.parent / "example-config.yaml"
+        data = yaml.safe_load(config_path.read_text())
+        return data["text_labels"][0]["title"]
+
+    def test_example_title_trims_trailing_blank_but_keeps_interior_one(self):
+        title_text = self._load_example_title_text()
+        lines = parse_markdown_text(title_text)
+
+        # Heading + interior blank + date line - the YAML clip-chomping
+        # trailing blank must not survive as a fourth entry.
+        assert len(lines) == 3
+        assert lines[0][1] == 1  # "# **Hamburg**" is a level-1 heading
+        assert lines[1][0][0].text == ""  # interior blank line preserved
+        assert "30. April 2026" in lines[2][0][0].text
+
+    def test_example_title_renders_with_visible_gap_between_heading_and_date(self):
+        title_text = self._load_example_title_text()
+        theme = load_theme("clean2")
+
+        box_width, box_height = 1600, 900
+        img = Image.new("RGB", (box_width, box_height), color=(0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        title_label = TitleLabel(datetime.now(), title_text)
+        render_title_slot(draw, title_label, box_x=0, box_y=0,
+                           box_width=box_width, box_height=box_height, theme=theme)
+
+        def row_has_ink(y):
+            return any(img.getpixel((x, y)) != (0, 0, 0) for x in range(box_width))
+
+        ink_rows = [y for y in range(box_height) if row_has_ink(y)]
+        assert ink_rows
+
+        # Group ink_rows into contiguous runs (bands of glyph ink).
+        runs = [[ink_rows[0]]]
+        for y in ink_rows[1:]:
+            if y == runs[-1][-1] + 1:
+                runs[-1].append(y)
+            else:
+                runs.append([y])
+
+        # Exactly two lines rendered ink: the heading, then the date -
+        # nothing left over from a phantom trailing blank line.
+        assert len(runs) == 2
+        gap = runs[1][0] - runs[0][-1] - 1
+        assert gap > 20  # a real line-height gap, not the old ~4px sliver

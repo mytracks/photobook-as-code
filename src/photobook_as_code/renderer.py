@@ -177,6 +177,7 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
 
     all_lines_info = []  # list of (word_infos, line_height, line_width)
     total_text_height = 0
+    blank_line_height = None  # lazily computed: regular font's nominal line height
 
     for segments, heading_level in parsed_lines:
         current_words = []
@@ -234,8 +235,17 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
                 current_width += added_width
                 current_height = max(current_height, word_height)
 
-        # Flush this source line's final (or only) display line, preserving
-        # blank-line spacing when a line has no words.
+        # A source line with no words (blank, or whitespace-only) still needs
+        # real height - otherwise it renders as a near-invisible line_spacing
+        # sliver next to actual text. Use the regular font's nominal line
+        # height (ascent + descent), independent of any particular glyphs.
+        if not current_words:
+            if blank_line_height is None:
+                ascent, descent = font_regular.getmetrics()
+                blank_line_height = ascent + descent
+            current_height = blank_line_height
+
+        # Flush this source line's final (or only) display line.
         all_lines_info.append((current_words, current_height, current_width))
         total_text_height += current_height + line_spacing
 
