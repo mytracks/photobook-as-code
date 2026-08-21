@@ -44,5 +44,6 @@
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/root/.claude"
   },
+  "postCreateCommand": "apt-get update && apt-get install -y fonts-dejavu-extra",
   "remoteUser": "root"
 }
