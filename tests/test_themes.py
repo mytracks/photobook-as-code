@@ -455,3 +455,70 @@ class TestThemeTextStyling:
         assert theme.text.text_background_color == '#000000'
         assert theme.text.text_background_opacity == 50
         assert theme.text.text_padding == 12
+
+
+class TestThemeTitleStyling:
+    """Tests for theme-level title styling properties."""
+
+    def test_parse_title_styling_defaults(self):
+        """Test default title styling values when theme omits a title: block."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'layouts': []
+        }
+
+        theme = Theme.from_dict(theme_data)
+        assert theme.title.base_font_size == 28
+        assert theme.title.font_family == 'DejaVuSans'
+        assert theme.title.text_color == '#000000'
+        assert theme.title.align == 'center'
+        assert theme.title.text_background_enabled == True
+
+    def test_parse_title_styling_custom(self):
+        """Test custom title styling values, independent from text styling."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'text': {'base_font_size': 14, 'text_color': '#111111'},
+            'title': {
+                'base_font_size': 48,
+                'font_family': 'DejaVuSansMono',
+                'text_color': '#222222',
+                'align': 'left',
+                'text_background_enabled': False,
+            },
+            'layouts': []
+        }
+
+        theme = Theme.from_dict(theme_data)
+        assert theme.title.base_font_size == 48
+        assert theme.title.font_family == 'DejaVuSansMono'
+        assert theme.title.text_color == '#222222'
+        assert theme.title.align == 'left'
+        assert theme.title.text_background_enabled == False
+        # Text styling is unaffected by title styling
+        assert theme.text.base_font_size == 14
+        assert theme.text.text_color == '#111111'
+
+    def test_invalid_title_align_raises(self):
+        """An invalid title.align value raises ThemeError."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'title': {'align': 'justify'},
+            'layouts': []
+        }
+        with pytest.raises(ThemeError, match="Title align must be one of"):
+            Theme.from_dict(theme_data)
+
+    def test_invalid_title_base_font_size_raises(self):
+        """A non-positive title.base_font_size raises ThemeError."""
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'title': {'base_font_size': -10},
+            'layouts': []
+        }
+        with pytest.raises(ThemeError, match="Title base_font_size must be a positive number"):
+            Theme.from_dict(theme_data)

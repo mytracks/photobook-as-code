@@ -8,36 +8,69 @@ from typing import List, Union, Literal, Optional, Dict
 import re
 
 
+def _parse_timestamp(timestamp_value) -> datetime:
+    """
+    Parse a timestamp value from configuration (ISO 8601 string or Unix epoch number).
+
+    Args:
+        timestamp_value: Raw 'timestamp' value from a text_labels entry
+
+    Returns:
+        Parsed datetime
+    """
+    if isinstance(timestamp_value, str):
+        # ISO 8601 format
+        return datetime.fromisoformat(timestamp_value.replace('Z', '+00:00'))
+    elif isinstance(timestamp_value, (int, float)):
+        # Unix epoch
+        return datetime.fromtimestamp(timestamp_value)
+    else:
+        raise ValueError(f"Invalid timestamp type: {type(timestamp_value)}")
+
+
 @dataclass
 class TextLabel:
-    """Text label with timestamp and content."""
+    """Text label with timestamp and content, overlaid on its closest photo."""
     timestamp: datetime
     text: str
-    
+
     @classmethod
     def from_dict(cls, data: dict) -> 'TextLabel':
         """
         Create TextLabel from configuration dictionary.
-        
+
         Args:
             data: Dictionary with 'timestamp' and 'text' fields
-            
+
         Returns:
             TextLabel instance
         """
-        timestamp_value = data['timestamp']
-        
-        # Parse timestamp
-        if isinstance(timestamp_value, str):
-            # ISO 8601 format
-            timestamp = datetime.fromisoformat(timestamp_value.replace('Z', '+00:00'))
-        elif isinstance(timestamp_value, (int, float)):
-            # Unix epoch
-            timestamp = datetime.fromtimestamp(timestamp_value)
-        else:
-            raise ValueError(f"Invalid timestamp type: {type(timestamp_value)}")
-        
-        return cls(timestamp=timestamp, text=data['text'])
+        return cls(timestamp=_parse_timestamp(data['timestamp']), text=data['text'])
+
+
+@dataclass
+class TitleLabel:
+    """Title label with timestamp and content; consumes its own page slot."""
+    timestamp: datetime
+    title: str
+
+    @property
+    def orientation(self) -> str:
+        """Titles always present as portrait orientation for layout template matching."""
+        return 'portrait'
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'TitleLabel':
+        """
+        Create TitleLabel from configuration dictionary.
+
+        Args:
+            data: Dictionary with 'timestamp' and 'title' fields
+
+        Returns:
+            TitleLabel instance
+        """
+        return cls(timestamp=_parse_timestamp(data['timestamp']), title=data['title'])
 
 
 @dataclass
@@ -86,9 +119,9 @@ def parse_markdown_line(line: str) -> tuple[List[TextSegment], int]:
     # Parse inline formatting (bold and italic)
     segments = []
     
-    # Pattern to match **bold**, *italic*, and ***bold+italic***
+    # Pattern to match **bold**, *italic*, _italic_, and ***bold+italic***
     # Process in order: bold+italic first, then bold, then italic
-    pattern = r'(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*)'
+    pattern = r'(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|_[^_]+_)'
     
     last_end = 0
     for match in re.finditer(pattern, line):
@@ -133,7 +166,16 @@ def parse_markdown_line(line: str) -> tuple[List[TextSegment], int]:
                 italic=True,
                 heading_level=heading_level
             ))
-        
+        elif matched_text.startswith('_') and matched_text.endswith('_'):
+            # Italic only (underscore form)
+            text = matched_text[1:-1]
+            segments.append(TextSegment(
+                text=text,
+                bold=False,
+                italic=True,
+                heading_level=heading_level
+            ))
+
         last_end = match.end()
     
     # Add remaining plain text
@@ -267,6 +309,62 @@ def associate_text_labels_with_photos(
     for idx, photo in enumerate(photos):
         label = photo_idx_to_label.get(idx, None)
         associations.append((photo, label))
-    
+
     return associations
+
+
+def parse_title_labels(text_labels: List[Dict]) -> List[TitleLabel]:
+    """
+    Parse title entries from configuration, skipping any without a 'title' field.
+
+    Args:
+        text_labels: List of text label dictionaries from configuration
+
+    Returns:
+        List of TitleLabel instances (invalid entries skipped; already validated in config)
+    """
+    titles = []
+    for label_data in text_labels:
+        if 'title' not in label_data:
+            continue
+        try:
+            titles.append(TitleLabel.from_dict(label_data))
+        except (ValueError, KeyError):
+            continue
+    return titles
+
+
+def merge_titles_with_photos(titles: List[TitleLabel], photos: List) -> List:
+    """
+    Merge title items chronologically into the photo sequence, producing the
+    final ordered sequence of page items (photos and titles combined).
+
+    Each title is inserted immediately before the first photo whose sort_date
+    is greater than or equal to the title's timestamp (appended at the end if
+    no such photo exists). Comparing with >= rather than > is what makes a
+    title win an exact timestamp tie with a photo: the tied photo is itself
+    the first one satisfying the condition, so the title lands right before it.
+
+    Args:
+        titles: TitleLabel items to merge in, any order
+        photos: PhotoMetadata items in their final display order
+
+    Returns:
+        Merged list of photos and titles in final page order
+    """
+    sorted_titles = sorted(titles, key=lambda t: t.timestamp)
+
+    merged = []
+    title_idx = 0
+
+    for photo in photos:
+        while title_idx < len(sorted_titles) and sorted_titles[title_idx].timestamp <= photo.sort_date:
+            merged.append(sorted_titles[title_idx])
+            title_idx += 1
+        merged.append(photo)
+
+    # Any remaining titles are later than every photo
+    merged.extend(sorted_titles[title_idx:])
+
+    return merged
 

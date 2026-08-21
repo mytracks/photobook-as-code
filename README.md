@@ -172,6 +172,45 @@ text:
 
 **Text Background for Readability**: By default, text is rendered with a semi-transparent white background (85% opacity) to ensure readability when text is positioned over photos. You can customize the background color and opacity, or disable it entirely by setting `text_background_enabled: false`.
 
+### Title Slots
+
+For a large, prominent section title (e.g. a chapter heading), use `title` instead of `text`:
+
+```yaml
+text_labels:
+  - timestamp: "2024-06-15T08:00:00"
+    title: "# Day 1: Arrival"
+  - timestamp: "2024-06-15T10:30:00"
+    text: "Checked into our hotel"
+```
+
+A `title` entry is different from a `text` caption in one important way: instead of being overlaid on the nearest photo, it **consumes its own page slot**, just like a photo would. This means:
+
+- The number of page slots is `photos + titles`, so a configured `pages` or `photos_per_page` accounts for titles automatically - adding titles can increase the total page count.
+- Titles are placed chronologically among your photos (by timestamp, same as photos are ordered by date), landing between whichever two photos its timestamp falls between. If a title's timestamp exactly matches a photo's, the title comes first.
+- Each `text_labels` entry must have exactly one of `text` or `title` - not both, not neither.
+- Titles support the same Markdown formatting and multi-line content as `text` captions (headings, `**bold**`, `*italic*`/`_italic_`).
+
+Because a title takes a photo's place in the page's layout template, themes need at least one layout at each relevant photo count that includes a **portrait**-shaped slot - a title always renders into a portrait-shaped cell, reusing whichever layout your theme already uses for a portrait photo at that count. No dedicated "title layout" needs to be authored.
+
+#### Theme Title Styling
+
+Title text styling is configured independently from caption (`text`) styling, at the theme level:
+
+```yaml
+title:
+  base_font_size: 28                # Base font size in points (titles default larger than captions)
+  font_family: "DejaVuSans"         # Font family name
+  text_color: "#000000"             # Text color (hex)
+  align: center                     # left, center, or right - alignment within the title's slot
+  text_background_enabled: true     # Enable semi-transparent background for readability
+  text_background_color: "#FFFFFF"  # Background color (hex)
+  text_background_opacity: 85       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_padding: 8                   # Padding around text in pixels
+```
+
+Unlike captions (which are positioned per-layout-slot via each template's `text:` block), a title's box is simply its matched layout slot's full `position`/`size`, and the text is vertically centered within it.
+
 ### Example with Multiple Labels
 
 ```yaml

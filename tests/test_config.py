@@ -64,13 +64,28 @@ class TestTextLabelValidation:
         with pytest.raises(ConfigurationError, match="missing required field 'timestamp'"):
             validate_text_labels(text_labels)
     
-    def test_missing_text_field(self):
-        """Test that missing text raises error."""
+    def test_missing_text_and_title_field(self):
+        """Test that missing both text and title raises error."""
         text_labels = [
             {'timestamp': '2026-06-15T14:30:00'},
         ]
-        with pytest.raises(ConfigurationError, match="missing required field 'text'"):
+        with pytest.raises(ConfigurationError, match="one of 'text' or 'title'"):
             validate_text_labels(text_labels)
+
+    def test_both_text_and_title_fields(self):
+        """Test that having both text and title raises error."""
+        text_labels = [
+            {'timestamp': '2026-06-15T14:30:00', 'text': 'A caption', 'title': 'A title'},
+        ]
+        with pytest.raises(ConfigurationError, match="mutually exclusive"):
+            validate_text_labels(text_labels)
+
+    def test_valid_title_field(self):
+        """Test that a title entry (no text field) is valid."""
+        text_labels = [
+            {'timestamp': '2026-06-15T14:30:00', 'title': '# A Title'},
+        ]
+        validate_text_labels(text_labels)  # Should not raise
     
     def test_invalid_iso_timestamp_format(self):
         """Test that invalid ISO timestamp raises error."""

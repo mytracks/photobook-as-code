@@ -3,6 +3,12 @@ description: Traditional style with cream background and visible borders
 background: {color: '#F5F5DC'}
 borders: {enabled: true, width: 4, color: '#8B7355', shadow: true}
 spacing: {page_margin: 30}
+title:
+  font_family: DejaVuSerif
+  base_font_size: 40
+  text_color: "#5C4A3A"
+  text_background_enabled: false
+  align: center
 layouts:
 - count: 1
   photos:

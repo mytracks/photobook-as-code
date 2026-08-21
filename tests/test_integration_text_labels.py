@@ -7,13 +7,21 @@ import pytest
 from pathlib import Path
 import tempfile
 import shutil
+import os
+from datetime import datetime, timedelta
+from PIL import Image
 
 from src.photobook_as_code.config import load_config
 from src.photobook_as_code.photos import collect_photos
 from src.photobook_as_code.themes import load_theme
 from src.photobook_as_code.layout import distribute_photos
 from src.photobook_as_code.renderer import render_all_pages
-from src.photobook_as_code.text_labels import associate_text_labels_with_photos
+from src.photobook_as_code.text_labels import (
+    associate_text_labels_with_photos,
+    parse_title_labels,
+    merge_titles_with_photos,
+    TitleLabel,
+)
 
 
 class TestTextLabelsIntegration:
@@ -401,3 +409,101 @@ text_labels:
         for output_file in output_files:
             assert Path(output_file).exists()
             assert Path(output_file).stat().st_size > 0
+
+
+class TestMixedTextAndTitleLabelsIntegration:
+    """Integration tests for a photobook mixing 'text' captions and 'title' slots."""
+
+    @pytest.fixture
+    def photos_dir_with_titles_config(self, tmp_path):
+        """
+        Create a photos directory (4 photos, deterministic mtimes an hour apart)
+        and a config file with 2 'title' entries and 1 'text' entry, chosen so
+        the titles land before-all, and between two photos.
+        """
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+
+        base = datetime(2026, 7, 1, 10, 0, 0)
+        filenames = ["photo_a.jpg", "photo_b.jpg", "photo_c.jpg", "photo_d.jpg"]
+        for i, filename in enumerate(filenames):
+            path = photos_dir / filename
+            Image.new("RGB", (800, 600), color="blue").save(path)
+            mtime = (base + timedelta(hours=i)).timestamp()
+            os.utime(path, (mtime, mtime))
+
+        title_before_all = base - timedelta(hours=1)  # before photo_a
+        title_between_b_and_c = base + timedelta(hours=1, minutes=30)  # between photo_b (+1h) and photo_c (+2h)
+        caption_near_a = base + timedelta(minutes=5)  # closest to photo_a
+
+        config_content = f"""photos: {photos_dir}
+output:
+  size: A4
+  format: pdf
+layout:
+  photos_per_page: 2
+  order: date
+theme: clean
+text_labels:
+  - timestamp: "{title_before_all.isoformat()}"
+    title: "# Chapter One"
+  - timestamp: "{title_between_b_and_c.isoformat()}"
+    title: "## Chapter Two"
+  - timestamp: "{caption_near_a.isoformat()}"
+    text: "A caption"
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+        return config_path, photos_dir
+
+    def test_mixed_config_merges_titles_and_increases_page_count(self, photos_dir_with_titles_config):
+        config_path, photos_dir = photos_dir_with_titles_config
+
+        config = load_config(config_path)
+        assert len(config.text_labels) == 3
+
+        photos = collect_photos(photos_dir, order=config.layout.order)
+        assert len(photos) == 4
+
+        theme = load_theme(config.theme)
+
+        # Caption association is unaffected by the presence of title entries
+        text_associations = associate_text_labels_with_photos(config.text_labels, photos)
+        assert sum(1 for _, label in text_associations if label is not None) == 1
+
+        # Titles merge chronologically: before all photos, and between photo_b/photo_c
+        titles = parse_title_labels(config.text_labels)
+        assert len(titles) == 2
+        merged = merge_titles_with_photos(titles, photos)
+
+        assert len(merged) == len(photos) + len(titles)
+        assert isinstance(merged[0], TitleLabel) and merged[0].title == "# Chapter One"
+        assert merged[1] == photos[0]  # photo_a
+        assert merged[2] == photos[1]  # photo_b
+        assert isinstance(merged[3], TitleLabel) and merged[3].title == "## Chapter Two"
+        assert merged[4] == photos[2]  # photo_c
+        assert merged[5] == photos[3]  # photo_d
+
+        # Distribution must account for titles increasing the total slot count
+        distribution_with_titles = distribute_photos(
+            total_photos=len(merged),
+            photos_per_page=config.layout.photos_per_page,
+        )
+        distribution_without_titles = distribute_photos(
+            total_photos=len(photos),
+            photos_per_page=config.layout.photos_per_page,
+        )
+        assert distribution_with_titles.total_pages == 3  # 6 items / 2 per page
+        assert distribution_without_titles.total_pages == 2  # 4 photos / 2 per page
+        assert distribution_with_titles.total_pages > distribution_without_titles.total_pages
+
+        # Full rendering pipeline runs over the merged sequence without error
+        page_width, page_height = config.get_paper_size_pixels()
+        pages = list(render_all_pages(
+            page_width, page_height, merged, distribution_with_titles, theme, text_associations
+        ))
+
+        assert len(pages) == distribution_with_titles.total_pages
+        for page in pages:
+            assert page.width == page_width
+            assert page.height == page_height

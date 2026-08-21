@@ -16,7 +16,16 @@ text:
   text_background_enabled: true     # Enable semi-transparent background for readability
   text_background_color: "#ffffff"  # Background color (hex)
   text_background_opacity: 50       # Background opacity 0-100 (0=transparent, 100=opaque)
-  text_padding: 12                  # Padding around text in pixels  
+  text_padding: 12                  # Padding around text in pixels
+title:
+  font_family: DejaVuSansMono
+  base_font_size: 64
+  text_color: "#000000"
+  text_background_enabled: true
+  text_background_color: "#ffffff"
+  text_background_opacity: 50
+  text_padding: 16
+  align: center
 layouts:
 # 1 Photo
 - count: 1

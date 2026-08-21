@@ -1,8 +1,4 @@
-## Purpose
-
-Text label management for photobooks. This capability parses timestamped text entries from configuration, associates them with photos based on chronological proximity, and provides structures for rendering formatted text on photobook pages.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Parse text label entries from configuration
 The system SHALL parse text label entries containing a timestamp and either `text` or `title` content from the photobook configuration. Each entry SHALL have exactly one of `text` or `title`.
@@ -116,22 +112,3 @@ The system SHALL parse markdown formatting markers in both `text` and `title` co
 #### Scenario: Title content uses the same markdown parsing as text content
 - **WHEN** a `title` entry's content contains markdown markers (headings, bold, italic, or combinations)
 - **THEN** system parses it with the same rules applied to `text` content
-
-### Requirement: Provide text label data for rendering
-The system SHALL provide text label content and formatting information to the renderer for each page.
-
-#### Scenario: Text labels for page
-- **WHEN** renderer requests text labels for a page
-- **THEN** system provides list of text labels associated with photos on that page
-
-#### Scenario: Formatted text segments
-- **WHEN** renderer requests formatted text content
-- **THEN** system provides text split into segments with style attributes (plain, italic, bold, heading level)
-
-#### Scenario: Text positioning lookup
-- **WHEN** renderer has photo placement and needs text position
-- **THEN** system provides text content associated with that photo (if any)
-
-#### Scenario: No text labels for page
-- **WHEN** page has no associated text labels
-- **THEN** system returns empty list (no error)

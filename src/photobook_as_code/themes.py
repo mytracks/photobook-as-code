@@ -82,6 +82,19 @@ class TextStyle:
 
 
 @dataclass
+class TitleStyle:
+    """Title styling properties for title slots (independent from caption `text` styling)."""
+    base_font_size: int = 28
+    font_family: str = "DejaVuSans"
+    text_color: str = "#000000"
+    text_background_enabled: bool = True
+    text_background_color: str = "#FFFFFF"
+    text_background_opacity: int = 85  # 0-100, where 100 is fully opaque
+    text_padding: int = 8  # Padding in pixels around text
+    align: str = "center"  # left, center, right
+
+
+@dataclass
 class Theme:
     """Complete theme definition."""
     name: str
@@ -90,6 +103,7 @@ class Theme:
     borders: BorderStyle
     spacing: SpacingStyle
     text: TextStyle = field(default_factory=TextStyle)
+    title: TitleStyle = field(default_factory=TitleStyle)
     layouts: List[LayoutTemplate] = field(default_factory=list)
     
     @classmethod
@@ -167,6 +181,15 @@ class Theme:
                 photos=photos
             ))
 
+        title_style = TitleStyle(**data.get('title', {}))
+
+        valid_title_align = ['left', 'center', 'right']
+        if title_style.align not in valid_title_align:
+            raise ThemeError(f"Title align must be one of {valid_title_align}, got: {title_style.align}")
+
+        if not isinstance(title_style.base_font_size, (int, float)) or isinstance(title_style.base_font_size, bool) or title_style.base_font_size <= 0:
+            raise ThemeError(f"Title base_font_size must be a positive number, got: {title_style.base_font_size}")
+
         return cls(
             name=data.get('name', 'Unnamed'),
             description=data.get('description', ''),
@@ -174,6 +197,7 @@ class Theme:
             borders=BorderStyle(**data.get('borders', {})),
             spacing=SpacingStyle(**data.get('spacing', {})),
             text=TextStyle(**data.get('text', {})),
+            title=title_style,
             layouts=layouts,
         )
 

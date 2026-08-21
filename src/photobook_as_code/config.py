@@ -118,12 +118,21 @@ def validate_text_labels(text_labels: List[Dict[str, Any]]) -> None:
             raise ConfigurationError(
                 f"Text label entry {i} is missing required field 'timestamp'"
             )
-        
-        if 'text' not in label:
+
+        has_text = 'text' in label
+        has_title = 'title' in label
+
+        if has_text and has_title:
             raise ConfigurationError(
-                f"Text label entry {i} is missing required field 'text'"
+                f"Text label entry {i} has both 'text' and 'title' fields; "
+                f"these are mutually exclusive"
             )
-        
+
+        if not has_text and not has_title:
+            raise ConfigurationError(
+                f"Text label entry {i} is missing required field: one of 'text' or 'title'"
+            )
+
         # Validate timestamp type and format
         timestamp = label['timestamp']
         if isinstance(timestamp, bool):
@@ -155,11 +164,12 @@ def validate_text_labels(text_labels: List[Dict[str, Any]]) -> None:
                 f"Must be string (ISO 8601) or number (Unix epoch)"
             )
         
-        # Validate text type
-        text = label['text']
-        if not isinstance(text, str):
+        # Validate content type (whichever of 'text'/'title' is present)
+        content_field = 'text' if has_text else 'title'
+        content = label[content_field]
+        if not isinstance(content, str):
             raise ConfigurationError(
-                f"Text label entry {i} has invalid text type: {type(text).__name__}. "
+                f"Text label entry {i} has invalid {content_field} type: {type(content).__name__}. "
                 f"Must be string"
             )
 

@@ -10,13 +10,20 @@ spacing:
   page_margin: 90
   photo_margin: 20
 text:
-  font_family: DejaVuSansMono
+  font_family: DejaVuSans
   base_font_size: 42
   text_color: "#000000"
   text_background_enabled: true     # Enable semi-transparent background for readability
   text_background_color: "#ffffff"  # Background color (hex)
   text_background_opacity: 50       # Background opacity 0-100 (0=transparent, 100=opaque)
-  text_padding: 12                  # Padding around text in pixels  
+  text_padding: 12                  # Padding around text in pixels
+title:
+  font_family: DejaVuSans
+  base_font_size: 72
+  text_color: "#ffffff"
+  text_background_enabled: false
+  text_padding: 16
+  align: center
 layouts:
 # 1 Photo - all orientation combinations
 - count: 1

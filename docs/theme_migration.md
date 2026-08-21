@@ -54,3 +54,15 @@ layouts:
 If no template matches the given combination of photos, the renderer will log a `LayoutError` and skip the layout for that page. It is highly recommended to provide fallback templates covering combinations of orientations for 1 to 4 photos.
 
 For a full set of default layouts, reference the built-in themes (e.g., `clean.yaml`, `modern.yaml`).
+
+## Title Slots and Layout Templates
+
+Title slots (`text_labels` entries using `title` instead of `text` - see the README's "Title Slots" section) consume a page slot the same way a photo does, and are matched into a layout template exactly like a photo: by count and orientation.
+
+A title always presents as `portrait` orientation for this matching, regardless of the orientations of the real photos sharing its page. This means:
+
+- A title lands in whatever cell a theme's layout template assigns to a portrait photo at that item count - no separate "title" orientation or dedicated title-only template is needed.
+- If your theme is missing a portrait-inclusive layout at a given count (for example, only an all-landscape `count: 3` template exists), a page that needs to place a title alongside 2 landscape photos at that count will fail to match with a `LayoutError`, exactly as it would for a missing photo-orientation combination today.
+- To use titles freely, make sure your theme defines at least one portrait-inclusive template for every photo count you expect a title to appear at (built-in themes already do this for counts 1-4).
+
+Because a title's box comes directly from the matched slot's `position`/`size` - not from a per-slot `text:` block - no additional per-layout configuration is required to support titles once a portrait-inclusive template exists. Title font, color, and alignment are configured once at the theme level (see the README's "Theme Title Styling" section).

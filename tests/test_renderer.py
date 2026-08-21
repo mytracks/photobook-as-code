@@ -1,9 +1,9 @@
 import pytest
 from PIL import Image, ImageDraw, ImageFont
 from photobook_as_code.renderer import render_page, render_text_label
-from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, TextStyle, TextPosition, LayoutTemplate, LayoutPhoto, LayoutPosition, LayoutPhotoSize
+from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, TextStyle, TitleStyle, TextPosition, LayoutTemplate, LayoutPhoto, LayoutPosition, LayoutPhotoSize
 from photobook_as_code.photos import PhotoMetadata
-from photobook_as_code.text_labels import TextLabel
+from photobook_as_code.text_labels import TextLabel, TitleLabel
 from pathlib import Path
 from datetime import datetime
 
@@ -66,6 +66,59 @@ def test_renderer_applies_layout_templates(tmp_path):
 
     r, g, b = page.getpixel((510, 760))
     assert r < 5 and g < 5 and b > 250
+
+
+def test_render_page_title_slot_skips_photo_and_border(tmp_path):
+    """A title slot fills its cell with theme-styled text and no photo/border/shadow."""
+    img1_path = tmp_path / "img1.jpg"
+    Image.new("RGB", (1920, 1080), color="red").save(img1_path)
+
+    photo = make_photo('landscape', str(img1_path))
+    title = TitleLabel(timestamp=datetime.now(), title="Hello")
+
+    theme = Theme(
+        name="test",
+        description="",
+        background=BackgroundStyle("#FFFFFF"),
+        borders=BorderStyle(enabled=True, width=4, color="#000000", shadow=False),
+        spacing=SpacingStyle(page_margin=10),
+        title=TitleStyle(
+            base_font_size=20,
+            align='center',
+            text_background_enabled=True,
+            text_background_color="#00FF00",
+            text_background_opacity=100,
+        ),
+        layouts=[
+            LayoutTemplate(
+                count=2,
+                photos=[
+                    LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), LayoutPhotoSize(width=1.0, height=0.5)),
+                    LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), LayoutPhotoSize(width=1.0, height=0.5))
+                ]
+            )
+        ]
+    )
+
+    page = render_page(
+        page_width=1000,
+        page_height=1000,
+        photos=[photo, title],
+        theme=theme
+    )
+
+    assert page.width == 1000
+    assert page.height == 1000
+
+    # Photo slot (top half) still shows the pasted red photo
+    r, g, b = page.getpixel((500, 250))
+    assert r > 250 and g < 5 and b < 5
+
+    # Title slot (bottom half): near its top-left corner (inside padding,
+    # away from the centered "Hello" text) should show its own green
+    # background, not a photo, not the border color, not the page background.
+    r, g, b = page.getpixel((20, 510))
+    assert r < 5 and g > 250 and b < 5
 
 
 def test_renderer_with_photo_margin(tmp_path):

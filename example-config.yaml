@@ -37,8 +37,13 @@ layout:
 theme: clean2
 
 text_labels:
-  - timestamp: "2026-04-30T10:24:00"
-    text: "# Auf nach Hamburg"
+  # 'title' entries get their own page slot (like a photo) instead of being
+  # overlaid on the nearest photo - use them for section/chapter headings.
+  - timestamp: "2026-04-30T10:00:00"
+    title: |
+      # **Hamburg**
+
+      30. April 2026
   - timestamp: "2026-04-30T12:23:00"
     text: "## Ladepause"
   - timestamp: "2026-04-30T14:02:00"

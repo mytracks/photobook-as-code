@@ -7,11 +7,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from photobook_as_code.text_labels import (
     TextLabel,
+    TitleLabel,
     TextSegment,
     parse_markdown_line,
     parse_markdown_text,
     find_closest_photo,
     associate_text_labels_with_photos,
+    parse_title_labels,
+    merge_titles_with_photos,
 )
 from photobook_as_code.photos import PhotoMetadata
 
@@ -91,6 +94,18 @@ class TestMarkdownParsing:
         assert segments[2].text == " text"
         assert segments[2].italic is False
     
+    def test_parse_underscore_italic(self):
+        """Test parsing underscore-style italic text (_italic_), same result as *italic*."""
+        segments, heading = parse_markdown_line("This is _italic_ text")
+        assert len(segments) == 3
+        assert segments[0].text == "This is "
+        assert segments[0].italic is False
+        assert segments[1].text == "italic"
+        assert segments[1].italic is True
+        assert segments[1].bold is False
+        assert segments[2].text == " text"
+        assert segments[2].italic is False
+
     def test_parse_bold(self):
         """Test parsing bold text."""
         segments, heading = parse_markdown_line("This is **bold** text")
@@ -113,6 +128,13 @@ class TestMarkdownParsing:
         assert segments[1].italic is True
         assert segments[2].text == " formatting"
     
+    def test_parse_bold_and_underscore_italic_combined(self):
+        """Test a line combining **bold** and _italic_ (the form from the original request)."""
+        segments, heading = parse_markdown_line("A **wonderful** _adventure_")
+        texts_styles = [(s.text, s.bold, s.italic) for s in segments]
+        assert ("wonderful", True, False) in texts_styles
+        assert ("adventure", False, True) in texts_styles
+
     def test_parse_heading_level_1(self):
         """Test parsing heading level 1."""
         segments, heading = parse_markdown_line("# Big Title")
@@ -344,4 +366,108 @@ class TestPhotoTextAssociation:
         
         associations = associate_text_labels_with_photos(labels, [])
         assert len(associations) == 0
+
+
+class TestTitleLabel:
+    """Tests for TitleLabel class."""
+
+    def test_from_dict_with_iso_timestamp(self):
+        """Test creating TitleLabel from dict with ISO timestamp."""
+        data = {'timestamp': '2026-06-15T14:30:00', 'title': '# Chapter One'}
+        label = TitleLabel.from_dict(data)
+        assert label.title == '# Chapter One'
+        assert isinstance(label.timestamp, datetime)
+        assert label.timestamp.year == 2026
+
+    def test_from_dict_with_unix_timestamp(self):
+        """Test creating TitleLabel from dict with Unix epoch timestamp."""
+        data = {'timestamp': 1656163800, 'title': 'A title'}
+        label = TitleLabel.from_dict(data)
+        assert label.title == 'A title'
+
+    def test_orientation_is_always_portrait(self):
+        """Titles always report portrait orientation for layout matching."""
+        label = TitleLabel(timestamp=datetime.now(), title='Anything')
+        assert label.orientation == 'portrait'
+
+
+class TestParseTitleLabels:
+    """Tests for parse_title_labels function."""
+
+    def test_parses_only_title_entries(self):
+        """Entries with 'text' are skipped; only 'title' entries are parsed."""
+        entries = [
+            {'timestamp': '2026-06-15T10:00:00', 'text': 'A caption'},
+            {'timestamp': '2026-06-15T11:00:00', 'title': 'A title'},
+        ]
+        titles = parse_title_labels(entries)
+        assert len(titles) == 1
+        assert titles[0].title == 'A title'
+
+    def test_no_title_entries(self):
+        """No title entries yields an empty list."""
+        entries = [{'timestamp': '2026-06-15T10:00:00', 'text': 'A caption'}]
+        assert parse_title_labels(entries) == []
+
+    def test_invalid_title_entry_skipped(self):
+        """An entry with an unparseable timestamp is skipped, not raised."""
+        entries = [{'timestamp': 'not-a-date', 'title': 'Broken'}]
+        assert parse_title_labels(entries) == []
+
+
+class TestMergeTitlesWithPhotos:
+    """Tests for merge_titles_with_photos function."""
+
+    def test_title_between_two_photos(self):
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        photos = [
+            make_photo('p1.jpg', base),
+            make_photo('p2.jpg', base + timedelta(hours=2)),
+        ]
+        title = TitleLabel(timestamp=base + timedelta(hours=1), title='Mid title')
+        merged = merge_titles_with_photos([title], photos)
+        assert merged == [photos[0], title, photos[1]]
+
+    def test_title_before_all_photos(self):
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        photos = [make_photo('p1.jpg', base), make_photo('p2.jpg', base + timedelta(hours=1))]
+        title = TitleLabel(timestamp=base - timedelta(hours=1), title='Intro')
+        merged = merge_titles_with_photos([title], photos)
+        assert merged == [title, photos[0], photos[1]]
+
+    def test_title_after_all_photos(self):
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        photos = [make_photo('p1.jpg', base), make_photo('p2.jpg', base + timedelta(hours=1))]
+        title = TitleLabel(timestamp=base + timedelta(hours=5), title='Outro')
+        merged = merge_titles_with_photos([title], photos)
+        assert merged == [photos[0], photos[1], title]
+
+    def test_title_wins_exact_timestamp_tie(self):
+        """A title with a timestamp exactly equal to a photo's comes first."""
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        photos = [make_photo('p1.jpg', base)]
+        title = TitleLabel(timestamp=base, title='Tied title')
+        merged = merge_titles_with_photos([title], photos)
+        assert merged == [title, photos[0]]
+
+    def test_multiple_titles_at_same_insertion_point_ordered_by_own_timestamp(self):
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        photos = [make_photo('p1.jpg', base + timedelta(hours=5))]
+        title_a = TitleLabel(timestamp=base + timedelta(hours=1), title='First')
+        title_b = TitleLabel(timestamp=base + timedelta(hours=2), title='Second')
+        # Pass in reverse order; merge should still sort them by their own timestamp
+        merged = merge_titles_with_photos([title_b, title_a], photos)
+        assert merged == [title_a, title_b, photos[0]]
+
+    def test_no_titles_returns_photos_unchanged(self):
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        photos = [make_photo('p1.jpg', base)]
+        merged = merge_titles_with_photos([], photos)
+        assert merged == photos
+
+    def test_no_photos_appends_all_titles(self):
+        base = datetime(2026, 6, 15, 12, 0, 0)
+        title = TitleLabel(timestamp=base, title='Only title')
+        merged = merge_titles_with_photos([title], [])
+        assert merged == [title]
 

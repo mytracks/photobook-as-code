@@ -19,7 +19,7 @@ from .layout import (
 )
 from .renderer import render_all_pages
 from .output import generate_output, prepare_output_path, OutputError
-from .text_labels import associate_text_labels_with_photos
+from .text_labels import associate_text_labels_with_photos, parse_title_labels, merge_titles_with_photos
 
 
 # Configure logging
@@ -91,43 +91,46 @@ def main(config: Path, output: Optional[Path], verbose: bool):
         click.echo(f"🎨 Loading theme '{pb_config.theme}'...")
         theme = load_theme(pb_config.theme)
         
-        # Stage 3.5: Associate text labels with photos
+        # Stage 3.5: Associate text labels with photos, and parse title slots
         text_label_associations = None
         if pb_config.text_labels:
             click.echo("📝 Associating text labels with photos...")
             text_label_associations = associate_text_labels_with_photos(pb_config.text_labels, photos)
             click.echo(f"   {len([label for _, label in text_label_associations if label is not None])} text labels associated")
-            
+
             # Log each association
             for photo, text_label in text_label_associations:
                 if text_label:
                     logger.info(f"Association: Photo '{photo.path.name}' (date: {photo.sort_date}) -> Text label at {text_label.timestamp}: {text_label.text[:50]}...")
                 else:
                     logger.info(f"Association: Photo '{photo.path.name}' (date: {photo.sort_date}) -> No text label")
-        
-            
+
+        titles = parse_title_labels(pb_config.text_labels)
+        page_items = merge_titles_with_photos(titles, photos) if titles else photos
+        if titles:
+            click.echo(f"   {len(titles)} titles merged as page slots")
 
         # Stage 4: Calculate layout
         click.echo("📐 Calculating layout...")
-        
+
         # Get paper dimensions
         page_width, page_height = pb_config.get_paper_size_pixels()
-        
-        # Calculate photo distribution
+
+        # Calculate photo distribution (titles count as page slots, same as photos)
         distribution = distribute_photos(
-            total_photos=len(photos),
+            total_photos=len(page_items),
             photos_per_page=pb_config.layout.photos_per_page,
             total_pages=pb_config.layout.pages
         )
-        
+
         click.echo(f"   {distribution.total_pages} pages, "
-                  f"{distribution.photos_per_page} photos per page")
-        
+                  f"{distribution.photos_per_page} items per page")
+
         # Stage 5: Render pages
         click.echo("🖼️  Rendering pages...")
-        
+
         # Create page generator (memory-efficient streaming)
-        pages_generator = render_all_pages(page_width, page_height, photos, distribution, theme, text_label_associations)
+        pages_generator = render_all_pages(page_width, page_height, page_items, distribution, theme, text_label_associations)
         
         # Stage 6: Generate output
         click.echo("💾 Generating output...")
