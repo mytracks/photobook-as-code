@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ filename }} - Photobook Text Editor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <span class="position">{{ index + 1 }} / {{ total }}</span>
+    <span class="filename">{{ filename }}</span>
+  </header>
+
+  <main>
+    <div class="date-header">
+      <span class="date-display">{{ date_display }}</span>
+      {% if is_new_day %}
+        <span class="new-day-badge" title="First photo of a new day">
+          <span class="new-day-icon" aria-hidden="true">🌅</span> New day
+        </span>
+      {% endif %}
+    </div>
+
+    <div class="photo-frame">
+      <img class="photo" src="{{ url_for('photo_image', index=index) }}" alt="{{ filename }}"
+        width="{{ photo_width }}" height="{{ photo_height }}"
+        style="aspect-ratio: {{ photo_width }} / {{ photo_height }};">
+
+      {% if has_prev %}
+        <a class="nav-zone nav-zone-left" id="prev-zone"
+          href="{{ url_for('view_photo', index=index - 1) }}" aria-label="Previous photo">
+          <span class="nav-zone-chevron" aria-hidden="true">&lsaquo;</span>
+        </a>
+      {% endif %}
+
+      {% if has_next %}
+        <a class="nav-zone nav-zone-right" id="next-zone"
+          href="{{ url_for('view_photo', index=index + 1) }}" aria-label="Next photo">
+          <span class="nav-zone-chevron" aria-hidden="true">&rsaquo;</span>
+        </a>
+      {% endif %}
+    </div>
+
+    <textarea id="text-field" spellcheck="true">{{ text }}</textarea>
+    <span id="save-status" class="save-status" aria-live="polite"></span>
+  </main>
+
+  <script src="{{ url_for('static', filename='editor.js') }}" data-index="{{ index }}"></script>
+</body>
+</html>

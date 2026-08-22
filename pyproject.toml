@@ -28,6 +28,8 @@ dependencies = [
     "reportlab>=4.0.0",
     "click>=8.1.0",
     "PyYAML>=6.0.0",
+    "Flask>=3.0.0",
+    "ruamel.yaml>=0.18.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +40,7 @@ dev = [
 
 [project.scripts]
 photobook = "photobook_as_code.cli:main"
+photobook-edit-labels = "photobook_as_code.webapp.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/photobook-as-code"

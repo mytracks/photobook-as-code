@@ -259,6 +259,29 @@ text_labels:
     text: "## Day 2\nExploring the old town"
 ```
 
+## Web Editor
+
+Writing `text_labels` captions by hand means cross-referencing timestamps and filename comments against a separate photo viewer. `photobook-edit-labels` gives you a small local web app instead: it shows one photo at a time next to a plain text field for that photo's caption, and saves your edits directly into the configuration file as you navigate.
+
+```bash
+photobook-edit-labels --config my-photobook.yaml
+```
+
+Then open the printed URL (`http://127.0.0.1:5000/` by default) in your browser.
+
+- Photos are shown in the same order (`layout.order`) the generated photobook would use, with Previous/Next navigation (also available via the left/right arrow keys).
+- The text field holds raw Markdown - there's no rich-text toolbar or live preview, just what you type.
+- Edits are saved automatically when you leave the text field (e.g. by clicking Next), with a small status indicator confirming the save.
+- If a photo has no `text_labels` entry yet, one is created the first time you save text for it - you don't need to run `--extract-labels` first.
+- The editor only ever writes to the one configuration file it was started with. Photos themselves are never modified, moved, or deleted.
+- Editing `title` entries isn't supported yet - only `text` entries are shown for editing.
+
+Options:
+
+```bash
+photobook-edit-labels --config my-photobook.yaml --host 0.0.0.0 --port 8080
+```
+
 ## Output Formats
 
 - **PDF**: Single file with all pages (ideal for printing)
