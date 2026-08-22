@@ -3,10 +3,15 @@ Layout calculation for photo grid arrangements.
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 import math
 from photobook_as_code.themes import LayoutTemplate
 from photobook_as_code.photos import PhotoMetadata
+from photobook_as_code.text_labels import TitleLabel
+
+# A page item is either a real photo or a title slot; match_template only
+# ever needs `.orientation`, which both expose.
+PageItem = Union[PhotoMetadata, TitleLabel]
 
 
 @dataclass
@@ -108,18 +113,19 @@ class LayoutError(Exception):
     pass
 
 
-def match_template(templates: List[LayoutTemplate], photos: List[PhotoMetadata]) -> LayoutTemplate:
+def match_template(templates: List[LayoutTemplate], photos: List[PageItem]) -> LayoutTemplate:
     """
-    Match photos to a layout template based on count and orientation.
-    Prefers exact orientation order match.
-    
+    Match page items to a layout template based on count and orientation.
+    Prefers exact orientation order match. Items may be photos or title slots -
+    both expose `.orientation` (a title slot always reports 'portrait').
+
     Args:
         templates: Available layout templates from theme
-        photos: Photos for a specific page
-        
+        photos: Page items (photos and/or title slots) for a specific page
+
     Returns:
         Matched LayoutTemplate
-        
+
     Raises:
         LayoutError: If no matching template is found
     """

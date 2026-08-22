@@ -20,11 +20,22 @@ class LayoutPhotoSize:
     height: float
 
 @dataclass
+class TextPosition:
+    """Text position and alignment specification."""
+    x: float  # percentage 0-100 of the associated photo's width; ignored when dock is set
+    y: float  # percentage 0-100 of the associated photo's height
+    width: float  # percentage 0-100 of the associated photo's width
+    height: Optional[float] = None  # percentage 0-100, calculated automatically if not specified
+    align: str = "left"  # left, center, right
+    dock: Optional[str] = None  # left, right: pin to the page's literal border instead of the photo
+
+@dataclass
 class LayoutPhoto:
     """Specification for a single photo in a layout template."""
     orientation: str  # 'portrait' or 'landscape'
     position: LayoutPosition
     size: LayoutPhotoSize  # Maximum bounds for rendering
+    text: Optional[TextPosition] = None  # Optional text positioning
 
 @dataclass
 class LayoutTemplate:
@@ -59,6 +70,31 @@ class SpacingStyle:
 
 
 @dataclass
+class TextStyle:
+    """Text styling properties for text labels."""
+    base_font_size: int = 14
+    font_family: str = "DejaVuSans"
+    text_color: str = "#000000"
+    text_background_enabled: bool = True
+    text_background_color: str = "#FFFFFF"
+    text_background_opacity: int = 85  # 0-100, where 100 is fully opaque
+    text_padding: int = 8  # Padding in pixels around text
+
+
+@dataclass
+class TitleStyle:
+    """Title styling properties for title slots (independent from caption `text` styling)."""
+    base_font_size: int = 28
+    font_family: str = "DejaVuSans"
+    text_color: str = "#000000"
+    text_background_enabled: bool = True
+    text_background_color: str = "#FFFFFF"
+    text_background_opacity: int = 85  # 0-100, where 100 is fully opaque
+    text_padding: int = 8  # Padding in pixels around text
+    align: str = "center"  # left, center, right
+
+
+@dataclass
 class Theme:
     """Complete theme definition."""
     name: str
@@ -66,6 +102,8 @@ class Theme:
     background: BackgroundStyle
     borders: BorderStyle
     spacing: SpacingStyle
+    text: TextStyle = field(default_factory=TextStyle)
+    title: TitleStyle = field(default_factory=TitleStyle)
     layouts: List[LayoutTemplate] = field(default_factory=list)
     
     @classmethod
@@ -81,18 +119,76 @@ class Theme:
                 if not isinstance(size_data, dict) or 'width' not in size_data or 'height' not in size_data:
                     raise ThemeError(f"Photo size must be an object with 'width' and 'height'. Got: {size_data}")
 
+                # Parse optional text position
+                text_pos = None
+                text_data = photo_dict.get('text')
+                if text_data and isinstance(text_data, dict):
+                    # Validate required width field
+                    if 'width' not in text_data:
+                        raise ThemeError(f"Text specification must include 'width' field")
+                    
+                    # Validate coordinates (percentages of the associated photo's dimensions)
+                    x = float(text_data.get('x', 0))
+                    y = float(text_data.get('y', 0))
+                    width = float(text_data.get('width'))
+                    height = float(text_data['height']) if 'height' in text_data else None
+
+                    if not (0 <= x <= 100):
+                        raise ThemeError(f"Text x coordinate must be 0-100, got: {x}")
+                    if not (0 <= y <= 100):
+                        raise ThemeError(f"Text y coordinate must be 0-100, got: {y}")
+                    if not (0 <= width <= 100):
+                        raise ThemeError(f"Text width must be 0-100, got: {width}")
+                    if height is not None and not (0 <= height <= 100):
+                        raise ThemeError(f"Text height must be 0-100, got: {height}")
+
+                    # Validate alignment
+                    align = text_data.get('align', 'left')
+
+                    valid_align = ['left', 'center', 'right']
+
+                    if align not in valid_align:
+                        raise ThemeError(f"Text align must be one of {valid_align}, got: {align}")
+
+                    # Validate dock: overrides the horizontal anchor to the page's literal border
+                    dock = text_data.get('dock')
+
+                    valid_dock = ['left', 'right']
+
+                    if dock is not None and dock not in valid_dock:
+                        raise ThemeError(f"Text dock must be one of {valid_dock}, got: {dock}")
+
+                    text_pos = TextPosition(
+                        x=x,
+                        y=y,
+                        width=width,
+                        height=height,
+                        align=align,
+                        dock=dock
+                    )
+
                 photos.append(LayoutPhoto(
                     orientation=photo_dict.get('orientation', 'landscape'),
                     position=LayoutPosition(x=pos.get('x', 0.5), y=pos.get('y', 0.5)),
                     size=LayoutPhotoSize(
                         width=float(size_data['width']),
                         height=float(size_data['height'])
-                    )
+                    ),
+                    text=text_pos
                 ))
             layouts.append(LayoutTemplate(
                 count=layout_dict.get('count', len(photos)),
                 photos=photos
             ))
+
+        title_style = TitleStyle(**data.get('title', {}))
+
+        valid_title_align = ['left', 'center', 'right']
+        if title_style.align not in valid_title_align:
+            raise ThemeError(f"Title align must be one of {valid_title_align}, got: {title_style.align}")
+
+        if not isinstance(title_style.base_font_size, (int, float)) or isinstance(title_style.base_font_size, bool) or title_style.base_font_size <= 0:
+            raise ThemeError(f"Title base_font_size must be a positive number, got: {title_style.base_font_size}")
 
         return cls(
             name=data.get('name', 'Unnamed'),
@@ -100,6 +196,8 @@ class Theme:
             background=BackgroundStyle(**data.get('background', {})),
             borders=BorderStyle(**data.get('borders', {})),
             spacing=SpacingStyle(**data.get('spacing', {})),
+            text=TextStyle(**data.get('text', {})),
+            title=title_style,
             layouts=layouts,
         )
 

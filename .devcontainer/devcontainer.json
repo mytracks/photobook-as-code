@@ -1,6 +1,6 @@
 {
   "name": "photobook-as-code",
-  "image": "swift:latest",
+  "image": "ubuntu:26.04",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22",
@@ -20,12 +20,12 @@
     },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "latest"
-    }
+    },
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
   "customizations": {
     "vscode": {
       "extensions": [
-        "swiftlang.swift-vscode",
         "redhat.vscode-yaml",
         "ms-vscode.vscode-json"
       ],
@@ -37,7 +37,12 @@
   },
   "mounts": [
     "source=${localEnv:HOME}/Pictures,target=/mnt/pictures,type=bind,readonly",
-    "source=${localEnv:HOME}/Downloads,target=/mnt/downloads,type=bind"
+    "source=${localEnv:HOME}/Downloads,target=/mnt/downloads,type=bind",
+    "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind"
   ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/root/.claude"
+  },
+  "postCreateCommand": "apt-get update && apt-get install -y fonts-dejavu-extra",
   "remoteUser": "root"
 }

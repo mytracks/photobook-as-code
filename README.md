@@ -88,6 +88,177 @@ theme: clean                 # clean, classic, or modern
 - **classic**: Traditional with cream background and visible borders  
 - **modern**: Contemporary with no borders and tight spacing
 
+## Text Labels
+
+Add descriptive text to your photobook pages! Text labels are automatically associated with photos based on timestamps and can include markdown formatting for styling.
+
+### Basic Usage
+
+Add text labels to your configuration:
+
+```yaml
+photos: ./my-photos/
+output:
+  size: A4
+  format: pdf
+layout:
+  photos_per_page: 2
+theme: clean
+text_labels:
+  - timestamp: "2024-06-15T10:30:00"
+    text: "# Beach Day\nOur amazing summer vacation!"
+  - timestamp: "2024-06-15T14:00:00"
+    text: "Beautiful sunset with *stunning* colors"
+  - timestamp: "2024-06-16T09:00:00"
+    text: "**Best breakfast ever**\nLocal cafe in town"
+```
+
+### Timestamp Format
+
+Text labels use timestamps to match with photos. Two formats are supported:
+
+- **ISO 8601**: `"2024-06-15T10:30:00"` (recommended)
+- **Unix epoch**: `1718450400` (seconds since 1970-01-01)
+
+The system automatically matches each text label to the photo with the closest timestamp based on EXIF data or file modification time.
+
+### Discovering Photo Timestamps
+
+Writing `text_labels` by hand requires knowing each photo's timestamp. Rather than inspecting EXIF data manually, run the CLI with `--extract-labels` to print an empty stub for every photo timestamp in the configured photo directory:
+
+```bash
+photobook --config my-photobook.yaml --extract-labels
+```
+
+This prints a ready-to-paste `text_labels` block to stdout, one entry per distinct timestamp, with an empty `text` field and the source filename(s) as a trailing comment:
+
+```yaml
+text_labels:
+  - timestamp: "2024-06-15T10:30:00"  # IMG_0001.jpg
+    text: ""
+  - timestamp: "2024-06-15T14:00:00"  # IMG_0002.jpg, IMG_0003.jpg
+    text: ""
+```
+
+A few things to know about this mode:
+
+- It **ignores** any `text_labels` already in the config - it always prints a stub for every photo, regardless of what's already been written. Merge the output into your config by hand.
+- Photos sharing the exact same timestamp collapse into a single stub entry, listing all their filenames, since they'd bind to the same page slot anyway.
+- Entries are always printed in chronological order, regardless of the config's `layout.order` setting.
+- No photobook is generated in this mode - `--extract-labels` exits immediately after printing, and any `--output` option is ignored.
+- An empty `text: ""` entry is safe to leave in your config - it renders nothing (no text, no background) until you fill it in.
+
+### Markdown Formatting
+
+Text labels support a subset of markdown for styling:
+
+- **Headings**: `# Heading 1`, `## Heading 2`, `### Heading 3`
+  - H1 = 1.5x base font size
+  - H2 = 1.3x base font size
+  - H3 = 1.2x base font size
+- **Bold**: `**bold text**`
+- **Italic**: `*italic text*`
+- **Bold + Italic**: `***bold and italic***`
+- **Multiple lines**: Use `\n` for line breaks
+
+### Theme Text Positioning
+
+Themes control where text appears on the page. The `clean` theme includes text positioning for some layouts. You can customize text position in your own themes:
+
+```yaml
+layouts:
+- count: 2
+  photos:
+  - orientation: landscape
+    position: {x: 0.5, y: 0.25}
+    size: {width: 1.0, height: 0.5}
+    text:
+      x: 10          # Left edge (% of page width)
+      y: 55          # Top edge (% of page height)
+      width: 80      # Text box width (%) - required
+      align: left    # left, center, or right
+```
+
+**Note**: Text height is automatically calculated based on content. Only width needs to be specified.
+
+### Theme Text Styling
+
+Customize text appearance at the theme level:
+
+```yaml
+text:
+  base_font_size: 14                # Base font size in points
+  font_family: "DejaVuSans"         # Font family name
+  text_color: "#000000"             # Text color (hex)
+  text_background_enabled: true     # Enable semi-transparent background for readability
+  text_background_color: "#FFFFFF"  # Background color (hex)
+  text_background_opacity: 85       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_padding: 8                   # Padding around text in pixels
+```
+
+**Text Background for Readability**: By default, text is rendered with a semi-transparent white background (85% opacity) to ensure readability when text is positioned over photos. You can customize the background color and opacity, or disable it entirely by setting `text_background_enabled: false`.
+
+### Title Slots
+
+For a large, prominent section title (e.g. a chapter heading), use `title` instead of `text`:
+
+```yaml
+text_labels:
+  - timestamp: "2024-06-15T08:00:00"
+    title: "# Day 1: Arrival"
+  - timestamp: "2024-06-15T10:30:00"
+    text: "Checked into our hotel"
+```
+
+A `title` entry is different from a `text` caption in one important way: instead of being overlaid on the nearest photo, it **consumes its own page slot**, just like a photo would. This means:
+
+- The number of page slots is `photos + titles`, so a configured `pages` or `photos_per_page` accounts for titles automatically - adding titles can increase the total page count.
+- Titles are placed chronologically among your photos (by timestamp, same as photos are ordered by date), landing between whichever two photos its timestamp falls between. If a title's timestamp exactly matches a photo's, the title comes first.
+- Each `text_labels` entry must have exactly one of `text` or `title` - not both, not neither.
+- Titles support the same Markdown formatting and multi-line content as `text` captions (headings, `**bold**`, `*italic*`/`_italic_`).
+
+Because a title takes a photo's place in the page's layout template, themes need at least one layout at each relevant photo count that includes a **portrait**-shaped slot - a title always renders into a portrait-shaped cell, reusing whichever layout your theme already uses for a portrait photo at that count. No dedicated "title layout" needs to be authored.
+
+#### Theme Title Styling
+
+Title text styling is configured independently from caption (`text`) styling, at the theme level:
+
+```yaml
+title:
+  base_font_size: 28                # Base font size in points (titles default larger than captions)
+  font_family: "DejaVuSans"         # Font family name
+  text_color: "#000000"             # Text color (hex)
+  align: center                     # left, center, or right - alignment within the title's slot
+  text_background_enabled: true     # Enable semi-transparent background for readability
+  text_background_color: "#FFFFFF"  # Background color (hex)
+  text_background_opacity: 85       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_padding: 8                   # Padding around text in pixels
+```
+
+Unlike captions (which are positioned per-layout-slot via each template's `text:` block), a title's box is simply its matched layout slot's full `position`/`size`, and the text is vertically centered within it.
+
+### Example with Multiple Labels
+
+```yaml
+photos: ./vacation-photos/
+output:
+  size: A4
+  format: pdf
+  filename: vacation-with-captions.pdf
+layout:
+  photos_per_page: 2
+theme: clean
+text_labels:
+  - timestamp: "2024-06-15T08:00:00"
+    text: "# Day 1: Arrival\nChecked into our hotel"
+  - timestamp: "2024-06-15T12:30:00"
+    text: "Lunch at the *best* local restaurant"
+  - timestamp: "2024-06-15T18:00:00"
+    text: "**Sunset view** from the beach"
+  - timestamp: "2024-06-16T10:00:00"
+    text: "## Day 2\nExploring the old town"
+```
+
 ## Output Formats
 
 - **PDF**: Single file with all pages (ideal for printing)

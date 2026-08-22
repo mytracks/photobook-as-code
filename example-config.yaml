@@ -14,7 +14,7 @@ output:
   format: pdf
   
   # Output filename (optional - defaults to config filename)
-  filename: my-photobook.pdf
+  filename: /mnt/downloads/my-photobook.pdf
   
   # Output directory (optional - defaults to current directory)
   # directory: ./output/
@@ -23,7 +23,7 @@ output:
 # Specify EITHER photos_per_page OR pages (not both)
 layout:
   # Fixed number of photos per page
-  photos_per_page: 4
+  photos_per_page: 3
   
   # OR: Fixed total number of pages
   # pages: 8
@@ -34,4 +34,19 @@ layout:
 # Theme selection
 # Available: clean, classic, modern
 # Or path to custom theme file
-theme: clean
+theme: clean2
+
+text_labels:
+  # 'title' entries get their own page slot (like a photo) instead of being
+  # overlaid on the nearest photo - use them for section/chapter headings.
+  - timestamp: "2026-04-30T10:00:00"
+    title: |
+      # **Hamburg**
+
+      30. April 2026
+  - timestamp: "2026-04-30T12:23:00"
+    text: "## Ladepause"
+  - timestamp: "2026-04-30T14:02:00"
+    text: "Es geht los"
+  - timestamp: "2026-04-30T14:04:00"
+    text: "**Hamburger** Spendenparlament"
