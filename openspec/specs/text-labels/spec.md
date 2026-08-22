@@ -23,6 +23,14 @@ The system SHALL parse text label entries containing a timestamp and either `tex
 - **WHEN** a `text` or `title` entry contains line breaks
 - **THEN** system preserves line breaks in parsed content
 
+#### Scenario: Interior blank line preserved
+- **WHEN** a `text` or `title` entry contains a blank line between two non-blank lines
+- **THEN** system preserves that blank line in parsed content
+
+#### Scenario: Leading and trailing blank lines trimmed
+- **WHEN** a `text` or `title` entry's content has one or more blank lines at the very start or end (for example, from a YAML `|` block scalar's trailing newline, or a blank line typed immediately after `text: |`/`title: |`)
+- **THEN** system trims those leading and trailing blank lines before parsing, so they produce no rendered content or spacing
+
 #### Scenario: ISO 8601 timestamp format
 - **WHEN** text label uses ISO 8601 timestamp (e.g., "2026-06-15T14:30:00")
 - **THEN** system parses timestamp correctly
@@ -135,6 +143,17 @@ The system SHALL provide text label content and formatting information to the re
 #### Scenario: No text labels for page
 - **WHEN** page has no associated text labels
 - **THEN** system returns empty list (no error)
+
+### Requirement: Render blank lines with vertical spacing
+The system SHALL render an interior blank line in `text` or `title` content as vertical spacing equal to one normal (non-heading) line of that content's base font size, rather than an imperceptible gap.
+
+#### Scenario: Single blank line between content lines
+- **WHEN** `text` or `title` content contains one blank line between two non-blank lines
+- **THEN** the rendered output shows a vertical gap between those lines approximately equal to one line of normal text height
+
+#### Scenario: Multiple consecutive blank lines
+- **WHEN** `text` or `title` content contains two or more consecutive blank lines between non-blank lines
+- **THEN** the rendered vertical gap is the sum of one line height per blank line (gaps stack additively)
 
 ### Requirement: Empty text content renders nothing
 The system SHALL render no visual output - neither text glyphs nor a background - for a `text`-field text label whose content is an empty string or parses to zero content lines.
