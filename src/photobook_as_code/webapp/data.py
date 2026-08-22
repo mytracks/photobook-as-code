@@ -42,6 +42,33 @@ class EditorData:
         _, label = self.associations[index]
         return label
 
+    def display_date(self, index: int) -> str:
+        """
+        The photo's capture date and time, formatted with weekday (e.g.
+        "Saturday, June 14, 2025 · 09:00"), or its filename when no EXIF
+        capture date is known - showing a real but unverified
+        filesystem date as if it were the capture date would be
+        misleading.
+        """
+        photo = self.photo_at(index)
+        if photo.date_taken is None:
+            return photo.filename
+        date = photo.date_taken
+        return f"{date.strftime('%A, %B')} {date.day}, {date.year} · {date.strftime('%H:%M')}"
+
+    def is_new_day(self, index: int) -> bool:
+        """
+        Whether this photo's date differs from the previously displayed
+        photo's date. Uses each photo's best-available date (falling back
+        to file_modified) so this stays computable even when display_date
+        falls back to showing a filename.
+        """
+        if index == 0:
+            return True
+        current = self.photo_at(index).sort_date.date()
+        previous = self.photo_at(index - 1).sort_date.date()
+        return current != previous
+
 
 def load_editor_data(config_path: Path) -> EditorData:
     """

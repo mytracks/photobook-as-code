@@ -42,6 +42,10 @@ def create_app(config_path: Path) -> Flask:
             text=data.text_for(index),
             has_prev=index > 0,
             has_next=index < data.count - 1,
+            date_display=data.display_date(index),
+            is_new_day=data.is_new_day(index),
+            photo_width=photo.width,
+            photo_height=photo.height,
         )
 
     @app.get("/photos/<int:index>/image")

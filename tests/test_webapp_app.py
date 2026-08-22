@@ -13,7 +13,9 @@ from photobook_as_code.webapp.app import create_app
 def _make_photos_dir(tmp_path: Path) -> Path:
     photos_dir = tmp_path / "photos"
     photos_dir.mkdir()
-    Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "a.jpg")
+    exif = Image.Exif()
+    exif[36867] = "2025:06:14 10:00:00"  # DateTimeOriginal
+    Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "a.jpg", exif=exif.tobytes())
     Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "b.jpg")
     return photos_dir
 
@@ -57,7 +59,7 @@ class TestNavigation:
         body = response.get_data(as_text=True)
         assert "a.jpg" in body
         assert "existing caption for a" in body
-        assert 'id="next-link"' in body
+        assert 'id="next-zone"' in body
 
     def test_view_second_photo_shows_empty_text(self, tmp_path):
         client, _ = make_client(tmp_path)
@@ -69,6 +71,16 @@ class TestNavigation:
         client, _ = make_client(tmp_path)
         assert client.get("/photos/99").status_code == 404
         assert client.get("/photos/-1").status_code == 404
+
+    def test_photo_with_exif_date_shows_formatted_date(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        body = client.get("/photos/0").get_data(as_text=True)
+        assert "Saturday, June 14, 2025 · 10:00" in body
+
+    def test_photo_without_exif_date_shows_filename_instead(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        body = client.get("/photos/1").get_data(as_text=True)
+        assert "b.jpg" in body
 
 
 class TestPhotoImage:

@@ -13,26 +13,39 @@
   </header>
 
   <main>
-    <img class="photo" src="{{ url_for('photo_image', index=index) }}" alt="{{ filename }}">
+    <div class="date-header">
+      <span class="date-display">{{ date_display }}</span>
+      {% if is_new_day %}
+        <span class="new-day-badge" title="First photo of a new day">
+          <span class="new-day-icon" aria-hidden="true">🌅</span> New day
+        </span>
+      {% endif %}
+    </div>
+
+    <div class="photo-frame">
+      <img class="photo" src="{{ url_for('photo_image', index=index) }}" alt="{{ filename }}"
+        width="{{ photo_width }}" height="{{ photo_height }}"
+        style="aspect-ratio: {{ photo_width }} / {{ photo_height }};">
+
+      {% if has_prev %}
+        <a class="nav-zone nav-zone-left" id="prev-zone"
+          href="{{ url_for('view_photo', index=index - 1) }}" aria-label="Previous photo">
+          <span class="nav-zone-chevron" aria-hidden="true">&lsaquo;</span>
+        </a>
+      {% endif %}
+
+      {% if has_next %}
+        <a class="nav-zone nav-zone-right" id="next-zone"
+          href="{{ url_for('view_photo', index=index + 1) }}" aria-label="Next photo">
+          <span class="nav-zone-chevron" aria-hidden="true">&rsaquo;</span>
+        </a>
+      {% endif %}
+    </div>
 
     <textarea id="text-field" spellcheck="true"
       placeholder="Write this photo's caption in Markdown&hellip;">{{ text }}</textarea>
     <span id="save-status" class="save-status" aria-live="polite"></span>
   </main>
-
-  <nav>
-    {% if has_prev %}
-      <a class="nav-button" id="prev-link" href="{{ url_for('view_photo', index=index - 1) }}">&larr; Previous</a>
-    {% else %}
-      <span class="nav-button" id="prev-link" aria-disabled="true">&larr; Previous</span>
-    {% endif %}
-
-    {% if has_next %}
-      <a class="nav-button" id="next-link" href="{{ url_for('view_photo', index=index + 1) }}">Next &rarr;</a>
-    {% else %}
-      <span class="nav-button" id="next-link" aria-disabled="true">Next &rarr;</span>
-    {% endif %}
-  </nav>
 
   <script src="{{ url_for('static', filename='editor.js') }}" data-index="{{ index }}"></script>
 </body>

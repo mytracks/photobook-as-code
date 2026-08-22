@@ -1,13 +1,22 @@
 (function () {
   "use strict";
 
+  var FOCUS_CAPTION_FLAG = "photobook-editor-focus-caption";
+
   var textarea = document.getElementById("text-field");
   var status = document.getElementById("save-status");
-  var prevLink = document.getElementById("prev-link");
-  var nextLink = document.getElementById("next-link");
+  var prevZone = document.getElementById("prev-zone");
+  var nextZone = document.getElementById("next-zone");
   var index = parseInt(document.currentScript.dataset.index, 10);
 
   var savedText = textarea.value;
+
+  if (sessionStorage.getItem(FOCUS_CAPTION_FLAG)) {
+    sessionStorage.removeItem(FOCUS_CAPTION_FLAG);
+    textarea.focus();
+    var end = textarea.value.length;
+    textarea.setSelectionRange(end, end);
+  }
 
   function setStatus(text) {
     status.textContent = text;
@@ -41,40 +50,43 @@
     setStatus("");
   });
 
-  function isEnabled(link) {
-    return link && link.tagName === "A" && link.getAttribute("aria-disabled") !== "true";
-  }
-
-  function navigate(link) {
-    if (!isEnabled(link)) {
+  function navigate(zone) {
+    if (!zone) {
       return;
     }
     save().then(function () {
-      window.location.href = link.href;
+      window.location.href = zone.href;
     });
   }
 
-  if (prevLink) {
-    prevLink.addEventListener("click", function (event) {
+  if (prevZone) {
+    prevZone.addEventListener("click", function (event) {
       event.preventDefault();
-      navigate(prevLink);
+      navigate(prevZone);
     });
   }
-  if (nextLink) {
-    nextLink.addEventListener("click", function (event) {
+  if (nextZone) {
+    nextZone.addEventListener("click", function (event) {
       event.preventDefault();
-      navigate(nextLink);
+      navigate(nextZone);
     });
   }
 
   document.addEventListener("keydown", function (event) {
-    if (document.activeElement === textarea) {
+    var withModifier = event.metaKey || event.ctrlKey;
+    var focusedInCaption = document.activeElement === textarea;
+
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
       return;
     }
-    if (event.key === "ArrowLeft") {
-      navigate(prevLink);
-    } else if (event.key === "ArrowRight") {
-      navigate(nextLink);
+    if (!withModifier && focusedInCaption) {
+      return;
     }
+
+    event.preventDefault();
+    if (withModifier && focusedInCaption) {
+      sessionStorage.setItem(FOCUS_CAPTION_FLAG, "1");
+    }
+    navigate(event.key === "ArrowLeft" ? prevZone : nextZone);
   });
 })();
