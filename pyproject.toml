@@ -30,6 +30,7 @@ dependencies = [
     "PyYAML>=6.0.0",
     "Flask>=3.0.0",
     "ruamel.yaml>=0.18.0",
+    "pikepdf>=9.0.0",
 ]
 
 [project.optional-dependencies]

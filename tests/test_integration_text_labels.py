@@ -358,7 +358,11 @@ text_labels:
         assert len(output_files) == 1
         assert Path(output_files[0]).exists()
         assert Path(output_files[0]).stat().st_size > 0
-    
+
+        import pikepdf
+        with pikepdf.open(output_files[0]) as pdf:
+            assert len(pdf.pages) == distribution.total_pages
+
     def test_png_output_with_text(self, tmp_path):
         """Test PNG generation with text labels."""
         from src.photobook_as_code.output import generate_output
