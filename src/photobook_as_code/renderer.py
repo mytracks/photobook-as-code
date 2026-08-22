@@ -353,6 +353,11 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
     # Parse markdown
     parsed_lines = parse_markdown_text(text_label.text)
 
+    # Empty/blank content (e.g. an unfilled stub) renders nothing at all -
+    # no text, no background box.
+    if not parsed_lines:
+        return
+
     # Get theme text styling
     base_font_size = theme.text.base_font_size
     font_family = theme.text.font_family

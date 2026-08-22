@@ -228,5 +228,53 @@ def collect_photos(directory: Path, order: str = "alphabetical",
             f"below recommended minimum ({MIN_RECOMMENDED_WIDTH}x{MIN_RECOMMENDED_HEIGHT}). "
             f"Print quality may be affected."
         )
-    
+
     return photos
+
+
+def group_photos_by_timestamp(photos: List[PhotoMetadata]) -> List[tuple[datetime, List[str]]]:
+    """
+    Group photos by identical timestamp, in chronological order.
+
+    Args:
+        photos: Photos to group, in any order
+
+    Returns:
+        List of (timestamp, filenames) tuples, one per distinct timestamp
+        among the given photos, sorted chronologically. Filenames within a
+        group are in the input list's relative order.
+    """
+    sorted_photos = sorted(photos, key=lambda p: p.sort_date)
+
+    groups: List[tuple[datetime, List[str]]] = []
+    for photo in sorted_photos:
+        if groups and groups[-1][0] == photo.sort_date:
+            groups[-1][1].append(photo.filename)
+        else:
+            groups.append((photo.sort_date, [photo.filename]))
+
+    return groups
+
+
+def format_text_label_stubs(photos: List[PhotoMetadata]) -> str:
+    """
+    Format photos as an empty `text_labels` YAML stub block, one entry per
+    distinct timestamp among the photos, ready to paste into a
+    configuration file's `text_labels` section.
+
+    Args:
+        photos: Photos to extract timestamps from
+
+    Returns:
+        YAML text block, e.g.:
+            text_labels:
+              - timestamp: "2026-04-30T09:12:03"  # IMG_0001.jpg
+                text: ""
+    """
+    lines = ["text_labels:"]
+    for timestamp, filenames in group_photos_by_timestamp(photos):
+        comment = ", ".join(filenames)
+        lines.append(f'  - timestamp: "{timestamp.isoformat()}"  # {comment}')
+        lines.append('    text: ""')
+
+    return "\n".join(lines) + "\n"

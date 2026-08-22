@@ -12,7 +12,7 @@ import click
 
 from . import __version__
 from .config import load_config, validate_photos_path, ConfigurationError
-from .photos import collect_photos, PhotoCollectionError
+from .photos import collect_photos, format_text_label_stubs, PhotoCollectionError
 from .themes import load_theme, ThemeError
 from .layout import (
     distribute_photos, LayoutError
@@ -51,17 +51,32 @@ def setup_logging(verbose: bool = False):
     is_flag=True,
     help='Enable verbose output'
 )
+@click.option(
+    '--extract-labels',
+    is_flag=True,
+    help='Print an empty text_labels YAML stub for every photo timestamp to '
+         'stdout, then exit without generating a photobook. Ignores the '
+         "config's existing text_labels and any --output option; photos "
+         'sharing an identical timestamp collapse into one stub entry, '
+         'annotated with all their filenames.'
+)
 @click.version_option(version=__version__, prog_name='photobook')
-def main(config: Path, output: Optional[Path], verbose: bool):
+def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bool):
     """
     Generate photobook layouts from YAML configuration.
-    
+
     Takes photos from a directory, arranges them in a grid layout,
     and outputs print-ready PDF or image files.
-    
+
     Example:
-    
+
         photobook --config my-album.yaml
+
+    Use --extract-labels to instead print an empty text_labels stub for
+    every photo timestamp (one per distinct timestamp), for pasting into
+    the config's text_labels section:
+
+        photobook --config my-album.yaml --extract-labels
     """
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
@@ -73,20 +88,27 @@ def main(config: Path, output: Optional[Path], verbose: bool):
     
     try:
         # Stage 1: Load and validate configuration
-        click.echo("📖 Loading configuration...")
+        if not extract_labels:
+            click.echo("📖 Loading configuration...")
         pb_config = load_config(config)
         validate_photos_path(pb_config)
-        
+
         # Stage 2: Collect photos
-        click.echo("📷 Collecting photos...")
+        if not extract_labels:
+            click.echo("📷 Collecting photos...")
         photos_path = pb_config.resolve_photos_path()
         photos = collect_photos(
             photos_path,
             order=pb_config.layout.order,
             recursive=False
         )
-        click.echo(f"   Found {len(photos)} photos")
-        
+        if not extract_labels:
+            click.echo(f"   Found {len(photos)} photos")
+
+        if extract_labels:
+            click.echo(format_text_label_stubs(photos), nl=False)
+            return
+
         # Stage 3: Load theme
         click.echo(f"🎨 Loading theme '{pb_config.theme}'...")
         theme = load_theme(pb_config.theme)

@@ -122,6 +122,32 @@ Text labels use timestamps to match with photos. Two formats are supported:
 
 The system automatically matches each text label to the photo with the closest timestamp based on EXIF data or file modification time.
 
+### Discovering Photo Timestamps
+
+Writing `text_labels` by hand requires knowing each photo's timestamp. Rather than inspecting EXIF data manually, run the CLI with `--extract-labels` to print an empty stub for every photo timestamp in the configured photo directory:
+
+```bash
+photobook --config my-photobook.yaml --extract-labels
+```
+
+This prints a ready-to-paste `text_labels` block to stdout, one entry per distinct timestamp, with an empty `text` field and the source filename(s) as a trailing comment:
+
+```yaml
+text_labels:
+  - timestamp: "2024-06-15T10:30:00"  # IMG_0001.jpg
+    text: ""
+  - timestamp: "2024-06-15T14:00:00"  # IMG_0002.jpg, IMG_0003.jpg
+    text: ""
+```
+
+A few things to know about this mode:
+
+- It **ignores** any `text_labels` already in the config - it always prints a stub for every photo, regardless of what's already been written. Merge the output into your config by hand.
+- Photos sharing the exact same timestamp collapse into a single stub entry, listing all their filenames, since they'd bind to the same page slot anyway.
+- Entries are always printed in chronological order, regardless of the config's `layout.order` setting.
+- No photobook is generated in this mode - `--extract-labels` exits immediately after printing, and any `--output` option is ignored.
+- An empty `text: ""` entry is safe to leave in your config - it renders nothing (no text, no background) until you fill it in.
+
 ### Markdown Formatting
 
 Text labels support a subset of markdown for styling:

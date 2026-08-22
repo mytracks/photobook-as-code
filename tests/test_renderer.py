@@ -169,7 +169,7 @@ def test_renderer_with_photo_margin(tmp_path):
     assert r > 250 and g < 5 and b < 5, f"Expected red at (105, 105), got {r},{g},{b}"
 
 
-def _render_text_box(y, photo_pos_y, photo_height, page_height=1000, photo_pos_x=0, photo_width=200):
+def _render_text_box(y, photo_pos_y, photo_height, page_height=1000, photo_pos_x=0, photo_width=200, text="Hi"):
     """Render a text label with an opaque background and return the resulting image.
 
     Uses an explicit `text.height` (20% of page_height = 200px) so box_height is
@@ -197,7 +197,7 @@ def _render_text_box(y, photo_pos_y, photo_height, page_height=1000, photo_pos_x
             text_padding=0,
         ),
     )
-    label = TextLabel(datetime.now(), "Hi")
+    label = TextLabel(datetime.now(), text)
     text_pos = TextPosition(x=0, y=y, width=100, height=20)
     render_text_label(draw, label, text_pos, page_width=200, page_height=page_height,
                        photo_pos_x=photo_pos_x, photo_pos_y=photo_pos_y,
@@ -232,6 +232,27 @@ def test_text_label_taller_than_photo_clamps_to_top_aligned():
     img = _render_text_box(y=100, photo_pos_y=300, photo_height=100)
     assert img.getpixel((195, 299)) == (255, 255, 255)  # above box: background
     assert img.getpixel((195, 305)) == (0, 0, 0)  # inside box, top-aligned to photo_pos_y
+
+
+def test_text_label_empty_text_renders_nothing():
+    # An empty text: "" stub must draw neither text nor a background box,
+    # even though the theme has text_background_enabled=True.
+    img = _render_text_box(y=0, photo_pos_y=300, photo_height=400, text="")
+    assert img.getextrema() == ((255, 255), (255, 255), (255, 255))
+
+
+def test_text_label_blank_only_text_renders_nothing():
+    # Content that parses to zero lines (only blank lines) is treated the
+    # same as a fully empty string.
+    img = _render_text_box(y=0, photo_pos_y=300, photo_height=400, text="\n\n\n")
+    assert img.getextrema() == ((255, 255), (255, 255), (255, 255))
+
+
+def test_text_label_non_empty_text_still_renders():
+    # Regression guard: the empty-content guard must not affect normal text.
+    img = _render_text_box(y=0, photo_pos_y=300, photo_height=400, text="Hi")
+    assert img.getpixel((195, 299)) == (255, 255, 255)  # above box: background
+    assert img.getpixel((195, 305)) == (0, 0, 0)  # inside box
 
 
 def _render_text_box_x(x, photo_pos_x, photo_width, page_width=1000, dock=None):
