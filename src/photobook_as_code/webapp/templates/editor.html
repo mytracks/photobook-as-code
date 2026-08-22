@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ filename }} - Photobook Text Editor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <span class="position">{{ index + 1 }} / {{ total }}</span>
+    <span class="filename">{{ filename }}</span>
+  </header>
+
+  <main>
+    <img class="photo" src="{{ url_for('photo_image', index=index) }}" alt="{{ filename }}">
+
+    <textarea id="text-field" spellcheck="true"
+      placeholder="Write this photo's caption in Markdown&hellip;">{{ text }}</textarea>
+    <span id="save-status" class="save-status" aria-live="polite"></span>
+  </main>
+
+  <nav>
+    {% if has_prev %}
+      <a class="nav-button" id="prev-link" href="{{ url_for('view_photo', index=index - 1) }}">&larr; Previous</a>
+    {% else %}
+      <span class="nav-button" id="prev-link" aria-disabled="true">&larr; Previous</span>
+    {% endif %}
+
+    {% if has_next %}
+      <a class="nav-button" id="next-link" href="{{ url_for('view_photo', index=index + 1) }}">Next &rarr;</a>
+    {% else %}
+      <span class="nav-button" id="next-link" aria-disabled="true">Next &rarr;</span>
+    {% endif %}
+  </nav>
+
+  <script src="{{ url_for('static', filename='editor.js') }}" data-index="{{ index }}"></script>
+</body>
+</html>
