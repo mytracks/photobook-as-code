@@ -4,15 +4,25 @@ Output file generation (PDF and images).
 
 from pathlib import Path
 from typing import Iterator, List
+import gc
+import io
 import logging
+import shutil
+import tempfile
 from datetime import datetime
 
+import pikepdf
 from PIL import Image
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from reportlab import rl_config
 
 logger = logging.getLogger(__name__)
+
+# ASCII85 is a transport encoding with no compression/quality benefit; disabling
+# it cuts ~25% off every stream reportlab retains in memory while building a PDF.
+rl_config.useA85 = 0
 
 
 class OutputError(Exception):
@@ -22,13 +32,19 @@ class OutputError(Exception):
 
 def generate_pdf(pages: Iterator[Image.Image], output_path: Path,
                  page_width_pixels: int, page_height_pixels: int,
-                 total_pages: int, dpi: int = 300) -> None:
+                 total_pages: int, dpi: int = 300, quality: int = 95) -> None:
     """
     Generate PDF from rendered page images using streaming approach.
-    
-    Processes pages one at a time to minimize memory usage. The pages iterator
-    can only be consumed once.
-    
+
+    Each page is rendered onto its own single-page PDF with a fresh
+    reportlab Canvas, immediately saved to a temp file, and released -
+    reportlab's Canvas/PDFDocument keeps every embedded image alive in
+    memory until save(), so a single long-lived Canvas would retain every
+    page's image for the whole run. Finalizing one page at a time bounds
+    peak memory to roughly one page, regardless of total page count. The
+    interim single-page PDFs are merged into the final output with pikepdf
+    once every page has been rendered.
+
     Args:
         pages: Iterator of page images (yields pages one at a time)
         output_path: Path for output PDF file
@@ -36,7 +52,8 @@ def generate_pdf(pages: Iterator[Image.Image], output_path: Path,
         page_height_pixels: Page height in pixels
         total_pages: Expected number of pages for progress reporting
         dpi: Dots per inch for conversion
-        
+        quality: JPEG quality used to embed each page's image (1-100)
+
     Raises:
         OutputError: If PDF generation fails
     """
@@ -44,41 +61,66 @@ def generate_pdf(pages: Iterator[Image.Image], output_path: Path,
         # Convert pixels to points (PDF units)
         page_width_pts = (page_width_pixels / dpi) * 72
         page_height_pts = (page_height_pixels / dpi) * 72
-        
-        # Create PDF canvas
-        c = canvas.Canvas(str(output_path), pagesize=(page_width_pts, page_height_pts))
-        
+
         logger.info(f"Generating PDF with {total_pages} pages...")
-        
-        for i, page in enumerate(pages, start=1):
-            logger.debug(f"Adding page {i}/{total_pages} to PDF")
-            
-            # Save page image to temporary bytes
-            import io
-            img_buffer = io.BytesIO()
-            page.save(img_buffer, format='PNG')
-            img_buffer.seek(0)
-            
-            # Create ImageReader for ReportLab
-            img_reader = ImageReader(img_buffer)
-            
-            # Draw image on PDF page
-            c.drawImage(
-                img_reader,
-                0, 0,
-                width=page_width_pts,
-                height=page_height_pts,
-                preserveAspectRatio=True
-            )
-            
-            # Add new page for next image (except on last page)
-            if i < total_pages:
-                c.showPage()
-        
-        # Save PDF
-        c.save()
-        logger.info(f"PDF saved to {output_path}")
-        
+
+        temp_dir = Path(tempfile.mkdtemp(prefix="photobook_pdf_"))
+        try:
+            interim_paths = []
+
+            for i, page in enumerate(pages, start=1):
+                logger.debug(f"Rendering page {i}/{total_pages} to interim PDF")
+
+                # Encode as JPEG rather than PNG: reportlab can embed JPEG
+                # bytes almost verbatim (DCTDecode passthrough), instead of
+                # decoding back to raw pixels and re-compressing them, which
+                # is both slower and far more memory-hungry per page.
+                img_buffer = io.BytesIO()
+                page.save(img_buffer, format='JPEG', quality=quality)
+                img_buffer.seek(0)
+                img_reader = ImageReader(img_buffer)
+
+                interim_path = temp_dir / f"page_{i:05d}.pdf"
+                page_canvas = canvas.Canvas(str(interim_path), pagesize=(page_width_pts, page_height_pts))
+                page_canvas.drawImage(
+                    img_reader,
+                    0, 0,
+                    width=page_width_pts,
+                    height=page_height_pts,
+                    preserveAspectRatio=True
+                )
+                page_canvas.save()
+
+                interim_paths.append(interim_path)
+
+                # reportlab's Canvas/PDFDocument hold internal back-references
+                # to one another, so the object graph behind each finalized
+                # page is a reference cycle, not just a chain CPython's
+                # refcounting can free immediately. Left to the generational
+                # GC's normal thresholds, these cycles - individually modest
+                # in object count but each anchoring several MB of image
+                # stream data - accumulate faster than automatic collection
+                # keeps up with, and memory grows without bound over a large
+                # book. An explicit collect per page keeps peak memory flat.
+                del page_canvas
+                gc.collect()
+
+            logger.info("Merging interim pages into final PDF...")
+            tmp_output_path = output_path.parent / f"{output_path.name}.tmp"
+            with pikepdf.Pdf.new() as merged:
+                for interim_path in interim_paths:
+                    with pikepdf.open(interim_path) as interim_pdf:
+                        merged.pages.extend(interim_pdf.pages)
+                merged.save(tmp_output_path)
+
+            # Only replace the final output path once the merge over every
+            # interim page has fully succeeded, so a failure never leaves a
+            # partial/corrupt file at output_path.
+            tmp_output_path.replace(output_path)
+            logger.info(f"PDF saved to {output_path}")
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
     except Exception as e:
         raise OutputError(f"Failed to generate PDF: {e}")
 
@@ -203,7 +245,7 @@ def generate_output(pages: Iterator[Image.Image], output_format: str,
     output_dir.mkdir(parents=True, exist_ok=True)
     
     if output_format == 'pdf':
-        generate_pdf(pages, output_path, page_width, page_height, total_pages, dpi)
+        generate_pdf(pages, output_path, page_width, page_height, total_pages, dpi, quality)
         return [output_path]
     
     elif output_format == 'png':

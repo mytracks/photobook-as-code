@@ -113,6 +113,10 @@ The system SHALL generate output files with reasonable file sizes while maintain
 - **WHEN** user specifies quality level
 - **THEN** system adjusts compression accordingly
 
+#### Scenario: PDF page image compression
+- **WHEN** a rendered page is embedded into PDF output
+- **THEN** system encodes the page as JPEG at the configured output quality level (`output.quality`, default 95) rather than embedding it losslessly
+
 ### Requirement: Support output directory specification
 The system SHALL allow users to specify where output files are saved.
 
