@@ -10,7 +10,7 @@ import click
 from ..config import ConfigurationError
 from ..photos import PhotoCollectionError
 from .app import create_app
-from .data import load_editor_data
+from .data import PhotoDirectoryCache, load_editor_data
 
 
 @click.command()
@@ -40,8 +40,9 @@ def main(config: Path, host: str, port: int):
 
         photobook-edit-labels --config my-album.yaml
     """
+    photo_cache = PhotoDirectoryCache()
     try:
-        data = load_editor_data(config)
+        data = load_editor_data(config, photo_cache=photo_cache)
     except ConfigurationError as e:
         click.secho(f"❌ Configuration error: {e}", fg="red", err=True)
         sys.exit(1)
@@ -53,7 +54,7 @@ def main(config: Path, host: str, port: int):
     click.echo(f"📷 {data.count} photos found")
     click.echo(f"🌐 Open http://{host}:{port}/ in your browser")
 
-    app = create_app(config)
+    app = create_app(config, photo_cache=photo_cache)
     app.run(host=host, port=port)
 
 

@@ -6,11 +6,30 @@ config/photos/text_labels modules.
 """
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..config import PhotobookConfig, load_config, validate_photos_path
 from ..photos import PhotoMetadata, collect_photos
 from ..text_labels import TextLabel, associate_text_labels_with_photos
+
+
+class PhotoDirectoryCache:
+    """
+    Caches the expensive photo-directory scan (collect_photos, which opens
+    every photo file to read EXIF/dimensions) across requests for one
+    running editor session, keyed by (photos_dir, order) so a changed
+    layout.order naturally misses the cache instead of needing explicit
+    invalidation.
+    """
+
+    def __init__(self):
+        self._cache: Dict[Tuple[str, str], List[PhotoMetadata]] = {}
+
+    def get(self, photos_dir: Path, order: str) -> List[PhotoMetadata]:
+        key = (str(photos_dir), order)
+        if key not in self._cache:
+            self._cache[key] = collect_photos(photos_dir, order=order, recursive=False)
+        return self._cache[key]
 
 
 class EditorData:
@@ -70,15 +89,24 @@ class EditorData:
         return current != previous
 
 
-def load_editor_data(config_path: Path) -> EditorData:
+def load_editor_data(
+    config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = None
+) -> EditorData:
     """
-    Load the configuration and photo list fresh from disk, in the same
-    order and with the same photo/text associations the CLI render
-    pipeline would use for this configuration.
+    Load the configuration fresh from disk (so hand-edited text_labels are
+    always reflected), in the same order and with the same photo/text
+    associations the CLI render pipeline would use for this configuration.
+
+    The photo directory listing itself - expensive to compute, since it
+    opens every photo file - is re-scanned fresh unless a `photo_cache` is
+    given, in which case it's scanned once and reused.
     """
     config = load_config(config_path)
     validate_photos_path(config)
     photos_dir = config.resolve_photos_path()
-    photos = collect_photos(photos_dir, order=config.layout.order, recursive=False)
+    if photo_cache is not None:
+        photos = photo_cache.get(photos_dir, config.layout.order)
+    else:
+        photos = collect_photos(photos_dir, order=config.layout.order, recursive=False)
     associations = associate_text_labels_with_photos(config.text_labels, photos)
     return EditorData(config=config, photos=photos, associations=associations)

@@ -10,7 +10,21 @@ from pathlib import Path
 
 from PIL import Image
 
-from photobook_as_code.webapp.data import load_editor_data
+import photobook_as_code.webapp.data as data_module
+from photobook_as_code.webapp.data import PhotoDirectoryCache, load_editor_data
+
+
+def _counting_collect_photos(monkeypatch):
+    """Wraps data_module.collect_photos to count real (non-cached) scans."""
+    original = data_module.collect_photos
+    calls = {"count": 0}
+
+    def wrapper(*args, **kwargs):
+        calls["count"] += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(data_module, "collect_photos", wrapper)
+    return calls
 
 
 def _make_photo_file(path: Path, mtime_offset_seconds: float) -> None:
@@ -158,3 +172,50 @@ class TestEditorDataIsNewDay:
         # computed from the best-available (file_modified) date
         assert data.display_date(1) == "z_no_exif.jpg"
         assert data.is_new_day(1) is True
+
+
+class TestPhotoDirectoryCache:
+    def test_without_cache_each_call_rescans(self, tmp_path, monkeypatch):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+        calls = _counting_collect_photos(monkeypatch)
+
+        load_editor_data(config_path)
+        load_editor_data(config_path)
+
+        assert calls["count"] == 2
+
+    def test_with_shared_cache_scans_once(self, tmp_path, monkeypatch):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+        calls = _counting_collect_photos(monkeypatch)
+        cache = PhotoDirectoryCache()
+
+        first = load_editor_data(config_path, photo_cache=cache)
+        second = load_editor_data(config_path, photo_cache=cache)
+
+        assert calls["count"] == 1
+        assert [p.filename for p in first.photos] == [p.filename for p in second.photos]
+
+    def test_cache_scans_once_per_distinct_order(self, tmp_path, monkeypatch):
+        photos_dir = _make_photos_dir(tmp_path)
+        date_config_path = _write_config(tmp_path, photos_dir, order="date")
+        alpha_config_path = tmp_path / "alpha-config.yaml"
+        alpha_config_path.write_text(
+            f"photos: {photos_dir}\n"
+            "output:\n"
+            "  size: A4\n"
+            "layout:\n"
+            "  photos_per_page: 2\n"
+            "  order: alphabetical\n"
+            "theme: clean\n"
+        )
+        calls = _counting_collect_photos(monkeypatch)
+        cache = PhotoDirectoryCache()
+
+        load_editor_data(date_config_path, photo_cache=cache)
+        load_editor_data(date_config_path, photo_cache=cache)
+        load_editor_data(alpha_config_path, photo_cache=cache)
+        load_editor_data(alpha_config_path, photo_cache=cache)
+
+        assert calls["count"] == 2

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 
+import photobook_as_code.webapp.data as data_module
 from photobook_as_code.config import load_config
 from photobook_as_code.webapp.app import create_app
 
@@ -144,3 +145,22 @@ class TestSaveText:
         client, _ = make_client(tmp_path)
         response = client.post("/photos/99/text", json={"text": "x"})
         assert response.status_code == 404
+
+
+class TestPhotoDirectoryCaching:
+    def test_multiple_routes_share_one_photo_directory_scan(self, tmp_path, monkeypatch):
+        original = data_module.collect_photos
+        calls = {"count": 0}
+
+        def wrapper(*args, **kwargs):
+            calls["count"] += 1
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(data_module, "collect_photos", wrapper)
+
+        client, _ = make_client(tmp_path)
+        client.get("/photos/0")
+        client.get("/photos/0/image")
+        client.get("/photos/1")
+
+        assert calls["count"] == 1

@@ -21,11 +21,11 @@ text_labels:
   - timestamp: "2026-03-16T18:57:15"  # 2026-03-16 18-57-15.jpg
     text: 16. März 2026
   - timestamp: "2026-03-17T04:17:08"  # 2026-03-17 04-17-08.jpg
-    text: "Eine Nacht in Lichtenbroich am Düsseldorfer Flughafen"
+    text: "Eine Nacht in **Lichtenbroich** am Düsseldorfer **Flughafen**"
   - timestamp: "2026-03-17T04:17:26"  # 2026-03-17 04-17-26.jpg
-    text: "27. März - Morgens um vier"
+    text: "27. März 2026 - **Morgens um vier**"
   - timestamp: "2026-03-17T10:50:51"  # 2026-03-17 10-50-51.jpg
-    text: "Sevilla"
+    text: "**Sevilla**"
   - timestamp: "2026-03-17T10:53:26"  # 2026-03-17 10-53-26.jpg
     text: "**Setas de Sevilla** - Die Pilze von Sevilla"
   - timestamp: "2026-03-17T10:54:29"  # 2026-03-17 10-54-29.jpg
@@ -37,11 +37,11 @@ text_labels:
   - timestamp: "2026-03-17T11:11:17"  # 2026-03-17 11-11-17.jpg
     text: ""
   - timestamp: "2026-03-17T12:06:49"  # 2026-03-17 12-06-49.jpg
-    text: "Die Kathedrale"
+    text: "Die **Kathedrale**"
   - timestamp: "2026-03-17T12:08:20"  # 2026-03-17 12-08-20.jpg
     text: ""
   - timestamp: "2026-03-17T12:11:00"  # 2026-03-17 12-11-00.jpg
-    text: "La **Giralda**"
+    text: "**La Giralda** -  Der Turm der Kathedrale"
   - timestamp: "2026-03-17T12:20:37"  # 2026-03-17 12-20-37.jpg
     text: ""
   - timestamp: "2026-03-17T12:35:19"  # 2026-03-17 12-35-19.jpg
@@ -55,7 +55,7 @@ text_labels:
   - timestamp: "2026-03-17T13:26:09"  # 2026-03-17 13-26-09.jpg
     text: ""
   - timestamp: "2026-03-17T13:28:44"  # 2026-03-17 13-28-44.jpg
-    text: "Plaza de España"
+    text: "Plaza de **España**"
   - timestamp: "2026-03-17T13:28:54"  # 2026-03-17 13-28-54.jpg
     text: ""
   - timestamp: "2026-03-17T13:29:34"  # 2026-03-17 13-29-34.jpg
@@ -79,7 +79,7 @@ text_labels:
   - timestamp: "2026-03-17T13:49:34"  # 2026-03-17 13-49-34.jpg
     text: ""
   - timestamp: "2026-03-17T13:52:36"  # 2026-03-17 13-52-36.jpg
-    text: "Parque de María Luisa"
+    text: "Parque de **María Luisa**"
   - timestamp: "2026-03-17T13:58:01"  # 2026-03-17 13-58-01.jpg
     text: ""
   - timestamp: "2026-03-17T14:43:25"  # 2026-03-17 14-43-25.jpg
@@ -87,7 +87,7 @@ text_labels:
   - timestamp: "2026-03-17T19:20:53"  # 2026-03-17 19-20-53.jpg
     text: ""
   - timestamp: "2026-03-18T09:10:24"  # 2026-03-18 09-10-24.jpg
-    text: "18. März\nPlaza de **San Francisco**"
+    text: "18. März 2026\nPlaza de **San Francisco**"
   - timestamp: "2026-03-18T09:12:37"  # 2026-03-18 09-12-37.jpg
     text: ""
   - timestamp: "2026-03-18T09:13:19"  # 2026-03-18 09-13-19.jpg
@@ -103,7 +103,7 @@ text_labels:
   - timestamp: "2026-03-18T10:05:36"  # 2026-03-18 10-05-36.jpg
     text: ""
   - timestamp: "2026-03-18T10:12:11"  # 2026-03-18 10-12-11.jpg
-    text: "Unser Guide"
+    text: "Unser **Guide**"
   - timestamp: "2026-03-18T10:15:05"  # 2026-03-18 10-15-05.jpg
     text: ""
   - timestamp: "2026-03-18T10:17:15"  # 2026-03-18 10-17-15.jpg
@@ -341,7 +341,7 @@ text_labels:
   - timestamp: "2026-03-21T08:04:01"  # 2026-03-21 08-04-01.jpg
     text: ""
   - timestamp: "2026-03-21T10:16:58"  # 2026-03-21 10-16-58.jpg
-    text: ""
+    text: "**Jerez**"
   - timestamp: "2026-03-21T10:18:36"  # 2026-03-21 10-18-36.jpg
     text: ""
   - timestamp: "2026-03-21T10:19:09"  # 2026-03-21 10-19-09.jpg
@@ -359,7 +359,7 @@ text_labels:
   - timestamp: "2026-03-21T10:28:55"  # 2026-03-21 10-28-55.jpg
     text: ""
   - timestamp: "2026-03-21T10:31:02"  # 2026-03-21 10-31-02.jpg
-    text: ""
+    text: "Die Markthalle"
   - timestamp: "2026-03-21T10:32:10"  # 2026-03-21 10-32-10.jpg
     text: ""
   - timestamp: "2026-03-21T10:35:08"  # 2026-03-21 10-35-08.jpg
@@ -379,11 +379,11 @@ text_labels:
   - timestamp: "2026-03-21T10:56:58"  # 2026-03-21 10-56-58.jpg
     text: ""
   - timestamp: "2026-03-21T12:18:16"  # 2026-03-21 12-18-16.jpg
-    text: ""
+    text: "Die Brücke Richtung **Cádiz**"
   - timestamp: "2026-03-21T12:19:04"  # 2026-03-21 12-19-04.jpg
     text: ""
   - timestamp: "2026-03-21T12:34:24"  # 2026-03-21 12-34-24.jpg
-    text: ""
+    text: "**Cádiz**"
   - timestamp: "2026-03-21T12:38:32"  # 2026-03-21 12-38-32.jpg
     text: ""
   - timestamp: "2026-03-21T12:38:47"  # 2026-03-21 12-38-47.jpg
@@ -401,7 +401,7 @@ text_labels:
   - timestamp: "2026-03-21T13:34:53"  # 2026-03-21 13-34-53.jpg
     text: ""
   - timestamp: "2026-03-21T16:47:27"  # 2026-03-21 16-47-27.jpg
-    text: ""
+    text: "Der Strand von *La Barrosa**"
   - timestamp: "2026-03-21T16:47:50"  # 2026-03-21 16-47-50.jpg
     text: ""
   - timestamp: "2026-03-21T16:48:31"  # 2026-03-21 16-48-31.jpg
@@ -409,11 +409,11 @@ text_labels:
   - timestamp: "2026-03-21T19:48:04"  # 2026-03-21 19-48-04.jpg
     text: ""
   - timestamp: "2026-03-22T08:30:22"  # 2026-03-22 08-30-22.jpg
-    text: ""
+    text: "22. März 2026"
   - timestamp: "2026-03-22T09:28:13"  # 2026-03-22 09-28-13.jpg
-    text: ""
+    text: "Dirks Geburtstag 😀"
   - timestamp: "2026-03-22T10:32:42"  # 2026-03-22 10-32-42.jpg
-    text: ""
+    text: "**Vejer**"
   - timestamp: "2026-03-22T10:34:41"  # 2026-03-22 10-34-41.jpg
     text: ""
   - timestamp: "2026-03-22T10:36:20"  # 2026-03-22 10-36-20.jpg
@@ -431,9 +431,9 @@ text_labels:
   - timestamp: "2026-03-22T10:56:37"  # 2026-03-22 10-56-37.jpg
     text: ""
   - timestamp: "2026-03-22T11:30:40"  # 2026-03-22 11-30-40.jpg
-    text: ""
+    text: "Auf dem Weg nach **Tarifa**"
   - timestamp: "2026-03-22T12:01:09"  # 2026-03-22 12-01-09.jpg
-    text: ""
+    text: "**Tarifa**"
   - timestamp: "2026-03-22T12:10:14"  # 2026-03-22 12-10-14.jpg
     text: ""
   - timestamp: "2026-03-22T12:11:20"  # 2026-03-22 12-11-20.jpg
@@ -447,11 +447,11 @@ text_labels:
   - timestamp: "2026-03-22T13:05:40"  # 2026-03-22 13-05-40.jpg
     text: ""
   - timestamp: "2026-03-22T13:09:30"  # 2026-03-22 13-09-30.jpg
-    text: ""
+    text: "**Mittelmeer**"
   - timestamp: "2026-03-22T13:09:34"  # 2026-03-22 13-09-34.jpg
     text: ""
   - timestamp: "2026-03-22T13:09:51"  # 2026-03-22 13-09-51.jpg
-    text: ""
+    text: "**Atlantik**"
   - timestamp: "2026-03-22T13:10:47"  # 2026-03-22 13-10-47.jpg
     text: ""
   - timestamp: "2026-03-22T13:10:51"  # 2026-03-22 13-10-51.jpg
@@ -475,7 +475,7 @@ text_labels:
   - timestamp: "2026-03-22T13:25:22"  # 2026-03-22 13-25-22.jpg
     text: ""
   - timestamp: "2026-03-22T15:03:00"  # 2026-03-22 15-03-00.jpg
-    text: ""
+    text: "Zurück in **La Barrosa**"
   - timestamp: "2026-03-22T18:30:03"  # 2026-03-22 18-30-03.jpg
     text: ""
   - timestamp: "2026-03-22T18:30:09"  # 2026-03-22 18-30-09.jpg
@@ -485,9 +485,9 @@ text_labels:
   - timestamp: "2026-03-22T18:55:08"  # 2026-03-22 18-55-08.jpg
     text: ""
   - timestamp: "2026-03-23T09:24:21"  # 2026-03-23 09-24-21.jpg
-    text: ""
+    text: "23. März 2026"
   - timestamp: "2026-03-23T10:23:01"  # 2026-03-23 10-23-01.jpg
-    text: ""
+    text: "Radtour nach **Conil de la Frontera**"
   - timestamp: "2026-03-23T10:23:29"  # 2026-03-23 10-23-29.jpg
     text: ""
   - timestamp: "2026-03-23T10:26:51"  # 2026-03-23 10-26-51.jpg
@@ -535,19 +535,19 @@ text_labels:
   - timestamp: "2026-03-23T20:04:09"  # 2026-03-23 20-04-09.jpg
     text: ""
   - timestamp: "2026-03-24T09:57:00"  # 2026-03-24 09-57-00.jpg
-    text: ""
+    text: "24. März 2026"
   - timestamp: "2026-03-24T09:58:15"  # 2026-03-24 09-58-15.jpg
-    text: ""
+    text: "**Faro de Roche**"
   - timestamp: "2026-03-24T10:35:26"  # 2026-03-24 10-35-26.jpg
     text: ""
   - timestamp: "2026-03-24T10:35:35"  # 2026-03-24 10-35-35.jpg
     text: ""
   - timestamp: "2026-03-24T10:38:22"  # 2026-03-24 10-38-22.jpg
-    text: ""
+    text: "**Kap Trafalgar**"
   - timestamp: "2026-03-24T10:38:26"  # 2026-03-24 10-38-26.jpg
     text: ""
   - timestamp: "2026-03-24T16:56:43"  # 2026-03-24 16-56-43.jpg
-    text: ""
+    text: "Zurück in **La Barrosa**"
   - timestamp: "2026-03-24T16:56:48"  # 2026-03-24 16-56-48.jpg
     text: ""
   - timestamp: "2026-03-24T16:57:34"  # 2026-03-24 16-57-34.jpg
@@ -559,11 +559,11 @@ text_labels:
   - timestamp: "2026-03-24T16:58:35"  # 2026-03-24 16-58-35.jpg
     text: ""
   - timestamp: "2026-03-25T06:52:46"  # 2026-03-25 06-52-46.jpg
-    text: ""
+    text: "25. März 2026"
   - timestamp: "2026-03-25T06:53:04"  # 2026-03-25 06-53-04.jpg
     text: ""
   - timestamp: "2026-03-25T09:59:55"  # 2026-03-25 09-59-55.jpg
-    text: ""
+    text: "Warten auf den Abflug ..."
   - timestamp: "2026-03-25T10:09:57"  # 2026-03-25 10-09-57.jpg
     text: ""
   - timestamp: "2026-03-25T10:20:44"  # 2026-03-25 10-20-44.jpg
