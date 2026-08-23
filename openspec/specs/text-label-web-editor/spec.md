@@ -5,7 +5,7 @@ A browser-based editor that lets a user page through the photos of a single phot
 ## Requirements
 
 ### Requirement: Navigate photos in configured order
-The system SHALL let the user move forward and backward through the photos of the configured photo directory, one photo at a time, in the same order the photobook renderer would use for that configuration. The system SHALL provide full-height click zones and a keyboard shortcut for this navigation, both usable regardless of where the page's focus currently is.
+The system SHALL let the user move forward and backward through the photos of the configured photo directory, one photo at a time, in the same order the photobook renderer would use for that configuration. The system SHALL provide full-height click zones and a keyboard shortcut for this navigation, both usable regardless of where the page's focus currently is. The keyboard shortcut SHALL NOT intercept key combinations that carry native text-editing meaning inside a text field.
 
 #### Scenario: Sequential navigation
 - **WHEN** the user requests the next or previous photo
@@ -24,8 +24,16 @@ The system SHALL let the user move forward and backward through the photos of th
 - **THEN** the system navigates to the previous photo (left band) or next photo (right band), applying the same first/last boundary rule as other navigation
 
 #### Scenario: Keyboard shortcut navigates regardless of focus
-- **WHEN** the user presses Cmd+Left Arrow or Cmd+Right Arrow (or Ctrl+Left Arrow / Ctrl+Right Arrow on non-Mac platforms), including while the caption text field has focus
-- **THEN** the system navigates to the previous or next photo respectively, saving any pending caption edit first as it does for other navigation actions
+- **WHEN** the user presses Cmd+Enter or Ctrl+Enter (either modifier accepted on any platform), including while the caption text field has focus
+- **THEN** the system navigates to the next photo, saving any pending caption edit first as it does for other navigation actions
+
+#### Scenario: Keyboard shortcut navigates backward with Shift
+- **WHEN** the user presses Cmd+Shift+Enter or Ctrl+Shift+Enter, including while the caption text field has focus
+- **THEN** the system navigates to the previous photo, saving any pending caption edit first as it does for other navigation actions
+
+#### Scenario: Native text-editing shortcuts are not intercepted
+- **WHEN** the user presses Cmd+Left Arrow, Cmd+Right Arrow, Ctrl+Left Arrow, or Ctrl+Right Arrow (with or without Shift held) while the caption text field has focus
+- **THEN** the system does not navigate to a different photo, and the browser's native text-editing behavior for that combination (moving or extending the selection to the start/end of the line on macOS, or by word on Windows/Linux) is left to run unmodified
 
 ### Requirement: Edit and autosave text content for the current photo
 The system SHALL display an editable plain-text field containing the current photo's associated `text_labels` `text` content (empty if none exists), and SHALL save changes to that content without requiring an explicit save action.

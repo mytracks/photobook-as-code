@@ -76,17 +76,21 @@
     var withModifier = event.metaKey || event.ctrlKey;
     var focusedInCaption = document.activeElement === textarea;
 
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
-      return;
-    }
-    if (!withModifier && focusedInCaption) {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if (withModifier || focusedInCaption) {
+        return;
+      }
+      event.preventDefault();
+      navigate(event.key === "ArrowLeft" ? prevZone : nextZone);
       return;
     }
 
-    event.preventDefault();
-    if (withModifier && focusedInCaption) {
-      sessionStorage.setItem(FOCUS_CAPTION_FLAG, "1");
+    if (event.key === "Enter" && withModifier) {
+      event.preventDefault();
+      if (focusedInCaption) {
+        sessionStorage.setItem(FOCUS_CAPTION_FLAG, "1");
+      }
+      navigate(event.shiftKey ? prevZone : nextZone);
     }
-    navigate(event.key === "ArrowLeft" ? prevZone : nextZone);
   });
 })();
