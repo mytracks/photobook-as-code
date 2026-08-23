@@ -71,10 +71,23 @@ layout:
   photos_per_page: 4         # Fixed photos per page
   # OR
   pages: 10                  # Fixed number of pages
+  new_page_per_day: true     # Optional, default true - see "Page Distribution" below
 
 # Theme selection
 theme: clean                 # clean, classic, or modern
 ```
+
+### Page Distribution
+
+By default (`new_page_per_day: true`), a photo or title from a new calendar day always starts a new page, so the book reads as a sequence of days rather than an arbitrary grid. With a fixed `pages` count, if the requested count leaves some pages holding fewer photos than others, those under-full pages are chosen so that:
+
+- A page with two photos of the same orientation as the book itself (e.g. two portrait photos in a portrait book) is preferred for becoming two full-page photos, since that gives the best result when flipping through the book.
+- A page with one matching and one non-matching photo is preferred next.
+- The resulting single-photo pages are spread across the whole book rather than clustered together.
+
+Set `new_page_per_day: false` to disable day-boundary page breaks and go back to filling pages purely by photo count, ignoring dates.
+
+If the requested `pages` count is too small to give every day its own page, the fewest day boundaries needed are merged (two days sharing a page) so the requested page count is still honored exactly - the tool logs a warning when this happens.
 
 ### Paper Sizes
 

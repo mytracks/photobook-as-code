@@ -31,6 +31,11 @@ layout:
   # Photo ordering (optional)
   # order: alphabetical  # alphabetical (default) or date
 
+  # Start a new page whenever a photo/title is from a new calendar day
+  # (optional, default true). With a fixed `pages` count, set to false to
+  # go back to filling pages purely by photo count, ignoring dates.
+  # new_page_per_day: true
+
 # Theme selection
 # Available: clean, classic, modern
 # Or path to custom theme file
