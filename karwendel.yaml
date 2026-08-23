@@ -9,3 +9,52 @@ layout:
   pages: 200
 
 theme: clean2
+text_labels:
+  - timestamp: "2026-06-11T16:11:20"  # 2026-06-11 16-11-20.jpg
+    text: 11. Juni 2026 **Sulzfeld**
+  - timestamp: "2026-06-11T16:56:27"  # 2026-06-11 16-56-27.jpg
+    text: Hotel **Weingut Bernhard**
+  - timestamp: "2026-06-12T19:05:30"  # 2026-06-12 19-05-30.jpg
+    text: 12. Juni 2026 **Imst**
+  - timestamp: "2026-06-13T07:43:11"  # 2026-06-13 07-43-11.jpg
+    text: "# 13. Juni 2026\nDie **Radtour beginnt**"
+  - timestamp: "2026-06-13T08:36:14"  # 2026-06-13 08-36-14.jpg
+    text: 8:36 Uhr - Wir warten auf den Zug
+  - timestamp: "2026-06-13T09:39:50"  # 2026-06-13 09-39-50.jpg
+    text: "# 9:30 Uhr\nLeider war der Fernverkehrszug nicht wirklich gut für E-Bike geeignet. Daher waren wir froh, als wir in Innsbruck angekommen waren."
+  - timestamp: "2026-06-13T11:59:27"  # 2026-06-13 11-59-27.jpg
+    text: '# Schwaz'
+  - timestamp: "2026-06-13T12:42:41"  # 2026-06-13 12-42-41.jpg
+    text: Da geht's rauf Richtung **Achensee**
+  - timestamp: "2026-06-13T12:56:01"  # 2026-06-13 12-56-01.jpg
+    text: Pause auf halber Strecke
+  - timestamp: "2026-06-13T13:35:16"  # 2026-06-13 13-35-16.jpg
+    text: Angekommen in **Arthur‘s Hotel**
+  - timestamp: "2026-06-13T13:38:30"  # 2026-06-13 13-38-30.jpg
+    text: Blick vom Balkon
+  - timestamp: "2026-06-13T14:15:20"  # 2026-06-13 14-15-20.jpg
+    text: Der **Achensee**
+  - timestamp: "2026-06-13T14:15:47"  # 2026-06-13 14-15-47.jpg
+    text: '... und der **qualmende Zug**'
+  - timestamp: "2026-06-13T14:46:45"  # 2026-06-13 14-46-45.jpg
+    text: Blick auf **Pertisau**
+  - timestamp: "2026-06-14T06:27:19"  # 2026-06-14 06-27-19.jpg
+    text: "# 14. Juni 2026"
+  - timestamp: "2026-06-14T09:05:33"  # 2026-06-14 09-05-33.jpg
+    text: Weiter geht's zum Tegernsee
+  - timestamp: "2026-06-14T09:34:05"  # 2026-06-14 09-34-05.jpg
+    text: 9:34 Uhr - Das ist noch der Achensee
+  - timestamp: "2026-06-14T12:57:36"  # 2026-06-14 12-57-36.jpg
+    text: 12:57 Uhr - Wir haben das Südufer des Tegernsees erreicht.
+  - timestamp: "2026-06-14T13:54:56"  # 2026-06-14 13-54-56.jpg
+    text: Hotel Garni **Eder** in **Moosrain**
+  - timestamp: "2026-06-14T16:50:45"  # 2026-06-14 16-50-45.jpg
+    text: Der Tegernsee
+  - timestamp: "2026-06-14T17:21:12"  # 2026-06-14 17-21-12.jpg
+    text: Das **Schloss** in **Tegernsee** am **Tegernsee**
+  - timestamp: "2026-06-15T11:21:15"  # 2026-06-15 11-21-15.jpg
+    text: "# 15. Juni 2026\nHalt in **Holzkirchen** auf dem Weg nach **München**"
+  - timestamp: "2026-06-15T15:29:04"  # 2026-06-15 15-29-04.jpg
+    text: Brücke über die **Isar** in **München**
+  - timestamp: "2026-06-15T17:49:22"  # 2026-06-15 17-49-22.jpg
+    text: Augustinerbiergarten
