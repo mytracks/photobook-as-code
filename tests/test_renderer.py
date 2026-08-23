@@ -261,7 +261,8 @@ def _render_text_box_x(x, photo_pos_x, photo_width, page_width=1000, dock=None):
     Mirrors `_render_text_box` but exercises horizontal (x/dock) positioning. Uses
     an explicit `text.width` (50% of photo_width) and `text.height` (100% of the
     50px-tall page) so both box dimensions are deterministic and pixel-exact.
-    Boundary checks use y=5 (a couple rows into the label) to avoid glyph pixels.
+    Boundary checks use y=20 (well below the single "Hi" line, which now renders
+    flush with the box's top padding) to avoid glyph pixels.
     """
     page_height = 50
     img = Image.new("RGB", (page_width, page_height), color="white")
@@ -292,40 +293,40 @@ def _render_text_box_x(x, photo_pos_x, photo_width, page_width=1000, dock=None):
 
 def test_text_label_x_zero_aligns_label_left_with_photo_left():
     img = _render_text_box_x(x=0, photo_pos_x=300, photo_width=400)
-    assert img.getpixel((299, 5)) == (255, 255, 255)  # left of box: background
-    assert img.getpixel((305, 5)) == (0, 0, 0)  # inside box
+    assert img.getpixel((299, 20)) == (255, 255, 255)  # left of box: background
+    assert img.getpixel((305, 20)) == (0, 0, 0)  # inside box
 
 
 def test_text_label_x_hundred_aligns_label_right_with_photo_right():
     # box_width=200, photo_width=400, slack=200 -> box_x=300+200=500, box right=700=photo right
     img = _render_text_box_x(x=100, photo_pos_x=300, photo_width=400)
-    assert img.getpixel((699, 5)) == (0, 0, 0)  # inside box, last column
-    assert img.getpixel((700, 5)) == (255, 255, 255)  # right of box: background
+    assert img.getpixel((699, 20)) == (0, 0, 0)  # inside box, last column
+    assert img.getpixel((700, 20)) == (255, 255, 255)  # right of box: background
 
 
 def test_text_label_x_fifty_centers_label_in_photo():
     # slack=200, offset=100 -> box_x=400, box spans cols 400-599, photo spans 300-700 (center 500)
     img = _render_text_box_x(x=50, photo_pos_x=300, photo_width=400)
-    assert img.getpixel((399, 5)) == (255, 255, 255)
-    assert img.getpixel((400, 5)) == (0, 0, 0)
-    assert img.getpixel((599, 5)) == (0, 0, 0)
-    assert img.getpixel((600, 5)) == (255, 255, 255)
+    assert img.getpixel((399, 20)) == (255, 255, 255)
+    assert img.getpixel((400, 20)) == (0, 0, 0)
+    assert img.getpixel((599, 20)) == (0, 0, 0)
+    assert img.getpixel((600, 20)) == (255, 255, 255)
 
 
 def test_text_label_dock_left_ignores_x_and_photo_position():
     # dock=left pins box to the page's left border regardless of x or photo_pos_x
     img = _render_text_box_x(x=50, photo_pos_x=300, photo_width=400, dock='left')
-    assert img.getpixel((0, 5)) == (0, 0, 0)  # flush at page's left border
-    assert img.getpixel((199, 5)) == (0, 0, 0)  # box_width=200, still from photo_width
-    assert img.getpixel((200, 5)) == (255, 255, 255)
+    assert img.getpixel((0, 20)) == (0, 0, 0)  # flush at page's left border
+    assert img.getpixel((199, 20)) == (0, 0, 0)  # box_width=200, still from photo_width
+    assert img.getpixel((200, 20)) == (255, 255, 255)
 
 
 def test_text_label_dock_right_ignores_x_and_photo_position():
     # dock=right pins box to the page's right border regardless of x or photo_pos_x
     img = _render_text_box_x(x=50, photo_pos_x=100, photo_width=400, page_width=1000, dock='right')
-    assert img.getpixel((999, 5)) == (0, 0, 0)  # flush at page's right border
-    assert img.getpixel((800, 5)) == (0, 0, 0)  # box_width=200, box starts at page_width-200
-    assert img.getpixel((799, 5)) == (255, 255, 255)
+    assert img.getpixel((999, 20)) == (0, 0, 0)  # flush at page's right border
+    assert img.getpixel((800, 20)) == (0, 0, 0)  # box_width=200, box starts at page_width-200
+    assert img.getpixel((799, 20)) == (255, 255, 255)
 
 
 # --- Word-wrap tests -------------------------------------------------------
@@ -350,7 +351,8 @@ def _measure(text, font=None):
 
 
 def _render_wrap_box(text, box_width_px, photo_pos_y=300, photo_height=700,
-                      page_width=2000, page_height=1200, align='left', height=None):
+                      page_width=2000, page_height=1200, align='left', height=None,
+                      padding=0):
     """Render a text label with an opaque white-on-black background and auto
     height (unless `height` is given), into a photo of the given pixel width
     (text.width=100% maps to box_width_px exactly). y=0 top-aligns the box to
@@ -372,7 +374,7 @@ def _render_wrap_box(text, box_width_px, photo_pos_y=300, photo_height=700,
             text_background_enabled=True,
             text_background_color="#000000",
             text_background_opacity=100,
-            text_padding=0,
+            text_padding=padding,
         ),
     )
     label = TextLabel(datetime.now(), text)
@@ -400,6 +402,26 @@ def _count_ink(img, x0, x1, y0, y1):
             if img.getpixel((x, y)) == (255, 255, 255):
                 count += 1
     return count
+
+
+def _first_ink_row(img, x0, x1, y0, y1):
+    """Row of the first white (glyph ink) pixel within the given region, top to bottom."""
+    for y in range(max(y0, 0), min(y1, img.height)):
+        for x in range(max(x0, 0), min(x1, img.width)):
+            if img.getpixel((x, y)) == (255, 255, 255):
+                return y
+    return None
+
+
+def _last_ink_row(img, x0, x1, y0, y1):
+    """Row of the last white (glyph ink) pixel within the given region, top to bottom."""
+    last = None
+    for y in range(max(y0, 0), min(y1, img.height)):
+        for x in range(max(x0, 0), min(x1, img.width)):
+            if img.getpixel((x, y)) == (255, 255, 255):
+                last = y
+                break
+    return last
 
 
 def _box_height_at(img, x, start_y):
@@ -613,3 +635,97 @@ def test_text_label_wrap_bug_reproduction_with_clean_theme():
     # heading text) rendered an empty background box with no glyph ink at
     # all. Confirm ink (white) now exists within the photo's own region.
     assert _has_ink(img, pos_x, pos_x + fitted_w, pos_y, pos_y + fitted_h)
+
+
+# --- Vertical alignment tests (fix-text-label-vertical-alignment) ---------
+#
+# "Wall"/"over" share a baseline (bottom=19 at this font/size) but "Wall"
+# starts higher (top=4) than "over" (top=8, x-height only) - a line with both
+# words on it needs the line-level union of their ink spans, not either
+# word's own tight bbox, to size correctly. "gap" adds a descender (bottom=23)
+# to exercise the same union on the other edge. These are exactly the shapes
+# that made the old per-word max-height computation wrong; see design.md.
+
+
+def test_text_label_auto_height_box_padding_symmetric_without_descenders():
+    # A single line mixing a word with tall letters ("Wall") and a word with
+    # only x-height letters ("over") must still auto-size its box so the top
+    # and bottom margins both equal the configured padding.
+    padding = 12
+    words_width = sum(_measure(w)[0] for w in ["Wall", "over"])
+    space_w, _ = _measure(" ")
+    box_width_px = words_width + space_w + 10  # fits both words on one line
+    photo_pos_y = 300
+
+    img = _render_wrap_box("Wall over", box_width_px=box_width_px, photo_pos_y=photo_pos_y,
+                            photo_height=900, padding=padding)
+
+    box_bottom = _box_height_at(img, x=box_width_px - 1, start_y=photo_pos_y) + photo_pos_y
+    ink_top = _first_ink_row(img, 0, box_width_px, photo_pos_y, box_bottom)
+    ink_bottom = _last_ink_row(img, 0, box_width_px, photo_pos_y, box_bottom)
+
+    top_margin = ink_top - photo_pos_y
+    bottom_margin = box_bottom - 1 - ink_bottom
+    assert top_margin == padding
+    assert bottom_margin == padding
+
+
+def test_text_label_auto_height_box_padding_symmetric_with_descender_line():
+    # A two-line box where only the second line ("gap") has a descender must
+    # still end up with a bottom margin matching the configured padding, not
+    # squeezed by an undercounted box height.
+    padding = 12
+    words_width = sum(_measure(w)[0] for w in ["Wall", "over"])
+    space_w, _ = _measure(" ")
+    box_width_px = words_width + space_w + 10
+    photo_pos_y = 300
+
+    img = _render_wrap_box("Wall over\ngap", box_width_px=box_width_px, photo_pos_y=photo_pos_y,
+                            photo_height=900, padding=padding)
+
+    box_bottom = _box_height_at(img, x=box_width_px - 1, start_y=photo_pos_y) + photo_pos_y
+    ink_top = _first_ink_row(img, 0, box_width_px, photo_pos_y, box_bottom)
+    ink_bottom = _last_ink_row(img, 0, box_width_px, photo_pos_y, box_bottom)
+
+    assert ink_top - photo_pos_y == padding
+    assert box_bottom - 1 - ink_bottom == padding
+
+
+def test_text_label_inter_line_gap_consistent_regardless_of_descenders():
+    # The visual gap between one line's ink and the next line's ink must not
+    # depend on which line happens to contain a descender - "gap"/"Wall" (line
+    # 1 has a descender) and "Ants"/"Wall" (neither does) must produce the
+    # same inter-line gap.
+    box_width_px = max(_measure("gap")[0], _measure("Ants")[0], _measure("Wall")[0]) + 20
+    photo_pos_y = 300
+
+    def row_has_ink(img, y):
+        return any(img.getpixel((x, y)) == (255, 255, 255) for x in range(box_width_px))
+
+    def inter_line_gap(text):
+        img = _render_wrap_box(text, box_width_px=box_width_px, photo_pos_y=photo_pos_y, photo_height=900)
+        line1_top = _first_ink_row(img, 0, box_width_px, photo_pos_y, photo_pos_y + 100)
+        y = line1_top
+        while row_has_ink(img, y):
+            y += 1
+        line1_bottom = y - 1
+        line2_top = _first_ink_row(img, 0, box_width_px, line1_bottom + 1, photo_pos_y + 100)
+        return line2_top - line1_bottom
+
+    assert inter_line_gap("gap\nWall") == inter_line_gap("Ants\nWall")
+
+
+def test_text_label_words_on_line_share_baseline():
+    # "Wall" (tall letters) and "over" (x-height only), on the same display
+    # line, must render with their ink ending on the same row (a shared
+    # baseline), even though "over"'s ink is shorter and starts lower.
+    box_width_px = _measure("Wall over")[0] + 20
+    photo_pos_y = 300
+    img = _render_wrap_box("Wall over", box_width_px=box_width_px, photo_pos_y=photo_pos_y, photo_height=900)
+
+    wall_w, _ = _measure("Wall")
+    space_w, _ = _measure(" ")
+    wall_bottom = _last_ink_row(img, 0, wall_w, photo_pos_y, photo_pos_y + 100)
+    over_bottom = _last_ink_row(img, wall_w + space_w, box_width_px, photo_pos_y, photo_pos_y + 100)
+
+    assert wall_bottom == over_bottom

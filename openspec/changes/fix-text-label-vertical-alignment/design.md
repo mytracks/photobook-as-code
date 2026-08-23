@@ -1,0 +1,41 @@
+## Context
+
+See `proposal.md` for motivation. One correction to the analysis there, found by pixel-checking the rendered output before writing this design: words on a line do **not** actually drift onto different baselines - `draw.text`'s default `anchor="la"` draws every word in a line from the same `current_y`, and the vertical distance from that anchor to the baseline (the font's `ascent` metric) is constant per font+size regardless of which glyphs are present. Verified by rendering "Ein neuer Morgen" (DejaVuSansMono 42px) and checking the bottom-most ink row of a descender-free letter in each word: "Ein" and "neuer" both bottom out at row 58. They share a baseline correctly.
+
+The actual, verified defect is narrower: `_wrap_markdown_lines` (renderer.py:159-256) computes a line's height as `max(bbox[3]-bbox[1])` across its words - i.e. the tallest *individual* word's own tight ink box. Because words share one baseline, the line's true vertical extent is `max(bbox[3]) - min(bbox[1])` across all its words (the union of their ink spans relative to that shared anchor), which is a different quantity. Concretely, for "Ein"/"neuer"/"Morgen" at size 42: per-word tight heights are 32/24/40 (max=40), but the true union span is 48-7=41. The gap is small here, but it compounds through two effects:
+- **Box height** (`total_text_height`, used for auto-height and title vertical-centering) sums the undercounted per-word max instead of the true span, so auto-height boxes can end up shorter than their content actually needs.
+- **Draw position**: the first line is drawn starting exactly at the padding line (`text_box_y`, renderer.py:401) with no correction for the fact that ink doesn't start exactly there - it starts `min(bbox[1])` below it (7-15px in the example). That gap gets added on top of the configured padding at the top, while the undercounted box height eats into the configured padding at the bottom. Simulated numerically for the example: top margin ends up ~19px (12px configured + 7px uncorrected leading), bottom margin ~4-5px (should be 12px) - a ~4x asymmetry, which is what reads as "text sits too low in its box." The same two quantities (line height, line draw position) also govern inter-line spacing, so lines with different letter profiles (some with descenders, some without) currently advance by inconsistent amounts.
+
+`render_title_slot` (renderer.py:415-465) shares `_wrap_markdown_lines`/`_draw_wrapped_lines` and centers text using the same undercounted `total_text_height`, so it over-estimates `vertical_slack` and inherits the same low-bias.
+
+## Goals / Non-Goals
+
+**Goals:**
+- Auto-height text/title boxes end up with equal top and bottom margins matching the configured `text_padding`, regardless of which specific letters the content happens to contain.
+- Line-to-line spacing is visually consistent regardless of which lines contain descenders/tall letters.
+- Fix is confined to the measurement/draw bookkeeping in `_wrap_markdown_lines`/`_draw_wrapped_lines`; no change to word-wrap line-breaking decisions, markdown parsing, or public config fields.
+
+**Non-Goals:**
+- Not attempting sub-baseline typographic refinements (e.g. optical margin alignment, hanging punctuation).
+- Not changing how blank lines are measured (`ascent+descent` fallback, renderer.py:242-246) - they draw no ink, so they aren't subject to this bug.
+- Not touching fixed-height clipping semantics (`height_limit` in `_draw_wrapped_lines`) beyond making the quantity it compares against (`current_y`) mean what it already was intended to mean.
+
+## Decisions
+
+**Compute each display line's vertical extent as the union of its words' ink spans, not the max of their individual tight heights.** During the measurement pass, track `line_top = min(bbox[1] for word in line)` and `line_bottom = max(bbox[3] for word in line)` alongside the existing per-word `(word, font, word_width)`; the line's height becomes `line_bottom - line_top`. This is what actually determines box height and inter-line spacing correctly, since all words in the line share one baseline (verified above) - the previous per-word max conflated "how tall is this one word's own glyphs" with "how much vertical room does the whole line occupy," which are different questions once you account for the shared anchor.
+
+**Shift each line's draw position by its own `line_top` when actually rendering it, instead of drawing at the raw accumulated `current_y`.** `current_y` (as accumulated across lines) represents the *intended* top of a line's ink; today it's passed straight to `draw.text` with no adjustment, so the line's actual ink lands `line_top` below where it was supposed to start. The fix draws each word at `current_y - line_top` (same shift for every word in the line, so their shared baseline is preserved - this only translates the whole line, it doesn't touch relative positioning within it). Verified numerically against the "Ein neuer Morgen" case: with this shift, both the top and bottom margins of the auto-height box come out at exactly 12px (the configured padding), where today they're ~19px and ~4-5px.
+- Alternative considered: give every word its own `anchor="lt"` (word-level top-alignment) instead of computing a line-level union. Rejected - this makes each word's own tight-bbox top land at `current_y`, which would flush word *tops* instead of *baselines*, reintroducing a real (if inverted) misalignment between x-height-only words and cap-height words on the same line. The line-level union preserves the already-correct shared baseline while fixing only the box-level bookkeeping.
+- Alternative considered: switch to nominal font metrics (`ascent+descent`, already used for blank lines) for every line's height, without any draw-position shift. Rejected as insufficient on its own - re-derived numerically, it makes box height slightly more generous (65px vs 64px in the example) but doesn't touch the dominant cause of the asymmetry, which is the missing shift at draw time, not the box being a pixel or two short.
+
+**`all_lines_info` entries gain a per-line `line_top` alongside the existing `(word_infos, line_height, line_width)`.** `_draw_wrapped_lines` uses it once per line (to compute that line's shifted draw `y`); it does not need to flow any further than that.
+
+## Risks / Trade-offs
+
+- [Every existing photobook's rendered captions/titles shift by a few pixels] → Mitigation: this is the point of the fix (proposal.md's Impact section already calls this out); the shift is generally small (single-digit to low-teens pixels at typical caption font sizes) and makes output more correct, not arbitrary.
+- [`tests/test_renderer.py`'s wrap/blank-line tests compute expected pixel bands using the same per-word tight-bbox logic being changed, via their own `_measure` helper] → Mitigation: those tests need their expected bands recomputed against the new line-union logic, not just re-run; this is a tasks-level follow-up, not a design concern, since none of them assert on the specific numeric offset this fix changes (they use loose "ink is present somewhere in this band" checks - see proposal.md), so most should keep passing once bands are widened/shifted where necessary, but must still be reviewed by hand.
+- [A line containing a single very tall accented character or unusual glyph could still produce a large `line_top`/`line_bottom` outlier] → Mitigation: accepted; this is the correct behavior (the line legitimately needs that much room), not a regression - today's per-word max already has to deal with the same outlier, just less accurately.
+
+## Migration Plan
+
+No config/schema migration - purely a rendering-internals fix. Implementation order: (1) change `_wrap_markdown_lines` to track and return per-line `line_top`/`line_bottom`-derived height, (2) change `_draw_wrapped_lines` to shift each line's draw `y` by its own `line_top`, (3) re-run the full test suite and manually recompute/adjust any `test_renderer.py` expectations that assumed the old per-word-max height, (4) regenerate a sample PDF (e.g. from `hamburg.yaml`) and visually confirm the "Ein neuer Morgen" caption now sits symmetrically in its background box. Rollback is a plain revert - no data or persisted state involved.

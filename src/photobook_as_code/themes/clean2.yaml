@@ -15,7 +15,7 @@ text:
   text_color: "#000000"
   text_background_enabled: true     # Enable semi-transparent background for readability
   text_background_color: "#ffffff"  # Background color (hex)
-  text_background_opacity: 50       # Background opacity 0-100 (0=transparent, 100=opaque)
+  text_background_opacity: 65       # Background opacity 0-100 (0=transparent, 100=opaque)
   text_padding: 12                  # Padding around text in pixels
 title:
   font_family: DejaVuSans

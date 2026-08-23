@@ -165,7 +165,15 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
 
     Returns:
         Tuple of (all_lines_info, total_text_height) where all_lines_info is
-        a list of (word_infos, line_height, line_width) per display line.
+        a list of (word_infos, line_height, line_width, line_top) per display
+        line. All words in a line are drawn from the same y with the same
+        PIL anchor ("la"), so they already share one baseline - line_height
+        and line_top are the union of the words' ink spans relative to that
+        shared anchor (max bottom-offset minus min top-offset, and min
+        top-offset respectively), not the max of each word's own tight ink
+        height. The two differ whenever a line's tallest-looking word and its
+        highest-starting word aren't the same word (see design.md for the
+        worked example and why this matters for box padding/line spacing).
     """
     space_width_cache = {}
 
@@ -175,14 +183,15 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
             space_width_cache[font] = bbox[2] - bbox[0]
         return space_width_cache[font]
 
-    all_lines_info = []  # list of (word_infos, line_height, line_width)
+    all_lines_info = []  # list of (word_infos, line_height, line_width, line_top)
     total_text_height = 0
     blank_line_height = None  # lazily computed: regular font's nominal line height
 
     for segments, heading_level in parsed_lines:
         current_words = []
         current_width = 0
-        current_height = 0
+        current_top = None
+        current_bottom = None
 
         for segment in segments:
             # Select font based on style
@@ -215,6 +224,8 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
                 bbox = draw.textbbox((0, 0), word, font=font)
                 word_width = bbox[2] - bbox[0]
                 word_height = bbox[3] - bbox[1]
+                word_top = bbox[1]
+                word_bottom = bbox[3]
 
                 added_width = word_width
                 if current_words:
@@ -224,29 +235,36 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
                     # Wrap: finish the current display line, start a new one.
                     # A lone word wider than text_box_width is never split or
                     # dropped - it simply becomes the only word on its line.
-                    all_lines_info.append((current_words, current_height, current_width))
+                    current_height = current_bottom - current_top
+                    all_lines_info.append((current_words, current_height, current_width, current_top))
                     total_text_height += current_height + line_spacing
                     current_words = []
                     current_width = 0
-                    current_height = 0
+                    current_top = None
+                    current_bottom = None
                     added_width = word_width
 
                 current_words.append((word, font, word_width, word_height))
                 current_width += added_width
-                current_height = max(current_height, word_height)
+                current_top = word_top if current_top is None else min(current_top, word_top)
+                current_bottom = word_bottom if current_bottom is None else max(current_bottom, word_bottom)
 
         # A source line with no words (blank, or whitespace-only) still needs
         # real height - otherwise it renders as a near-invisible line_spacing
         # sliver next to actual text. Use the regular font's nominal line
         # height (ascent + descent), independent of any particular glyphs.
+        # It has no ink to shift, so line_top is unused for it - 0 is fine.
         if not current_words:
             if blank_line_height is None:
                 ascent, descent = font_regular.getmetrics()
                 blank_line_height = ascent + descent
             current_height = blank_line_height
+            current_top = 0
+        else:
+            current_height = current_bottom - current_top
 
         # Flush this source line's final (or only) display line.
-        all_lines_info.append((current_words, current_height, current_width))
+        all_lines_info.append((current_words, current_height, current_width, current_top))
         total_text_height += current_height + line_spacing
 
     # Remove the last line spacing since it was added after the last line
@@ -289,7 +307,7 @@ def _draw_wrapped_lines(draw: ImageDraw.Draw, all_lines_info, text_box_x: int, s
 
     current_y = start_y
 
-    for (word_infos, line_height, line_width) in all_lines_info:
+    for (word_infos, line_height, line_width, line_top) in all_lines_info:
         if height_limit is not None and current_y > start_y + height_limit:
             break  # Clip at boundary
 
@@ -303,6 +321,13 @@ def _draw_wrapped_lines(draw: ImageDraw.Draw, all_lines_info, text_box_x: int, s
         else:  # left
             current_x = text_box_x
 
+        # Shift up by this line's own top offset so its actual topmost ink
+        # lands at current_y (its intended position) instead of current_y +
+        # line_top, which is where PIL's default anchor="la" would otherwise
+        # place it. Every word in the line gets the same shift, so they keep
+        # the common baseline they already share (see design.md).
+        draw_y = current_y - line_top
+
         # Draw each word. No width clip here: the packing pass already
         # guaranteed the line fits text_box_width, except for a lone word
         # wider than the box on its own, which is drawn anyway rather than
@@ -311,7 +336,7 @@ def _draw_wrapped_lines(draw: ImageDraw.Draw, all_lines_info, text_box_x: int, s
         for word, font, word_width, word_height in word_infos:
             if not first_word:
                 current_x += space_width_for(font)
-            draw.text((current_x, current_y), word, fill=rgb, font=font)
+            draw.text((current_x, draw_y), word, fill=rgb, font=font)
             current_x += word_width
             first_word = False
 
