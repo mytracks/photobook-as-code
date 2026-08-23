@@ -1,6 +1,6 @@
 {
   "name": "photobook-as-code",
-  "image": "ubuntu:26.04",
+  "image": "ubuntu:24.04",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22",
