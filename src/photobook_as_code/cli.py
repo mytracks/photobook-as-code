@@ -137,12 +137,16 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
 
         # Get paper dimensions
         page_width, page_height = pb_config.get_paper_size_pixels()
+        book_orientation = pb_config.get_book_orientation()
 
         # Calculate photo distribution (titles count as page slots, same as photos)
         distribution = distribute_photos(
-            total_photos=len(page_items),
+            items=page_items,
             photos_per_page=pb_config.layout.photos_per_page,
-            total_pages=pb_config.layout.pages
+            total_pages=pb_config.layout.pages,
+            max_items_per_page=theme.max_layout_count,
+            book_orientation=book_orientation,
+            new_page_per_day=pb_config.layout.new_page_per_day,
         )
 
         click.echo(f"   {distribution.total_pages} pages, "

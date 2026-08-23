@@ -32,6 +32,7 @@ class LayoutConfig:
     photos_per_page: Optional[int] = None
     pages: Optional[int] = None
     order: Literal["alphabetical", "date"] = "alphabetical"
+    new_page_per_day: bool = True
     
 
 @dataclass
@@ -57,6 +58,12 @@ class PhotobookConfig:
         else:
             return photos_path.resolve()
     
+    def get_book_orientation(self) -> str:
+        """The book's own page orientation ('portrait' or 'landscape'), derived
+        from its pixel dimensions - used to rank orientation-matched page splits."""
+        width, height = self.get_paper_size_pixels()
+        return 'portrait' if height >= width else 'landscape'
+
     def get_paper_size_pixels(self) -> tuple[int, int]:
         """Get paper size in pixels at 300 DPI."""
         if self.output.size in PAPER_SIZES:
@@ -244,6 +251,7 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
             photos_per_page=layout_data.get('photos_per_page'),
             pages=layout_data.get('pages'),
             order=layout_data.get('order', 'alphabetical'),
+            new_page_per_day=layout_data.get('new_page_per_day', True),
         )
         
         config = PhotobookConfig(
@@ -280,7 +288,14 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
             f"Invalid order: {config.layout.order}. "
             f"Must be 'alphabetical' or 'date'"
         )
-    
+
+    # Validate new_page_per_day
+    if not isinstance(config.layout.new_page_per_day, bool):
+        raise ConfigurationError(
+            f"Invalid new_page_per_day: {config.layout.new_page_per_day!r}. "
+            f"Must be a boolean"
+        )
+
     return config
 
 

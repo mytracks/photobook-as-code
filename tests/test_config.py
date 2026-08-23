@@ -199,3 +199,108 @@ text_labels:
                 load_config(config_path)
         finally:
             config_path.unlink()
+
+
+class TestNewPagePerDayConfig:
+    """Tests for the layout.new_page_per_day configuration field."""
+
+    def _write_and_load(self, config_content: str):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_default_is_true(self):
+        """Test new_page_per_day defaults to True when not specified."""
+        config = self._write_and_load("""
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+        assert config.layout.new_page_per_day is True
+
+    def test_explicit_true(self):
+        """Test new_page_per_day can be explicitly enabled."""
+        config = self._write_and_load("""
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+  new_page_per_day: true
+""")
+        assert config.layout.new_page_per_day is True
+
+    def test_explicit_false(self):
+        """Test new_page_per_day can be explicitly disabled."""
+        config = self._write_and_load("""
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+  new_page_per_day: false
+""")
+        assert config.layout.new_page_per_day is False
+
+    def test_invalid_type_raises(self):
+        """Test a non-boolean new_page_per_day raises a clear validation error."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photos: tests/fixtures/sample-photos
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+  new_page_per_day: "yes please"
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="new_page_per_day"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+
+class TestGetBookOrientation:
+    """Tests for PhotobookConfig.get_book_orientation, used to rank orientation-matched splits."""
+
+    def _write_and_load(self, size: str):
+        config_content = f"""
+photos: tests/fixtures/sample-photos
+output:
+  size: {size}
+layout:
+  photos_per_page: 4
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_a4_is_portrait(self):
+        config = self._write_and_load("A4")
+        assert config.get_book_orientation() == 'portrait'
+
+    def test_custom_landscape_size(self):
+        config = self._write_and_load("3508x2480")
+        assert config.get_book_orientation() == 'landscape'
+
+    def test_custom_portrait_size(self):
+        config = self._write_and_load("2480x3508")
+        assert config.get_book_orientation() == 'portrait'
+
+    def test_square_counts_as_portrait(self):
+        config = self._write_and_load("2000x2000")
+        assert config.get_book_orientation() == 'portrait'

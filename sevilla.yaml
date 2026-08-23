@@ -5,8 +5,8 @@ output:
   filename: /mnt/downloads/sevilla.pdf
 
 layout:
-  photos_per_page: 2
-  #pages: 198
+  #photos_per_page: 2
+  pages: 100
 
 theme: clean2
 
@@ -401,7 +401,7 @@ text_labels:
   - timestamp: "2026-03-21T13:34:53"  # 2026-03-21 13-34-53.jpg
     text: ""
   - timestamp: "2026-03-21T16:47:27"  # 2026-03-21 16-47-27.jpg
-    text: "Der Strand von *La Barrosa**"
+    text: "Der Strand von **La Barrosa**"
   - timestamp: "2026-03-21T16:47:50"  # 2026-03-21 16-47-50.jpg
     text: ""
   - timestamp: "2026-03-21T16:48:31"  # 2026-03-21 16-48-31.jpg

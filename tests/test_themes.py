@@ -5,7 +5,7 @@ Tests for theme system with text positioning.
 import pytest
 from src.photobook_as_code.themes import (
     Theme, ThemeError, TextPosition, TextStyle, LayoutPhoto,
-    LayoutPosition, LayoutPhotoSize
+    LayoutPosition, LayoutPhotoSize, LayoutTemplate, load_theme, list_builtin_themes
 )
 
 
@@ -522,3 +522,35 @@ class TestThemeTitleStyling:
         }
         with pytest.raises(ThemeError, match="Title base_font_size must be a positive number"):
             Theme.from_dict(theme_data)
+
+
+class TestThemeMaxLayoutCount:
+    """Tests for Theme.max_layout_count, used to cap day-aware page density."""
+
+    def test_max_layout_count_from_dict(self):
+        theme_data = {
+            'name': 'Test',
+            'description': 'Test theme',
+            'layouts': [
+                {'count': 1, 'photos': [{'orientation': 'landscape', 'size': {'width': 0.8, 'height': 0.8}}]},
+                {'count': 3, 'photos': [
+                    {'orientation': 'landscape', 'size': {'width': 0.5, 'height': 0.5}},
+                    {'orientation': 'landscape', 'size': {'width': 0.5, 'height': 0.5}},
+                    {'orientation': 'landscape', 'size': {'width': 0.5, 'height': 0.5}},
+                ]},
+            ]
+        }
+        theme = Theme.from_dict(theme_data)
+        assert theme.max_layout_count == 3
+
+    def test_max_layout_count_no_layouts(self):
+        theme = Theme(
+            name='Empty', description='', background=None, borders=None, spacing=None,
+        )
+        assert theme.max_layout_count == 0
+
+    @pytest.mark.parametrize("theme_name", list_builtin_themes())
+    def test_builtin_themes_cap_at_four(self, theme_name):
+        """Every shipped theme currently defines layouts up to count 4."""
+        theme = load_theme(theme_name)
+        assert theme.max_layout_count == 4

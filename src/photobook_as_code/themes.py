@@ -105,7 +105,13 @@ class Theme:
     text: TextStyle = field(default_factory=TextStyle)
     title: TitleStyle = field(default_factory=TitleStyle)
     layouts: List[LayoutTemplate] = field(default_factory=list)
-    
+
+    @property
+    def max_layout_count(self) -> int:
+        """Largest item count any layout template in this theme defines - the
+        most photos/titles that can ever be placed on a single page."""
+        return max((t.count for t in self.layouts), default=0)
+
     @classmethod
     def from_dict(cls, data: dict) -> 'Theme':
         """Create Theme from dictionary."""

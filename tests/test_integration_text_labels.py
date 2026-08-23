@@ -76,16 +76,16 @@ text_labels:
         # Calculate layout
         page_width, page_height = config.get_paper_size_pixels()
         distribution = distribute_photos(
-            total_photos=len(photos),
+            items=photos,
             photos_per_page=config.layout.photos_per_page,
             total_pages=config.layout.pages
         )
-        
+
         # Render pages
         pages = list(render_all_pages(
             page_width, page_height, photos, distribution, theme, text_associations
         ))
-        
+
         assert len(pages) == distribution.total_pages
         for page in pages:
             assert page.width == page_width
@@ -114,11 +114,11 @@ theme: clean
             
             page_width, page_height = config.get_paper_size_pixels()
             distribution = distribute_photos(
-                total_photos=len(photos),
+                items=photos,
                 photos_per_page=config.layout.photos_per_page,
                 total_pages=config.layout.pages
             )
-            
+
             # Render without text associations
             pages = list(render_all_pages(
                 page_width, page_height, photos, distribution, theme
@@ -334,15 +334,15 @@ text_labels:
         
         page_width, page_height = config.get_paper_size_pixels()
         distribution = distribute_photos(
-            total_photos=len(photos),
+            items=photos,
             photos_per_page=config.layout.photos_per_page,
             total_pages=config.layout.pages
         )
-        
+
         pages_gen = render_all_pages(
             page_width, page_height, photos, distribution, theme, text_associations
         )
-        
+
         output_path = tmp_path / "test-output.pdf"
         output_files = generate_output(
             pages=pages_gen,
@@ -389,15 +389,15 @@ text_labels:
         
         page_width, page_height = config.get_paper_size_pixels()
         distribution = distribute_photos(
-            total_photos=len(photos),
+            items=photos,
             photos_per_page=config.layout.photos_per_page,
             total_pages=config.layout.pages
         )
-        
+
         pages_gen = render_all_pages(
             page_width, page_height, photos, distribution, theme, text_associations
         )
-        
+
         output_path = tmp_path / "test-output.png"
         output_files = generate_output(
             pages=pages_gen,
@@ -492,11 +492,11 @@ text_labels:
 
         # Distribution must account for titles increasing the total slot count
         distribution_with_titles = distribute_photos(
-            total_photos=len(merged),
+            items=merged,
             photos_per_page=config.layout.photos_per_page,
         )
         distribution_without_titles = distribute_photos(
-            total_photos=len(photos),
+            items=photos,
             photos_per_page=config.layout.photos_per_page,
         )
         assert distribution_with_titles.total_pages == 3  # 6 items / 2 per page
