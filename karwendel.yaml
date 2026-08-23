@@ -1,0 +1,11 @@
+photos: /mnt/pictures/2026/2026-06-11+ Karwendel + Schenna/
+output:
+  size: A4
+  format: pdf
+  filename: /mnt/downloads/karwendel.pdf
+
+layout:
+  #photos_per_page: 2
+  pages: 200
+
+theme: clean2
