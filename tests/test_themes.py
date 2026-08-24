@@ -37,13 +37,15 @@ class TestTextStyle:
         assert style.base_font_size == 14
         assert style.font_family == 'DejaVuSans'
         assert style.text_color == '#000000'
-    
+        assert style.line_spacing == 10
+
     def test_text_style_custom_values(self):
         """Test TextStyle with custom values."""
-        style = TextStyle(base_font_size=18, font_family='Arial', text_color='#FF0000')
+        style = TextStyle(base_font_size=18, font_family='Arial', text_color='#FF0000', line_spacing=20)
         assert style.base_font_size == 18
         assert style.font_family == 'Arial'
         assert style.text_color == '#FF0000'
+        assert style.line_spacing == 20
 
 
 class TestThemeTextPositionParsing:
@@ -429,7 +431,8 @@ class TestThemeTextStyling:
         assert theme.text.text_background_color == '#FFFFFF'
         assert theme.text.text_background_opacity == 85
         assert theme.text.text_padding == 8
-    
+        assert theme.text.line_spacing == 10
+
     def test_parse_text_styling_custom(self):
         """Test custom text styling values."""
         theme_data = {
@@ -442,11 +445,12 @@ class TestThemeTextStyling:
                 'text_background_enabled': False,
                 'text_background_color': '#000000',
                 'text_background_opacity': 50,
-                'text_padding': 12
+                'text_padding': 12,
+                'line_spacing': 16
             },
             'layouts': []
         }
-        
+
         theme = Theme.from_dict(theme_data)
         assert theme.text.base_font_size == 18
         assert theme.text.font_family == 'Arial'
@@ -455,6 +459,7 @@ class TestThemeTextStyling:
         assert theme.text.text_background_color == '#000000'
         assert theme.text.text_background_opacity == 50
         assert theme.text.text_padding == 12
+        assert theme.text.line_spacing == 16
 
 
 class TestThemeTitleStyling:
@@ -474,6 +479,7 @@ class TestThemeTitleStyling:
         assert theme.title.text_color == '#000000'
         assert theme.title.align == 'center'
         assert theme.title.text_background_enabled == True
+        assert theme.title.line_spacing == 10
 
     def test_parse_title_styling_custom(self):
         """Test custom title styling values, independent from text styling."""
@@ -487,6 +493,7 @@ class TestThemeTitleStyling:
                 'text_color': '#222222',
                 'align': 'left',
                 'text_background_enabled': False,
+                'line_spacing': 24,
             },
             'layouts': []
         }
@@ -497,6 +504,7 @@ class TestThemeTitleStyling:
         assert theme.title.text_color == '#222222'
         assert theme.title.align == 'left'
         assert theme.title.text_background_enabled == False
+        assert theme.title.line_spacing == 24
         # Text styling is unaffected by title styling
         assert theme.text.base_font_size == 14
         assert theme.text.text_color == '#111111'

@@ -202,6 +202,14 @@ The system SHALL support optional text styling properties at the theme level for
 - **WHEN** theme specifies text_color that is not a valid color (hex, rgb, or name)
 - **THEN** system reports validation error indicating invalid color
 
+#### Scenario: Theme with text line spacing
+- **WHEN** theme specifies `text.line_spacing` (pixels)
+- **THEN** system uses the specified gap between consecutive rendered lines of caption (`text`) content
+
+#### Scenario: Theme without text line spacing
+- **WHEN** theme does not specify `text.line_spacing`
+- **THEN** system uses a default gap of 10 pixels between consecutive rendered lines of caption content
+
 ### Requirement: Support title styling properties in themes
 The system SHALL support an optional theme-level `title` style block for title-slot rendering, independent from the `text` style block used for photo captions.
 
@@ -236,6 +244,14 @@ The system SHALL support an optional theme-level `title` style block for title-s
 #### Scenario: Title styling independent from text styling
 - **WHEN** a theme defines both `text` and `title` style blocks with different font sizes or colors
 - **THEN** system renders photo captions using the `text` block and title slots using the `title` block, without either affecting the other
+
+#### Scenario: Theme with title line spacing
+- **WHEN** theme specifies `title.line_spacing` (pixels)
+- **THEN** system uses the specified gap between consecutive rendered lines of title-slot content, independently of `text.line_spacing`
+
+#### Scenario: Theme without title line spacing
+- **WHEN** theme does not specify `title.line_spacing`
+- **THEN** system uses a default gap of 10 pixels between consecutive rendered lines of title-slot content
 
 ### Requirement: Support text background overlay for readability
 The system SHALL support optional text background overlay properties to ensure text remains readable when rendered over photos.

@@ -392,7 +392,7 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
 
     rgb = hex_to_rgb(text_color)
     padding = theme.text.text_padding
-    line_spacing = 4
+    line_spacing = theme.text.line_spacing
 
     # Text box width is needed up front so word-wrapping can use it during the
     # first (measurement) pass, not just for drawing in the second pass.
@@ -465,7 +465,7 @@ def render_title_slot(draw: ImageDraw.Draw, title_label: TitleLabel,
 
     rgb = hex_to_rgb(theme.title.text_color)
     padding = theme.title.text_padding
-    line_spacing = 4
+    line_spacing = theme.title.line_spacing
 
     text_box_width = box_width - 2 * padding
     text_box_height = box_height - 2 * padding
