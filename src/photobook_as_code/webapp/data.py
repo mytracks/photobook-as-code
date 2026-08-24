@@ -104,6 +104,15 @@ class EditorData:
         """Current content of the title at `index`."""
         return self.title_at(index).title
 
+    def date_taken_iso(self, index: int) -> Optional[str]:
+        """
+        ISO 8601 timestamp of the photo's capture date, or None when no EXIF
+        capture date is known (in which case `display_date` falls back to
+        the filename and there is nothing to format on the client).
+        """
+        photo = self.photo_at(index)
+        return photo.date_taken.isoformat() if photo.date_taken is not None else None
+
     def display_date(self, index: int) -> str:
         """
         The photo's capture date and time, formatted with weekday (e.g.

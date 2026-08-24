@@ -59,6 +59,7 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             has_prev=index > 0,
             has_next=index < data.count - 1,
             date_display=data.display_date(index),
+            date_taken_iso=data.date_taken_iso(index),
             is_new_day=data.is_new_day(index),
             photo_width=photo.width,
             photo_height=photo.height,

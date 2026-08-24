@@ -13,9 +13,7 @@ text_labels:
   - timestamp: "2026-06-11T16:11:20"  # 2026-06-11 16-11-20.jpg
     text: ''
   - timestamp: "2026-06-11T16:11:20"  # 2026-06-11 16-11-20.jpg
-    title: '# 11. Juni 2026
-
-      **Sulzfeld**'
+    title: '11. Juni 2026\n# **Sulzfeld**'
   - timestamp: "2026-06-11T16:56:27"  # 2026-06-11 16-56-27.jpg
     text: Hotel **Weingut Bernhard**
   - timestamp: "2026-06-12T19:05:30"  # 2026-06-12 19-05-30.jpg
@@ -59,13 +57,15 @@ text_labels:
   - timestamp: "2026-06-14T17:21:12"  # 2026-06-14 17-21-12.jpg
     text: Das **Schloss** in **Tegernsee** am **Tegernsee**
   - timestamp: "2026-06-15T11:21:15"  # 2026-06-15 11-21-15.jpg
-    text: "# 15. Juni 2026\nHalt in **Holzkirchen** auf dem Weg nach **München**"
+    title: "15. Juni 2026\n# Tegernsee - München"
+  - timestamp: "2026-06-15T11:21:15"  # 2026-06-15 11-21-15.jpg
+    text: "Halt in **Holzkirchen** auf dem Weg nach **München**"
   - timestamp: "2026-06-15T15:29:04"  # 2026-06-15 15-29-04.jpg
     text: Brücke über die **Isar** in **München**
   - timestamp: "2026-06-15T17:49:22"  # 2026-06-15 17-49-22.jpg
     text: Augustinerbiergarten
   - timestamp: "2026-06-16T09:40:37"  # 2026-06-16 09-40-37.jpg
-    text: "# 16. Juni 2026\nWeiter geht's **Richtung Bad Tölz**"
+    title: "16. Juni 2026\nMünchen - Bad Tölz"
   - timestamp: "2026-06-16T16:23:46"  # 2026-06-16 16-23-46.jpg
     text: '**Bad Tölz**'
   - timestamp: "2026-06-17T08:38:11"  # 2026-06-17 08-38-11.jpg
@@ -89,8 +89,22 @@ text_labels:
   - timestamp: "2026-06-18T06:52:02"  # 2026-06-18 06-52-02.jpg
     text: '# 18. Juni 2026 - 6:52 Uhr'
   - timestamp: "2026-06-18T07:57:26"  # 2026-06-18 07-57-26.jpg
-    text: Wir sind ein Stück mit dem Zug von **Garmisch** nach **Hochzirl** gefahren.
+    text: Am letzten Tag sind wir zunächst mit dem Zug von **Garmisch** nach **Hochzirl** gefahren.
   - timestamp: "2026-06-18T09:01:56"  # 2026-06-18 09-01-56.jpg
-    text: Angekommen in **Hochzirl**
+    text: "9:01 Uhr\nAngekommen in **Hochzirl**"
   - timestamp: "2026-06-18T09:29:19"  # 2026-06-18 09-29-19.jpg
     text: Durch das schöne **Inntal** bis nach **Imst**
+  - timestamp: "2026-06-19T11:24:26"  # 2026-06-19 11-24-26.jpg
+    title: '# 19. Juni 2026
+
+      Jetzt eine Woche entspannen in **Schenna**'
+  - timestamp: "2026-06-19T11:24:26"  # 2026-06-19 11-24-26.jpg
+    text: Blick vom **Balkon**
+  - timestamp: "2026-06-19T12:26:59"  # 2026-06-19 12-26-59.jpg
+    text: "**Mair Stub'm**"
+  - timestamp: "2026-06-20T09:15:04"  # 2026-06-20 09-15-04.jpg
+    text: "# 20. Juni 2026\nRadtour nach **Bozen**"
+  - timestamp: "2026-06-20T10:19:41"  # 2026-06-20 10-19-41.jpg
+    text: '... und mit dem **Zug zurück**.'
+  - timestamp: "2026-06-21T10:49:23"  # 2026-06-21 10-49-23.jpg
+    text: "# 21. Juni 2026\nAlgunder Waalweg"

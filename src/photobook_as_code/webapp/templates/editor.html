@@ -7,18 +7,73 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  <svg aria-hidden="true" class="icon-sprite">
+    <symbol id="icon-chevron-left" viewBox="0 0 24 24">
+      <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24">
+      <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24">
+      <path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0h10l-1 13a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-sunrise" viewBox="0 0 24 24">
+      <path d="M12 2v4M4.9 10.1l1.4 1.4M2 18h20M19.1 10.1l-1.4 1.4M6 18a6 6 0 0112 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </svg>
+
   <header>
-    <span class="position">{{ index + 1 }} / {{ total }}</span>
+    <nav class="nav-controls" aria-label="Item navigation">
+      {% if has_prev %}
+        <a class="nav-button" id="nav-prev" href="{{ url_for('view_item', index=index - 1) }}" aria-label="Previous item">
+      {% else %}
+        <a class="nav-button" id="nav-prev" aria-disabled="true" aria-label="Previous item">
+      {% endif %}
+          <svg class="icon" aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
+        </a>
+
+      <span class="position-control">
+        <button type="button" id="position-display" class="position">{{ index + 1 }} / {{ total }}</button>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" id="position-input" class="position-input"
+          data-max="{{ total }}" value="{{ index + 1 }}" aria-label="Jump to item number" hidden>
+      </span>
+
+      {% if has_next %}
+        <a class="nav-button" id="nav-next" href="{{ url_for('view_item', index=index + 1) }}" aria-label="Next item">
+      {% else %}
+        <a class="nav-button" id="nav-next" aria-disabled="true" aria-label="Next item">
+      {% endif %}
+          <svg class="icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg>
+        </a>
+    </nav>
+
     <span class="filename">{{ filename if not is_title else "Title entry" }}</span>
+
+    <div class="header-actions">
+      {% if is_title %}
+        <button type="button" id="delete-title-button" class="header-action header-action-danger">
+          <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
+          Delete title
+        </button>
+      {% else %}
+        <button type="button" id="add-title-button" class="header-action">
+          <svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
+          Add title before this photo
+        </button>
+      {% endif %}
+    </div>
   </header>
 
   <main>
     {% if not is_title %}
       <div class="date-header">
-        <span class="date-display">{{ date_display }}</span>
+        <span class="date-display"{% if date_taken_iso %} data-date="{{ date_taken_iso }}"{% endif %}>{{ date_display }}</span>
         {% if is_new_day %}
           <span class="new-day-badge" title="First photo of a new day">
-            <span class="new-day-icon" aria-hidden="true">🌅</span> New day
+            <svg class="icon" aria-hidden="true"><use href="#icon-sunrise"></use></svg> New day
           </span>
         {% endif %}
       </div>
@@ -30,28 +85,12 @@
           width="{{ photo_width }}" height="{{ photo_height }}"
           style="aspect-ratio: {{ photo_width }} / {{ photo_height }};">
       {% endif %}
-
-      {% if has_prev %}
-        <a class="nav-zone nav-zone-left" id="prev-zone"
-          href="{{ url_for('view_item', index=index - 1) }}" aria-label="Previous item">
-          <span class="nav-zone-chevron" aria-hidden="true">&lsaquo;</span>
-        </a>
-      {% endif %}
-
-      {% if has_next %}
-        <a class="nav-zone nav-zone-right" id="next-zone"
-          href="{{ url_for('view_item', index=index + 1) }}" aria-label="Next item">
-          <span class="nav-zone-chevron" aria-hidden="true">&rsaquo;</span>
-        </a>
-      {% endif %}
     </div>
 
     {% if is_title %}
       <textarea id="text-field" class="title-field" spellcheck="true">{{ title_text }}</textarea>
-      <button type="button" id="delete-title-button" class="action-button action-button-danger">Delete title</button>
     {% else %}
       <textarea id="text-field" spellcheck="true">{{ text }}</textarea>
-      <button type="button" id="add-title-button" class="action-button">Add title before this photo</button>
     {% endif %}
     <span id="save-status" class="save-status" aria-live="polite"></span>
   </main>
