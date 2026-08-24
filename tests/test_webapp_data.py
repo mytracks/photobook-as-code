@@ -54,7 +54,7 @@ def _make_photos_dir(tmp_path: Path) -> Path:
 def _write_config(tmp_path: Path, photos_dir: Path, order: str) -> Path:
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
-        f"photos: {photos_dir}\n"
+        f"photo_folders:\n  - {photos_dir}\n"
         "output:\n"
         "  size: A4\n"
         "layout:\n"
@@ -70,7 +70,7 @@ def _write_config_with_labels(
 ) -> Path:
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
-        f"photos: {photos_dir}\n"
+        f"photo_folders:\n  - {photos_dir}\n"
         "output:\n"
         "  size: A4\n"
         "layout:\n"
@@ -317,7 +317,7 @@ class TestPhotoDirectoryCache:
         date_config_path = _write_config(tmp_path, photos_dir, order="date")
         alpha_config_path = tmp_path / "alpha-config.yaml"
         alpha_config_path.write_text(
-            f"photos: {photos_dir}\n"
+            f"photo_folders:\n  - {photos_dir}\n"
             "output:\n"
             "  size: A4\n"
             "layout:\n"
@@ -334,3 +334,17 @@ class TestPhotoDirectoryCache:
         load_editor_data(alpha_config_path, photo_cache=cache)
 
         assert calls["count"] == 2
+
+    def test_cache_key_ignores_folder_listing_order(self, tmp_path, monkeypatch):
+        photos_dir = _make_photos_dir(tmp_path)
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        _make_photo_file(other_dir / "z_other.jpg", mtime_offset_seconds=30)
+        calls = _counting_collect_photos(monkeypatch)
+        cache = PhotoDirectoryCache()
+
+        first = cache.get([photos_dir, other_dir], "alphabetical")
+        second = cache.get([other_dir, photos_dir], "alphabetical")
+
+        assert calls["count"] == 1
+        assert first is second

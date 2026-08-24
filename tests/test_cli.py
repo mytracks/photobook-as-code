@@ -35,7 +35,8 @@ def test_extract_labels_prints_stubs_and_writes_no_output(tmp_path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    config_content = f"""photos: {photos_dir}
+    config_content = f"""photo_folders:
+  - {photos_dir}
 output:
   size: A4
   format: pdf
@@ -84,7 +85,8 @@ def test_extract_labels_collapses_shared_timestamp(tmp_path):
         mtime = shared.timestamp()
         os.utime(path, (mtime, mtime))
 
-    config_content = f"""photos: {photos_dir}
+    config_content = f"""photo_folders:
+  - {photos_dir}
 output:
   size: A4
   format: pdf

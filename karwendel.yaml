@@ -1,4 +1,5 @@
-photos: /mnt/pictures/2026/2026-06-11+ Karwendel + Schenna/
+photo_folders:
+  - /mnt/pictures/2026/2026-06-11+ Karwendel + Schenna/
 output:
   size: A4
   format: pdf

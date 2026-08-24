@@ -16,7 +16,8 @@ from photobook_as_code.webapp import yaml_store
 
 
 SAMPLE_CONFIG = """\
-photos: ./photos/
+photo_folders:
+  - ./photos/
 output:
   size: A4
 layout:
@@ -145,7 +146,8 @@ class TestInsertNewEntry:
 
     def test_insert_creates_text_labels_section_when_absent(self, tmp_path):
         no_labels_config = """\
-photos: ./photos/
+photo_folders:
+  - ./photos/
 output:
   size: A4
 layout:
@@ -234,7 +236,8 @@ class TestInsertNewTitleEntry:
 
     def test_insert_creates_text_labels_section_when_absent(self, tmp_path):
         no_labels_config = """\
-photos: ./photos/
+photo_folders:
+  - ./photos/
 output:
   size: A4
 layout:

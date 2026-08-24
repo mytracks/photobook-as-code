@@ -28,19 +28,23 @@ The system SHALL support rendering pages incrementally using a generator pattern
 - **THEN** each page has identical quality and appearance as batch rendering approach
 
 ### Requirement: Detect photo files
-The system SHALL detect and filter supported image file formats (JPG, JPEG, PNG) from the specified source directory.
+The system SHALL detect and filter supported image file formats (JPG, JPEG, PNG) from each of the configured source folders, and SHALL merge the results across all folders into one combined pool before ordering and layout.
 
 #### Scenario: Mixed file types
-- **WHEN** source directory contains JPG, PNG, and other file types
-- **THEN** system includes only JPG and PNG files for layout
+- **WHEN** a source folder contains JPG, PNG, and other file types
+- **THEN** system includes only JPG and PNG files from that folder for layout
 
 #### Scenario: Case-insensitive extensions
-- **WHEN** source directory contains files with extensions .jpg, .JPG, .jpeg, .JPEG, .png, .PNG
+- **WHEN** a source folder contains files with extensions .jpg, .JPG, .jpeg, .JPEG, .png, .PNG
 - **THEN** system recognizes all as valid photo files
 
 #### Scenario: Subdirectories
-- **WHEN** source directory contains subdirectories with photos
+- **WHEN** a source folder contains subdirectories with photos
 - **THEN** system behavior follows configuration (recursive or single-level)
+
+#### Scenario: Multiple source folders merged
+- **WHEN** more than one folder is configured
+- **THEN** system detects photo files independently in each folder and merges them into a single combined pool, deduplicated by resolved photo path, before ordering is applied
 
 ### Requirement: Determine photo ordering
 The system SHALL order photos consistently for layout placement.

@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-from ..config import PhotobookConfig, load_config, validate_photos_path
+from ..config import PhotobookConfig, load_config, validate_photo_folders
 from ..photos import PhotoMetadata, collect_photos
 from ..text_labels import (
     TextLabel,
@@ -25,20 +25,21 @@ Item = Union[PhotoMetadata, TitleLabel]
 
 class PhotoDirectoryCache:
     """
-    Caches the expensive photo-directory scan (collect_photos, which opens
+    Caches the expensive photo-folder scan (collect_photos, which opens
     every photo file to read EXIF/dimensions) across requests for one
-    running editor session, keyed by (photos_dir, order) so a changed
-    layout.order naturally misses the cache instead of needing explicit
-    invalidation.
+    running editor session, keyed by (photo_folders, order) so a changed
+    layout.order or folder set naturally misses the cache instead of needing
+    explicit invalidation. The folder set is sorted before keying so listing
+    order in `photo_folders` doesn't affect cache hits.
     """
 
     def __init__(self):
-        self._cache: Dict[Tuple[str, str], List[PhotoMetadata]] = {}
+        self._cache: Dict[Tuple[Tuple[str, ...], str], List[PhotoMetadata]] = {}
 
-    def get(self, photos_dir: Path, order: str) -> List[PhotoMetadata]:
-        key = (str(photos_dir), order)
+    def get(self, photo_folders: List[Path], order: str) -> List[PhotoMetadata]:
+        key = (tuple(sorted(str(folder) for folder in photo_folders)), order)
         if key not in self._cache:
-            self._cache[key] = collect_photos(photos_dir, order=order, recursive=False)
+            self._cache[key] = collect_photos(photo_folders, order=order, recursive=False)
         return self._cache[key]
 
 
@@ -170,12 +171,12 @@ def load_editor_data(
     given, in which case it's scanned once and reused.
     """
     config = load_config(config_path)
-    validate_photos_path(config)
-    photos_dir = config.resolve_photos_path()
+    validate_photo_folders(config)
+    photo_folders = config.resolve_photo_folders()
     if photo_cache is not None:
-        photos = photo_cache.get(photos_dir, config.layout.order)
+        photos = photo_cache.get(photo_folders, config.layout.order)
     else:
-        photos = collect_photos(photos_dir, order=config.layout.order, recursive=False)
+        photos = collect_photos(photo_folders, order=config.layout.order, recursive=False)
     associations = associate_text_labels_with_photos(config.text_labels, photos)
     titles = parse_title_labels(config.text_labels)
     items = merge_titles_with_photos(titles, photos)

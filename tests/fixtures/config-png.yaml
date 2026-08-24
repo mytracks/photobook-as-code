@@ -1,5 +1,6 @@
 # Test configuration for PNG output
-photos: ./sample-photos/
+photo_folders:
+  - ./sample-photos/
 output:
   size: Letter
   format: png

@@ -19,7 +19,7 @@ def test_nonexistent_config_file_fails_fast(tmp_path):
 def test_nonexistent_photos_directory_fails_fast(tmp_path):
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
-        f"photos: {tmp_path / 'no-such-photos-dir'}\n"
+        f"photo_folders:\n  - {tmp_path / 'no-such-photos-dir'}\n"
         "output:\n"
         "  size: A4\n"
         "layout:\n"

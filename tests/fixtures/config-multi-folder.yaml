@@ -1,0 +1,13 @@
+# Multi-folder test configuration - photos from both folders are merged
+# into one pool before layout.order is applied
+photo_folders:
+  - ./sample-photos-subset-1/
+  - ./sample-photos-subset-2/
+output:
+  size: A4
+  format: pdf
+  filename: test-multi-folder.pdf
+  directory: tests/output/
+layout:
+  photos_per_page: 4
+theme: clean

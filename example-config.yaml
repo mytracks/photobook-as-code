@@ -1,9 +1,12 @@
 # Example photobook configuration
 
-# Path to directory containing photos
-# Can be relative or absolute
-#photos: /mnt/pictures/2026/2026-04-30+ Hamburg
-photos: /mnt/pictures/2026/Test
+# List of directories containing photos - photos from every listed folder
+# are merged into one pool before layout.order is applied
+# Paths can be relative or absolute
+#photo_folders:
+#  - /mnt/pictures/2026/2026-04-30+ Hamburg
+photo_folders:
+  - /mnt/pictures/2026/Test
 
 # Output configuration
 output:

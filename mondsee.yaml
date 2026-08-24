@@ -1,4 +1,5 @@
-photos: /mnt/pictures/2026/2026-07-31+ Mondsee/
+photo_folders:
+  - /mnt/pictures/2026/2026-07-31+ Mondsee/
 output:
   size: A4
   #size: "4960x7016"  # Custom size in pixels

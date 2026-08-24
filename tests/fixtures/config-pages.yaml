@@ -1,5 +1,6 @@
 # Test configuration with fixed pages
-photos: ./sample-photos/
+photo_folders:
+  - ./sample-photos/
 output:
   size: A4
   format: pdf

@@ -1,6 +1,7 @@
 # Test configuration for sparse distribution: 1 photo across 10 pages
 # Note: Uses a subdirectory with only 1 photo
-photos: ./sample-photos-subset-1/
+photo_folders:
+  - ./sample-photos-subset-1/
 output:
   size: A4
   format: pdf
