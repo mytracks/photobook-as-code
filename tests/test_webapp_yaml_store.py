@@ -2,11 +2,16 @@
 Tests for the round-trip-safe YAML persistence layer used by the web editor.
 """
 
+from datetime import datetime
 from pathlib import Path
 
 from photobook_as_code.config import load_config
 from photobook_as_code.photos import PhotoMetadata
-from photobook_as_code.text_labels import associate_text_labels_with_photos
+from photobook_as_code.text_labels import (
+    TitleLabel,
+    associate_text_labels_with_photos,
+    parse_title_labels,
+)
 from photobook_as_code.webapp import yaml_store
 
 
@@ -164,3 +169,107 @@ theme: clean
         reloaded = load_config(config_path)
         assert len(reloaded.text_labels) == 1
         assert reloaded.text_labels[0]["text"] == "first caption"
+
+
+class TestFindTitleEntryIndex:
+    def test_locates_matching_title(self, tmp_path):
+        config_path = _write_config(tmp_path, SAMPLE_CONFIG)
+        config = load_config(config_path)
+        titles = parse_title_labels(config.text_labels)
+        assert len(titles) == 1
+
+        index = yaml_store.find_title_entry_index(config.text_labels, titles[0])
+
+        assert index == 0
+
+    def test_returns_none_for_unmatched_title(self, tmp_path):
+        config_path = _write_config(tmp_path, SAMPLE_CONFIG)
+        config = load_config(config_path)
+        phantom = TitleLabel(timestamp=datetime(2099, 1, 1), title="nope")
+
+        assert yaml_store.find_title_entry_index(config.text_labels, phantom) is None
+
+
+class TestSaveTitleText:
+    def test_update_changes_only_the_target_title(self, tmp_path):
+        config_path = _write_config(tmp_path, SAMPLE_CONFIG)
+        config = load_config(config_path)
+        titles = parse_title_labels(config.text_labels)
+
+        yaml_store.save_title_text(config_path, config.text_labels, titles[0], "New Title")
+
+        content = config_path.read_text()
+        assert "New Title" in content
+        assert '    text: "existing text"' in content  # b.jpg entry untouched
+        assert '    text: ""' in content  # a.jpg entry untouched
+
+        reloaded = load_config(config_path)
+        reloaded_titles = parse_title_labels(reloaded.text_labels)
+        assert len(reloaded_titles) == 1
+        assert reloaded_titles[0].title == "New Title"
+
+
+class TestInsertNewTitleEntry:
+    def test_insert_in_chronological_middle(self, tmp_path):
+        config_path = _write_config(tmp_path, SAMPLE_CONFIG)
+        mid_photo = _photo("mid.jpg", "2026-01-02T15:00:00")
+
+        yaml_store.insert_new_title(config_path, mid_photo)
+
+        content = config_path.read_text()
+        a_pos = content.index("a.jpg")
+        mid_pos = content.index("mid.jpg")
+        b_pos = content.index("b.jpg")
+        assert a_pos < mid_pos < b_pos
+        # entries untouched either side of the insertion
+        assert '# title.jpg' in content
+        assert '    text: ""' in content  # a.jpg's entry, still empty
+        assert '    text: "existing text"' in content  # b.jpg's entry, untouched
+
+        reloaded = load_config(config_path)
+        titles = parse_title_labels(reloaded.text_labels)
+        assert len(titles) == 2
+        new_title = next(t for t in titles if t.title == "")
+        assert new_title.timestamp == datetime.fromisoformat("2026-01-02T15:00:00")
+
+    def test_insert_creates_text_labels_section_when_absent(self, tmp_path):
+        no_labels_config = """\
+photos: ./photos/
+output:
+  size: A4
+layout:
+  photos_per_page: 2
+theme: clean
+"""
+        config_path = _write_config(tmp_path, no_labels_config)
+        photo = _photo("only.jpg", "2026-02-01T08:00:00")
+
+        yaml_store.insert_new_title(config_path, photo)
+
+        content = config_path.read_text()
+        assert content.startswith(no_labels_config)
+        assert "text_labels:" in content
+        assert '# only.jpg' in content
+
+        reloaded = load_config(config_path)
+        titles = parse_title_labels(reloaded.text_labels)
+        assert len(titles) == 1
+        assert titles[0].title == ""
+
+
+class TestDeleteTitleEntry:
+    def test_removes_only_the_target_title(self, tmp_path):
+        config_path = _write_config(tmp_path, SAMPLE_CONFIG)
+        config = load_config(config_path)
+        titles = parse_title_labels(config.text_labels)
+
+        yaml_store.delete_title_entry(config_path, config.text_labels, titles[0])
+
+        content = config_path.read_text()
+        assert "# Trip Title" not in content
+        assert '    text: "existing text"' in content  # b.jpg entry untouched
+        assert '    text: ""' in content  # a.jpg entry untouched
+
+        reloaded = load_config(config_path)
+        assert parse_title_labels(reloaded.text_labels) == []
+        assert len(reloaded.text_labels) == 2

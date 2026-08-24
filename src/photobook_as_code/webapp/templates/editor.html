@@ -3,49 +3,60 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ filename }} - Photobook Text Editor</title>
+  <title>{{ filename if not is_title else "Title" }} - Photobook Text Editor</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header>
     <span class="position">{{ index + 1 }} / {{ total }}</span>
-    <span class="filename">{{ filename }}</span>
+    <span class="filename">{{ filename if not is_title else "Title entry" }}</span>
   </header>
 
   <main>
-    <div class="date-header">
-      <span class="date-display">{{ date_display }}</span>
-      {% if is_new_day %}
-        <span class="new-day-badge" title="First photo of a new day">
-          <span class="new-day-icon" aria-hidden="true">🌅</span> New day
-        </span>
-      {% endif %}
-    </div>
+    {% if not is_title %}
+      <div class="date-header">
+        <span class="date-display">{{ date_display }}</span>
+        {% if is_new_day %}
+          <span class="new-day-badge" title="First photo of a new day">
+            <span class="new-day-icon" aria-hidden="true">🌅</span> New day
+          </span>
+        {% endif %}
+      </div>
+    {% endif %}
 
-    <div class="photo-frame">
-      <img class="photo" src="{{ url_for('photo_image', index=index) }}" alt="{{ filename }}"
-        width="{{ photo_width }}" height="{{ photo_height }}"
-        style="aspect-ratio: {{ photo_width }} / {{ photo_height }};">
+    <div class="item-frame{{ ' title-frame' if is_title else '' }}">
+      {% if not is_title %}
+        <img class="photo" src="{{ url_for('item_image', index=index) }}" alt="{{ filename }}"
+          width="{{ photo_width }}" height="{{ photo_height }}"
+          style="aspect-ratio: {{ photo_width }} / {{ photo_height }};">
+      {% endif %}
 
       {% if has_prev %}
         <a class="nav-zone nav-zone-left" id="prev-zone"
-          href="{{ url_for('view_photo', index=index - 1) }}" aria-label="Previous photo">
+          href="{{ url_for('view_item', index=index - 1) }}" aria-label="Previous item">
           <span class="nav-zone-chevron" aria-hidden="true">&lsaquo;</span>
         </a>
       {% endif %}
 
       {% if has_next %}
         <a class="nav-zone nav-zone-right" id="next-zone"
-          href="{{ url_for('view_photo', index=index + 1) }}" aria-label="Next photo">
+          href="{{ url_for('view_item', index=index + 1) }}" aria-label="Next item">
           <span class="nav-zone-chevron" aria-hidden="true">&rsaquo;</span>
         </a>
       {% endif %}
     </div>
 
-    <textarea id="text-field" spellcheck="true">{{ text }}</textarea>
+    {% if is_title %}
+      <textarea id="text-field" class="title-field" spellcheck="true">{{ title_text }}</textarea>
+      <button type="button" id="delete-title-button" class="action-button action-button-danger">Delete title</button>
+    {% else %}
+      <textarea id="text-field" spellcheck="true">{{ text }}</textarea>
+      <button type="button" id="add-title-button" class="action-button">Add title before this photo</button>
+    {% endif %}
     <span id="save-status" class="save-status" aria-live="polite"></span>
   </main>
 
-  <script src="{{ url_for('static', filename='editor.js') }}" data-index="{{ index }}"></script>
+  <script src="{{ url_for('static', filename='editor.js') }}"
+    data-index="{{ index }}" data-is-title="{{ 'true' if is_title else 'false' }}"></script>
 </body>
 </html>

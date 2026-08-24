@@ -17,7 +17,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from ..photos import PhotoMetadata
-from ..text_labels import TextLabel, _parse_timestamp
+from ..text_labels import TextLabel, TitleLabel, _parse_timestamp
 
 
 def _make_yaml() -> YAML:
@@ -128,4 +128,102 @@ def save_photo_text(
     else:
         insert_new_entry(document, photo, new_text)
 
+    save_document(config_path, document)
+
+
+def find_title_entry_index(text_labels: List[dict], label: TitleLabel) -> Optional[int]:
+    """
+    Find the index within a plain text_labels list (as parsed by
+    config.load_config) of the entry that produced the given TitleLabel.
+
+    Mirrors `find_entry_index`, matching on `(timestamp, title)` instead of
+    `(timestamp, text)`.
+    """
+    for index, entry in enumerate(text_labels):
+        if "title" not in entry:
+            continue
+        try:
+            candidate = TitleLabel.from_dict(entry)
+        except (KeyError, ValueError):
+            continue
+        if candidate.timestamp == label.timestamp and candidate.title == label.title:
+            return index
+    return None
+
+
+def insert_new_title_entry(document: CommentedMap, photo: PhotoMetadata, title_text: str = "") -> int:
+    """
+    Insert a new title entry timestamped to `photo`'s own timestamp,
+    positioned in chronological order among existing entries. Creates the
+    text_labels key if the document doesn't have one.
+
+    Using the photo's own timestamp means the new title sorts immediately
+    before that specific photo once merged with the photo sequence (see
+    `text_labels.merge_titles_with_photos`), without any editor-side
+    ordering logic of its own.
+
+    Returns the index the new entry was inserted at.
+    """
+    if document.get("text_labels") is None:
+        document["text_labels"] = CommentedSeq()
+
+    text_labels_seq = document["text_labels"]
+
+    insert_at = len(text_labels_seq)
+    for i, existing in enumerate(text_labels_seq):
+        if _parse_timestamp(existing["timestamp"]) > photo.sort_date:
+            insert_at = i
+            break
+
+    entry = CommentedMap()
+    entry["timestamp"] = DoubleQuotedScalarString(photo.sort_date.isoformat())
+    entry["title"] = title_text
+    entry.yaml_add_eol_comment(photo.filename, "timestamp")
+
+    text_labels_seq.insert(insert_at, entry)
+    return insert_at
+
+
+def insert_new_title(config_path: Path, photo: PhotoMetadata) -> None:
+    """
+    Create a new, empty title entry timestamped to `photo`, saving it to
+    `config_path`. Loads and writes the document fresh so the save always
+    reflects the file's current on-disk content.
+    """
+    document = load_document(config_path)
+    insert_new_title_entry(document, photo, "")
+    save_document(config_path, document)
+
+
+def save_title_text(
+    config_path: Path,
+    text_labels: List[dict],
+    label: TitleLabel,
+    new_text: str,
+) -> None:
+    """
+    Save `new_text` as the title entry identified by `label`.
+
+    Loads and writes the document fresh so the save always reflects the
+    file's current on-disk content.
+    """
+    document = load_document(config_path)
+    index = find_title_entry_index(text_labels, label)
+    document["text_labels"][index]["title"] = new_text
+    save_document(config_path, document)
+
+
+def delete_title_entry(
+    config_path: Path,
+    text_labels: List[dict],
+    label: TitleLabel,
+) -> None:
+    """
+    Delete the title entry identified by `label` from the configuration
+    file. Loads and writes the document fresh so the save always reflects
+    the file's current on-disk content.
+    """
+    document = load_document(config_path)
+    index = find_title_entry_index(text_labels, label)
+    del document["text_labels"][index]
     save_document(config_path, document)
