@@ -1,152 +1,77 @@
-photos: /mnt/pictures/2026/2026-06-11+ Karwendel + Schenna/
+photos: /mnt/pictures/2026/2026-07-31+ Mondsee/
 output:
   size: A4
-  format: pdf
-  filename: /mnt/downloads/karwendel.pdf
+  #size: "4960x7016"  # Custom size in pixels
+  #format: pdf
+  #filename: /mnt/downloads/mondsee.pdf
+  format: jpg
+  directory: /mnt/downloads/mondsee
+  quality: 95   
 
 layout:
   #photos_per_page: 2
-  pages: 140
+  pages: 80
+  order: date
 
 theme: clean2
 text_labels:
-  - timestamp: "2026-06-11T16:11:20"  # 2026-06-11 16-11-20.jpg
-    title: '11. Juni 2026
-
-      # **Sulzfeld**'
-  - timestamp: "2026-06-11T16:35:53"  # 2026-06-11 16-35-53.jpg
-    text: ""
-  - timestamp: "2026-06-11T16:56:27"  # 2026-06-11 16-56-27.jpg
-    text: Hotel **Weingut Bernhard**
-  - timestamp: "2026-06-12T19:05:30"  # 2026-06-12 19-05-30.jpg
-    title: "12. Juni 2026\n# **Imst**"
-  - timestamp: "2026-06-13T07:43:11"  # 2026-06-13 07-43-11.jpg
-    title: "13. Juni 2026\n# Innsbruck - Achensee"
-  - timestamp: "2026-06-13T07:43:11"  # 2026-06-13 07-43-11.jpg
-    text: Gasthof **Neuner** in **Imst**
-  - timestamp: "2026-06-13T08:36:14"  # 2026-06-13 08-36-14.jpg
-    text: "# 8:36 Uhr\nWir warten auf den Zug"
-  - timestamp: "2026-06-13T09:39:50"  # 2026-06-13 09-39-50.jpg
-    text: "# 9:30 Uhr\nLeider war der Fernverkehrszug nicht wirklich gut für E-Bikes geeignet. Daher waren wir froh, als wir in Innsbruck angekommen waren."
-  - timestamp: "2026-06-13T11:59:27"  # 2026-06-13 11-59-27.jpg
-    text: 'Pause in **Schwaz**'
-  - timestamp: "2026-06-13T12:42:41"  # 2026-06-13 12-42-41.jpg
-    text: Da geht's rauf Richtung **Achensee**
-  - timestamp: "2026-06-13T12:56:01"  # 2026-06-13 12-56-01.jpg
-    text: Pause auf **halber Strecke**
-  - timestamp: "2026-06-13T13:35:16"  # 2026-06-13 13-35-16.jpg
-    text: Angekommen in **Arthur‘s Hotel**
-  - timestamp: "2026-06-13T13:38:30"  # 2026-06-13 13-38-30.jpg
-    text: Blick vom **Balkon**
-  - timestamp: "2026-06-13T14:15:20"  # 2026-06-13 14-15-20.jpg
-    text: Der **Achensee** ...
-  - timestamp: "2026-06-13T14:15:47"  # 2026-06-13 14-15-47.jpg
-    text: '... und der **qualmende Zug**'
-  - timestamp: "2026-06-13T14:46:45"  # 2026-06-13 14-46-45.jpg
-    text: Blick auf **Pertisau**
-  - timestamp: "2026-06-14T06:27:19"  # 2026-06-14 06-27-19.jpg
-    text: "14. Juni 2026\n# Achensee - Tegernsee"
-  - timestamp: "2026-06-14T09:05:33"  # 2026-06-14 09-05-33.jpg
-    text: Weiter geht's zum Tegernsee
-  - timestamp: "2026-06-14T09:34:05"  # 2026-06-14 09-34-05.jpg
-    text: 9:34 Uhr - Das ist noch der Achensee
-  - timestamp: "2026-06-14T12:57:36"  # 2026-06-14 12-57-36.jpg
-    text: 12:57 Uhr - Wir haben das Südufer des Tegernsees erreicht.
-  - timestamp: "2026-06-14T13:54:56"  # 2026-06-14 13-54-56.jpg
-    text: Hotel Garni **Eder** in **Moosrain**
-  - timestamp: "2026-06-14T16:50:45"  # 2026-06-14 16-50-45.jpg
-    text: Der **Tegernsee**
-  - timestamp: "2026-06-14T17:21:12"  # 2026-06-14 17-21-12.jpg
-    text: Das **Schloss** in **Tegernsee** am **Tegernsee**
-  - timestamp: "2026-06-15T11:21:15"  # 2026-06-15 11-21-15.jpg
-    title: "15. Juni 2026\n# Tegernsee - München"
-  - timestamp: "2026-06-15T11:21:15"  # 2026-06-15 11-21-15.jpg
-    text: "Halt in **Holzkirchen** auf dem Weg nach **München**"
-  - timestamp: "2026-06-15T15:29:04"  # 2026-06-15 15-29-04.jpg
-    text: Brücke über die **Isar** in **München**
-  - timestamp: "2026-06-15T17:49:22"  # 2026-06-15 17-49-22.jpg
-    text: Augustinerbiergarten
-  - timestamp: "2026-06-16T09:40:37"  # 2026-06-16 09-40-37.jpg
-    title: "16. Juni 2026\n# München - Bad Tölz"
-  - timestamp: "2026-06-16T16:23:46"  # 2026-06-16 16-23-46.jpg
-    text: '**Bad Tölz**'
-  - timestamp: "2026-06-17T08:38:11"  # 2026-06-17 08-38-11.jpg
-    text: "Hotel **Zachschuster** in Bad Tölz"
-  - timestamp: "2026-06-17T08:38:11"  # 2026-06-17 08-38-11.jpg
-    title: '17. Juni 2026
-
-      # Bad Tölz - Garmisch-Partenkirchen'
-  - timestamp: "2026-06-17T09:57:23"  # 2026-06-17 09-57-23.jpg
-    text: '**Sylvensteinspeicher**'
-  - timestamp: "2026-06-17T10:12:50"  # 2026-06-17 10-12-50.jpg
-    text: Pause am **Sylvensteinspeicher**
-  - timestamp: "2026-06-17T11:45:43"  # 2026-06-17 11-45-43.jpg
-    text: Golfplatz in **Wallgau**
-  - timestamp: "2026-06-17T12:39:33"  # 2026-06-17 12-39-33.jpg
-    text: Skisprungschanzen in **Garmisch-Partenkirchen**
-  - timestamp: "2026-06-17T16:13:43"  # 2026-06-17 16-13-43.jpg
-    text: Hotel **Rheinischer Hof** in **Garmisch**
-  - timestamp: "2026-06-17T17:33:17"  # 2026-06-17 17-33-17.jpg
-    text: Leckere Tapas in der **Alten Druckerei**
-  - timestamp: "2026-06-17T18:43:46"  # 2026-06-17 18-43-46.jpg
-    text: "# 18:43 Uhr\nBlick auf die **Zugspitze**"
-  - timestamp: "2026-06-17T20:14:49"  # 2026-06-17 20-14-49.jpg
-    text: '# 20:14 Uhr'
-  - timestamp: "2026-06-17T21:08:55"  # 2026-06-17 21-08-55.jpg
-    text: '# 21:08 Uhr'
-  - timestamp: "2026-06-18T06:52:02"  # 2026-06-18 06-52-02.jpg
-    text: '# 6:52 Uhr'
-  - timestamp: "2026-06-18T06:52:02"  # 2026-06-18 06-52-02.jpg
-    title: '18. Juni 2026
-
-      # Garmisch - Hochzirl - Imst'
-  - timestamp: "2026-06-18T07:57:26"  # 2026-06-18 07-57-26.jpg
-    text: Am letzten Tag sind wir zunächst mit dem Zug von **Garmisch** nach **Hochzirl** gefahren.
-  - timestamp: "2026-06-18T09:01:56"  # 2026-06-18 09-01-56.jpg
-    text: "9:01 Uhr\nAngekommen in **Hochzirl**"
-  - timestamp: "2026-06-18T09:29:19"  # 2026-06-18 09-29-19.jpg
-    text: Durch das schöne **Inntal** bis nach **Imst**
-  - timestamp: "2026-06-19T11:24:26"  # 2026-06-19 11-24-26.jpg
-    title: '# 19. Juni 2026
-
-      Eine Woche entspannen im Hotel **Hilburger** in **Schenna**'
-  - timestamp: "2026-06-19T11:24:26"  # 2026-06-19 11-24-26.jpg
-    text: Blick vom **Balkon**
-  - timestamp: "2026-06-19T12:26:59"  # 2026-06-19 12-26-59.jpg
-    text: "**Mair Stub'm**"
-  - timestamp: "2026-06-20T09:15:04"  # 2026-06-20 09-15-04.jpg
-    text: "20. Juni 2026\n# Radtour nach **Bozen**"
-  - timestamp: "2026-06-20T10:19:41"  # 2026-06-20 10-19-41.jpg
-    text: '... und mit dem **Zug zurück**.'
-  - timestamp: "2026-06-21T10:49:23"  # 2026-06-21 10-49-23.jpg
-    text: "21. Juni 2026\n# Algunder Waalweg"
-  - timestamp: "2026-06-22T10:34:37"  # 2026-06-22 10-34-37.jpg
-    title: '22. Juni 2026
-
-      # Radtour entlang der **Südtiroler Weinstraße**'
-  - timestamp: "2026-06-22T10:34:37"  # 2026-06-22 10-34-37.jpg
-    text: '**Tramin**'
-  - timestamp: "2026-06-22T10:43:58"  # 2026-06-22 10-43-58.jpg
+  - timestamp: "2026-07-31T10:27:26"  # APC_3713.jpg
+    text: "31. Juli 2026\nShopping bei **Adidas**"
+  - timestamp: "2026-07-31T12:20:44"  # 2026-07-31 12-20-44.jpg
+    text: Radtour in **Nürnberg**
+  - timestamp: "2026-07-31T18:56:08"  # APC_3714.jpg
+    text: Abends in **Nürnberg**
+  - timestamp: "2026-08-01T13:31:44"  # 2026-08-01 13-31-44.jpg
+    title: "1. August 2026\n# Mondsee"
+  - timestamp: "2026-08-01T14:27:31"  # 2026-08-01 14-27-31.jpg
+    text: Der **Mondsee**
+  - timestamp: "2026-08-01T14:52:34"  # 2026-08-01 14-52-34.jpg
+    text: Basilika **St. Michael**
+  - timestamp: "2026-08-01T15:24:03"  # 2026-08-01 15-24-03.jpg
+    text: Unser Hotel **Krone**
+  - timestamp: "2026-08-01T15:25:52"  # 2026-08-01 15-25-52.jpg
+    text: Unser Zimmer genau in der Mitte
+  - timestamp: "2026-08-02T08:40:05"  # 2026-08-02 08-40-05.jpg
+    title: "2. August 2026\n# Radtour rund um den Mondsee"
+  - timestamp: "2026-08-02T09:12:44"  # 2026-08-02 09-12-44.jpg
+    text: Kurzer Abstecher zum **Attersee**
+  - timestamp: "2026-08-02T09:45:03"  # 2026-08-02 09-45-03.jpg
+    text: '... das ist wieder der **Mondsee**'
+  - timestamp: "2026-08-02T10:05:07"  # 2026-08-02 10-05-07.jpg
+    text: Die **Drachenwand**
+  - timestamp: "2026-08-02T12:07:17"  # 2026-08-02 12-07-17.jpg
+    text: Bootstour auf dem **Mondsee**
+  - timestamp: "2026-08-02T16:55:27"  # 2026-08-02 16-55-27.jpg
+    text: '**Seewalchen** und **Kammer** am **Attersee**'
+  - timestamp: "2026-08-03T09:57:37"  # 2026-08-03 09-57-37.jpg
+    title: "3. August 2026\n# **Katrinseilbahn** bei **Bad Ischl**"
+  - timestamp: "2026-08-03T10:10:37"  # 2026-08-03 10-10-37.jpg
+    text: Wir sind mit der **goldenen Gondel** gefahren.
+  - timestamp: "2026-08-03T10:21:45"  # 2026-08-03 10-21-45.jpg
+    text: Blick zum **Hallstätter See**
+  - timestamp: "2026-08-03T10:21:50"  # 2026-08-03 10-21-50.jpg
+    text: 'Blick auf den **Dachstein Gletscher**'
+  - timestamp: "2026-08-03T10:52:26"  # 2026-08-03 10-52-26.jpg
     text: ''
-  - timestamp: "2026-06-22T10:44:03"  # 2026-06-22 10-44-03.jpg
-    text: Blick zurück Richtung **Tramin**
-  - timestamp: "2026-06-22T10:51:23"  # 2026-06-22 10-51-23.jpg
-    text: Blick auf **Kurtatsch**
-  - timestamp: "2026-06-22T11:08:49"  # 2026-06-22 11-08-49.jpg
-    text: '**Margreid**'
-  - timestamp: "2026-06-23T08:54:26"  # 2026-06-23 08-54-26.jpg
-    title: '23. Juni 2026
-
-      # Meran 2000'
-  - timestamp: "2026-06-24T09:48:07"  # 2026-06-24 09-48-07.jpg
-    title: '24. Juni 2026
-
-      # **Meran** und **Forst**'
-  - timestamp: "2026-06-25T10:03:01"  # 2026-06-25 10-03-01.jpg
-    title: '25. Juni 2026
-
-      # Wanderung im **Schnalstal**'
-  - timestamp: "2026-06-27T18:22:49"  # 2026-06-27 18-22-49.jpg
-    text: "27. Juni 2026\n# Auf dem Rückweg Zwischenstopp in **Ulm**"
-  - timestamp: "2026-06-28T06:41:18"  # 2026-06-28 06-41-18.jpg
-    text: "28. Juni 2026\nErst Frühstück im Hotel, dann nach Hause ..."
+  - timestamp: "2026-08-03T10:53:47"  # 2026-08-03 10-53-47.jpg
+    text: Blick auf **Bad Ischl**
+  - timestamp: "2026-08-03T12:30:42"  # 2026-08-03 12-30-42.jpg
+    text: Blick auf den **Wolfgangsee**
+  - timestamp: "2026-08-04T08:42:06"  # 2026-08-04 08-42-06.jpg
+    title: "4. August 2026\n# Radtour am **Wolfgangsee**"
+  - timestamp: "2026-08-04T08:42:23"  # 2026-08-04 08-42-23.jpg
+    text: Sankt **Gilgen**
+  - timestamp: "2026-08-04T09:14:20"  # 2026-08-04 09-14-20.jpg
+    text: Blick auf **St. Wolfgang**
+  - timestamp: "2026-08-04T09:28:36"  # 2026-08-04 09-28-36.jpg
+    text: '**Strobl**'
+  - timestamp: "2026-08-04T09:58:29"  # 2026-08-04 09-58-29.jpg
+    text: '**St. Wolfgang** mit dem **Weissen Rössl**'
+  - timestamp: "2026-08-04T11:12:13"  # 2026-08-04 11-12-13.jpg
+    text: Die **Schafbergbahn**
+  - timestamp: "2026-08-04T11:39:12"  # 2026-08-04 11-39-12.jpg
+    text: Sankt **Gilgen**
+  - timestamp: "2026-08-05T09:23:40"  # 2026-08-05 09-23-40.jpg
+    title: "5. August 2026\n# Radtour am **Hallstätter See**"
+  - timestamp: "2026-08-05T09:39:40"  # 2026-08-05 09-39-40.jpg
+    text: Erster Blick auf **Hallstatt**
