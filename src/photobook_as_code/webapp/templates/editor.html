@@ -68,16 +68,14 @@
   </header>
 
   <main>
-    {% if not is_title %}
-      <div class="date-header">
-        <span class="date-display"{% if date_taken_iso %} data-date="{{ date_taken_iso }}"{% endif %}>{{ date_display }}</span>
-        {% if is_new_day %}
-          <span class="new-day-badge" title="First photo of a new day">
-            <svg class="icon" aria-hidden="true"><use href="#icon-sunrise"></use></svg> New day
-          </span>
-        {% endif %}
-      </div>
-    {% endif %}
+    <div class="date-header">
+      {% if is_new_day %}
+        <span class="new-day-badge" title="First item of a new day">
+          <svg class="icon" aria-hidden="true"><use href="#icon-sunrise"></use></svg> New day
+        </span>
+      {% endif %}
+      <span class="date-display"{% if date_taken_iso %} data-date="{{ date_taken_iso }}"{% endif %}>{{ date_display }}</span>
+    </div>
 
     <div class="item-frame{{ ' title-frame' if is_title else '' }}">
       {% if not is_title %}

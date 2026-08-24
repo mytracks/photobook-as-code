@@ -37,32 +37,33 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
     def view_item(index: int):
         data = _load_data_or_404(index)
 
-        if data.is_title(index):
-            return render_template(
-                "editor.html",
-                index=index,
-                total=data.count,
-                is_title=True,
-                title_text=data.title_text_for(index),
-                has_prev=index > 0,
-                has_next=index < data.count - 1,
-            )
-
-        photo = data.photo_at(index)
-        return render_template(
-            "editor.html",
+        common_context = dict(
             index=index,
             total=data.count,
-            is_title=False,
-            filename=photo.filename,
-            text=data.text_for(index),
             has_prev=index > 0,
             has_next=index < data.count - 1,
             date_display=data.display_date(index),
             date_taken_iso=data.date_taken_iso(index),
             is_new_day=data.is_new_day(index),
+        )
+
+        if data.is_title(index):
+            return render_template(
+                "editor.html",
+                is_title=True,
+                title_text=data.title_text_for(index),
+                **common_context,
+            )
+
+        photo = data.photo_at(index)
+        return render_template(
+            "editor.html",
+            is_title=False,
+            filename=photo.filename,
+            text=data.text_for(index),
             photo_width=photo.width,
             photo_height=photo.height,
+            **common_context,
         )
 
     @app.get("/items/<int:index>/image")
