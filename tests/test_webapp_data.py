@@ -65,6 +65,23 @@ def _write_config(tmp_path: Path, photos_dir: Path, order: str) -> Path:
     return config_path
 
 
+def _write_config_with_labels(
+    tmp_path: Path, photos_dir: Path, order: str, text_labels_yaml: str
+) -> Path:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        f"photos: {photos_dir}\n"
+        "output:\n"
+        "  size: A4\n"
+        "layout:\n"
+        "  photos_per_page: 2\n"
+        f"  order: {order}\n"
+        "theme: clean\n"
+        f"{text_labels_yaml}"
+    )
+    return config_path
+
+
 class TestEditorDataOrdering:
     def test_alphabetical_order(self, tmp_path):
         photos_dir = _make_photos_dir(tmp_path)
@@ -172,6 +189,67 @@ class TestEditorDataIsNewDay:
         # computed from the best-available (file_modified) date
         assert data.display_date(1) == "z_no_exif.jpg"
         assert data.is_new_day(1) is True
+
+
+class TestEditorDataItems:
+    def test_titles_are_merged_among_photos(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        _make_photo_file_with_exif(photos_dir / "b.jpg", datetime(2025, 6, 15, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T09:00:00"\n'
+            "    title: Day One\n"
+            '  - timestamp: "2025-06-16T00:00:00"\n'
+            "    title: Trailing\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+
+        assert data.count == 4
+        assert data.is_title(0) is True
+        assert data.title_text_for(0) == "Day One"
+        assert data.is_title(1) is False  # a.jpg - tied timestamp loses to the title
+        assert data.is_title(2) is False  # b.jpg
+        assert data.is_title(3) is True  # Trailing, appended after every photo
+        assert data.title_text_for(3) == "Trailing"
+
+    def test_photo_lookups_still_work_around_titles(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        _make_photo_file_with_exif(photos_dir / "b.jpg", datetime(2025, 6, 15, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T09:00:00"\n'
+            "    title: Day One\n"
+            '  - timestamp: "2025-06-15T09:00:00"\n'
+            "    text: caption for b\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+
+        # merged order: [title "Day One", a.jpg, b.jpg]
+        assert data.is_title(0) is True
+        assert data.photo_at(1).filename == "a.jpg"
+        assert data.text_for(1) == ""
+        assert data.photo_at(2).filename == "b.jpg"
+        assert data.text_for(2) == "caption for b"
+        assert data.display_date(1) == "Saturday, June 14, 2025 · 09:00"
+        # a.jpg and b.jpg differ in calendar day, despite the title in between
+        assert data.is_new_day(2) is True
+
+    def test_no_titles_behaves_like_photo_only_sequence(self, tmp_path):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+
+        data = load_editor_data(config_path)
+
+        assert data.count == len(data.photos) == 3
+        assert all(data.is_title(i) is False for i in range(data.count))
 
 
 class TestPhotoDirectoryCache:

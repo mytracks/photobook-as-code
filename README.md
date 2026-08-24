@@ -274,7 +274,7 @@ text_labels:
 
 ## Web Editor
 
-Writing `text_labels` captions by hand means cross-referencing timestamps and filename comments against a separate photo viewer. `photobook-edit-labels` gives you a small local web app instead: it shows one photo at a time next to a plain text field for that photo's caption, and saves your edits directly into the configuration file as you navigate.
+Writing `text_labels` captions and titles by hand means cross-referencing timestamps and filename comments against a separate photo viewer. `photobook-edit-labels` gives you a small local web app instead: it shows photos and titles one at a time, interleaved in the same order the generated photobook would use, next to a plain text field for that item's content, and saves your edits directly into the configuration file as you navigate.
 
 ```bash
 photobook-edit-labels --config my-photobook.yaml
@@ -282,12 +282,13 @@ photobook-edit-labels --config my-photobook.yaml
 
 Then open the printed URL (`http://127.0.0.1:5000/` by default) in your browser.
 
-- Photos are shown in the same order (`layout.order`) the generated photobook would use, with Previous/Next navigation (also available via the left/right arrow keys).
+- Items (photos and titles) are shown in the same order (`layout.order`, with titles merged in) the generated photobook would use, with Previous/Next navigation (also available via the left/right arrow keys).
 - The text field holds raw Markdown - there's no rich-text toolbar or live preview, just what you type.
 - Edits are saved automatically when you leave the text field (e.g. by clicking Next), with a small status indicator confirming the save.
 - If a photo has no `text_labels` entry yet, one is created the first time you save text for it - you don't need to run `--extract-labels` first.
+- While viewing a photo, "Add title before this photo" creates a new, empty title positioned right before it, timestamped to that photo, ready to edit immediately.
+- While viewing a title, "Delete title" removes it from the configuration file.
 - The editor only ever writes to the one configuration file it was started with. Photos themselves are never modified, moved, or deleted.
-- Editing `title` entries isn't supported yet - only `text` entries are shown for editing.
 
 Options:
 

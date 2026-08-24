@@ -1,16 +1,24 @@
 """
 Read-side data access for the web editor: loading the configuration,
-collecting photos in the configured order, and looking up each photo's
-current text_labels content - all reused, unchanged, from the existing
-config/photos/text_labels modules.
+collecting photos in the configured order, merging in titles the same way
+the renderer does, and looking up each item's current text_labels content -
+built from the existing config/photos/text_labels modules.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from ..config import PhotobookConfig, load_config, validate_photos_path
 from ..photos import PhotoMetadata, collect_photos
-from ..text_labels import TextLabel, associate_text_labels_with_photos
+from ..text_labels import (
+    TextLabel,
+    TitleLabel,
+    associate_text_labels_with_photos,
+    merge_titles_with_photos,
+    parse_title_labels,
+)
+
+Item = Union[PhotoMetadata, TitleLabel]
 
 
 class PhotoDirectoryCache:
@@ -33,33 +41,68 @@ class PhotoDirectoryCache:
 
 
 class EditorData:
-    """A fresh, request-scoped view of a config file's photos and their text."""
+    """
+    A fresh, request-scoped view of a config file's items - photos and
+    titles, merged into the same order the photobook renderer would produce
+    - and the photos' associated caption text.
+    """
 
     def __init__(
         self,
         config: PhotobookConfig,
         photos: List[PhotoMetadata],
         associations: List[Tuple[PhotoMetadata, Optional[TextLabel]]],
+        items: List[Item],
     ):
         self.config = config
         self.photos = photos
         self.associations = associations
+        self.items = items
+
+        # Maps each merged-sequence index to its position in `photos`
+        # (None for a title item), so caption/date logic - which is
+        # inherently photo-scoped - can keep working in terms of `photos`.
+        self._item_to_photo_index: List[Optional[int]] = []
+        photo_index = 0
+        for item in items:
+            if isinstance(item, TitleLabel):
+                self._item_to_photo_index.append(None)
+            else:
+                self._item_to_photo_index.append(photo_index)
+                photo_index += 1
 
     @property
     def count(self) -> int:
-        return len(self.photos)
+        return len(self.items)
+
+    def item_at(self, index: int) -> Item:
+        return self.items[index]
+
+    def is_title(self, index: int) -> bool:
+        return isinstance(self.items[index], TitleLabel)
+
+    def title_at(self, index: int) -> TitleLabel:
+        return self.items[index]
+
+    def _photo_index(self, index: int) -> int:
+        """The position within `photos` of the (photo) item at `index`."""
+        return self._item_to_photo_index[index]
 
     def photo_at(self, index: int) -> PhotoMetadata:
-        return self.photos[index]
+        return self.photos[self._photo_index(index)]
 
     def text_for(self, index: int) -> str:
-        """Current text for the photo at `index`, or '' if it has none yet."""
+        """Current caption text for the photo at `index`, or '' if it has none yet."""
         label = self.label_for(index)
         return label.text if label is not None else ""
 
     def label_for(self, index: int) -> Optional[TextLabel]:
-        _, label = self.associations[index]
+        _, label = self.associations[self._photo_index(index)]
         return label
+
+    def title_text_for(self, index: int) -> str:
+        """Current content of the title at `index`."""
+        return self.title_at(index).title
 
     def display_date(self, index: int) -> str:
         """
@@ -78,14 +121,16 @@ class EditorData:
     def is_new_day(self, index: int) -> bool:
         """
         Whether this photo's date differs from the previously displayed
-        photo's date. Uses each photo's best-available date (falling back
-        to file_modified) so this stays computable even when display_date
-        falls back to showing a filename.
+        photo's date. Compares consecutive photos only (skipping over any
+        title in between), using each photo's best-available date (falling
+        back to file_modified) so this stays computable even when
+        display_date falls back to showing a filename.
         """
-        if index == 0:
+        photo_index = self._photo_index(index)
+        if photo_index == 0:
             return True
-        current = self.photo_at(index).sort_date.date()
-        previous = self.photo_at(index - 1).sort_date.date()
+        current = self.photos[photo_index].sort_date.date()
+        previous = self.photos[photo_index - 1].sort_date.date()
         return current != previous
 
 
@@ -109,4 +154,6 @@ def load_editor_data(
     else:
         photos = collect_photos(photos_dir, order=config.layout.order, recursive=False)
     associations = associate_text_labels_with_photos(config.text_labels, photos)
-    return EditorData(config=config, photos=photos, associations=associations)
+    titles = parse_title_labels(config.text_labels)
+    items = merge_titles_with_photos(titles, photos)
+    return EditorData(config=config, photos=photos, associations=associations, items=items)
