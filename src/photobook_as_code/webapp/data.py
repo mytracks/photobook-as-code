@@ -5,6 +5,8 @@ the renderer does, and looking up each item's current text_labels content -
 built from the existing config/photos/text_labels modules.
 """
 
+from datetime import date as CalendarDate
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -104,34 +106,55 @@ class EditorData:
         """Current content of the title at `index`."""
         return self.title_at(index).title
 
+    def date_taken_iso(self, index: int) -> Optional[str]:
+        """
+        ISO 8601 timestamp of the item's date - a title's own timestamp
+        (always present), or a photo's capture date, or None when no EXIF
+        capture date is known (in which case `display_date` falls back to
+        the filename and there is nothing to format on the client).
+        """
+        if self.is_title(index):
+            return self.title_at(index).timestamp.isoformat()
+        photo = self.photo_at(index)
+        return photo.date_taken.isoformat() if photo.date_taken is not None else None
+
     def display_date(self, index: int) -> str:
         """
-        The photo's capture date and time, formatted with weekday (e.g.
-        "Saturday, June 14, 2025 · 09:00"), or its filename when no EXIF
-        capture date is known - showing a real but unverified
-        filesystem date as if it were the capture date would be
-        misleading.
+        The item's date and time, formatted with weekday (e.g.
+        "Saturday, June 14, 2025 · 09:00"). A title always uses its own
+        timestamp. A photo uses its EXIF capture date when known, or its
+        filename when not - showing a real but unverified filesystem date
+        as if it were the capture date would be misleading.
         """
+        if self.is_title(index):
+            return self._format_date(self.title_at(index).timestamp)
         photo = self.photo_at(index)
         if photo.date_taken is None:
             return photo.filename
-        date = photo.date_taken
-        return f"{date.strftime('%A, %B')} {date.day}, {date.year} · {date.strftime('%H:%M')}"
+        return self._format_date(photo.date_taken)
+
+    @staticmethod
+    def _format_date(dt: datetime) -> str:
+        return f"{dt.strftime('%A, %B')} {dt.day}, {dt.year} · {dt.strftime('%H:%M')}"
+
+    def _item_date(self, index: int) -> CalendarDate:
+        """The best-available calendar date for the item at `index`, used for new-day grouping."""
+        if self.is_title(index):
+            return self.title_at(index).timestamp.date()
+        return self.photo_at(index).sort_date.date()
 
     def is_new_day(self, index: int) -> bool:
         """
-        Whether this photo's date differs from the previously displayed
-        photo's date. Compares consecutive photos only (skipping over any
-        title in between), using each photo's best-available date (falling
-        back to file_modified) so this stays computable even when
-        display_date falls back to showing a filename.
+        Whether this item's date differs from the previously displayed
+        item's date, comparing across the full merged sequence of photos
+        and titles together (not photos alone, skipping over titles), using
+        each item's best-available date (falling back to file_modified for
+        a photo) so this stays computable even when display_date falls back
+        to showing a filename.
         """
-        photo_index = self._photo_index(index)
-        if photo_index == 0:
+        if index == 0:
             return True
-        current = self.photos[photo_index].sort_date.date()
-        previous = self.photos[photo_index - 1].sort_date.date()
-        return current != previous
+        return self._item_date(index) != self._item_date(index - 1)
 
 
 def load_editor_data(

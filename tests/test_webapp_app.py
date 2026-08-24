@@ -119,7 +119,7 @@ class TestNavigation:
         body = response.get_data(as_text=True)
         assert "a.jpg" in body
         assert "existing caption for a" in body
-        assert 'id="next-zone"' in body
+        assert 'id="nav-next"' in body
 
     def test_view_second_photo_shows_empty_text(self, tmp_path):
         client, _ = make_client(tmp_path)
@@ -133,14 +133,51 @@ class TestNavigation:
         assert client.get("/items/-1").status_code == 404
 
     def test_photo_with_exif_date_shows_formatted_date(self, tmp_path):
+        # Formatting itself now happens client-side (locale-aware, see
+        # editor.js); the server's job is to expose the raw timestamp for
+        # JS to format, plus a plain-English fallback for no-JS clients.
         client, _ = make_client(tmp_path)
         body = client.get("/items/0").get_data(as_text=True)
+        assert 'data-date="2025-06-14T10:00:00"' in body
         assert "Saturday, June 14, 2025 · 10:00" in body
 
     def test_photo_without_exif_date_shows_filename_instead(self, tmp_path):
         client, _ = make_client(tmp_path)
         body = client.get("/items/1").get_data(as_text=True)
         assert "b.jpg" in body
+        assert "data-date=" not in body
+
+
+class TestHeaderControls:
+    def test_nav_controls_disabled_at_first_item(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)  # merged order: [a.jpg, title, b.jpg]
+        body = client.get("/items/0").get_data(as_text=True)
+        assert 'id="nav-prev" aria-disabled="true"' in body
+        assert 'id="nav-next" href=' in body
+
+    def test_nav_controls_disabled_at_last_item(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/2").get_data(as_text=True)
+        assert 'id="nav-next" aria-disabled="true"' in body
+        assert 'id="nav-prev" href=' in body
+
+    def test_nav_controls_both_enabled_in_the_middle(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/1").get_data(as_text=True)
+        assert 'id="nav-prev" href=' in body
+        assert 'id="nav-next" href=' in body
+        assert "aria-disabled" not in body
+
+    def test_position_control_shows_index_and_total(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/1").get_data(as_text=True)
+        assert '<button type="button" id="position-display" class="position">2 / 3</button>' in body
+
+    def test_position_control_is_a_focusable_button_not_a_span(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+        assert '<span class="position">' not in body
+        assert '<button type="button" id="position-display" class="position">' in body
 
 
 class TestPhotoImage:

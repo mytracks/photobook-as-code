@@ -5,10 +5,12 @@
 
   var textarea = document.getElementById("text-field");
   var status = document.getElementById("save-status");
-  var prevZone = document.getElementById("prev-zone");
-  var nextZone = document.getElementById("next-zone");
+  var prevZone = document.getElementById("nav-prev");
+  var nextZone = document.getElementById("nav-next");
   var addTitleButton = document.getElementById("add-title-button");
   var deleteTitleButton = document.getElementById("delete-title-button");
+  var positionDisplay = document.getElementById("position-display");
+  var positionInput = document.getElementById("position-input");
   var index = parseInt(document.currentScript.dataset.index, 10);
   var isTitle = document.currentScript.dataset.isTitle === "true";
 
@@ -55,7 +57,7 @@
   });
 
   function navigate(zone) {
-    if (!zone) {
+    if (!zone || zone.getAttribute("aria-disabled") === "true" || !zone.hasAttribute("href")) {
       return;
     }
     save().then(function () {
@@ -116,6 +118,73 @@
           setStatus("Could not delete title - check your connection and try again");
         });
     });
+  }
+
+  // Locale-aware date/time formatting: the server renders a plain-English
+  // fallback (and the raw ISO timestamp in data-date); replace it with the
+  // viewer's own locale formatting when Intl is available.
+  var dateDisplay = document.querySelector(".date-display[data-date]");
+  if (dateDisplay && window.Intl && Intl.DateTimeFormat) {
+    var captured = new Date(dateDisplay.getAttribute("data-date"));
+    if (!isNaN(captured.getTime())) {
+      dateDisplay.textContent = new Intl.DateTimeFormat(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(captured);
+    }
+  }
+
+  // Jump-to-item: clicking the position indicator turns it into an editable
+  // number input; confirming a valid position saves and navigates there,
+  // the same way every other navigation trigger does.
+  if (positionDisplay && positionInput) {
+    var totalItems = parseInt(positionInput.dataset.max, 10);
+
+    var showInput = function () {
+      positionInput.value = String(index + 1);
+      positionDisplay.hidden = true;
+      positionInput.hidden = false;
+      positionInput.focus();
+      positionInput.select();
+    };
+
+    var showDisplay = function () {
+      positionInput.hidden = true;
+      positionDisplay.hidden = false;
+    };
+
+    var confirmJump = function () {
+      var raw = positionInput.value.trim();
+      var value = parseInt(raw, 10);
+      var isValidInteger = raw !== "" && String(value) === raw;
+      if (!isValidInteger || value < 1 || value > totalItems) {
+        positionInput.focus();
+        positionInput.select();
+        return;
+      }
+      var targetIndex = value - 1;
+      save().then(function () {
+        window.location.href = "/items/" + targetIndex;
+      });
+    };
+
+    positionDisplay.addEventListener("click", showInput);
+
+    positionInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        confirmJump();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        showDisplay();
+      }
+    });
+
+    positionInput.addEventListener("blur", showDisplay);
   }
 
   document.addEventListener("keydown", function (event) {

@@ -4,8 +4,8 @@ A browser-based editor that lets a user page through the photos of a single phot
 
 ## Requirements
 
-### Requirement: Navigate photos in configured order
-The system SHALL let the user move forward and backward through the items of the configured photobook - photos and titles, interleaved in the same merged order the photobook renderer would use for that configuration - one item at a time. The system SHALL provide full-height click zones and a keyboard shortcut for this navigation, both usable regardless of where the page's focus currently is and regardless of whether the current or adjacent item is a photo or a title. The keyboard shortcut SHALL NOT intercept key combinations that carry native text-editing meaning inside a text field.
+### Requirement: Navigate between items
+The system SHALL let the user move forward and backward through the items of the configured photobook - photos and titles, interleaved in the same merged order the photobook renderer would use for that configuration - one item at a time. The system SHALL provide always-visible previous/next controls in the page header and a keyboard shortcut for this navigation, both usable regardless of where the page's focus currently is and regardless of whether the current or adjacent item is a photo or a title. The keyboard shortcut SHALL NOT intercept key combinations that carry native text-editing meaning inside a text field.
 
 #### Scenario: Sequential navigation
 - **WHEN** the user requests the next or previous item
@@ -23,9 +23,9 @@ The system SHALL let the user move forward and backward through the items of the
 - **WHEN** the configuration's `text_labels` contains one or more `title` entries
 - **THEN** each title appears in the editor's sequence immediately before the first photo whose timestamp is at or after the title's own timestamp, matching the renderer's placement, and is appended at the end of the sequence if no such photo exists
 
-#### Scenario: Full-height click zones
-- **WHEN** the user clicks anywhere within the left or right edge band of the current item's display area, spanning its full height
-- **THEN** the system navigates to the previous item (left band) or next item (right band), applying the same first/last boundary rule as other navigation
+#### Scenario: Header navigation controls
+- **WHEN** the user views any item
+- **THEN** the system displays previous and next navigation controls in the page header, visible without requiring the pointer to hover over the item's display area
 
 #### Scenario: Keyboard shortcut navigates regardless of focus
 - **WHEN** the user presses Cmd+Enter or Ctrl+Enter (either modifier accepted on any platform), including while a caption or title text field has focus
@@ -38,6 +38,29 @@ The system SHALL let the user move forward and backward through the items of the
 #### Scenario: Native text-editing shortcuts are not intercepted
 - **WHEN** the user presses Cmd+Left Arrow, Cmd+Right Arrow, Ctrl+Left Arrow, or Ctrl+Right Arrow (with or without Shift held) while a caption or title text field has focus
 - **THEN** the system does not navigate to a different item, and the browser's native text-editing behavior for that combination is left to run unmodified
+
+#### Scenario: Smooth transition on navigation
+- **WHEN** the user navigates to a different item by any means (previous/next controls, jump-to-number, keyboard shortcut, or after adding/deleting a title)
+- **THEN** the system transitions to the new item with a smooth visual transition rather than an abrupt, unstyled page reload
+
+### Requirement: Jump directly to an item by number
+The system SHALL let the user navigate directly to any item by entering its position number, activated from the header's item position indicator.
+
+#### Scenario: Activate the jump control
+- **WHEN** the user clicks the item position indicator (for example, "2 / 264")
+- **THEN** the system replaces it in place with a text input pre-filled with the current position, ready for the user to type a new number
+
+#### Scenario: Confirm a valid position
+- **WHEN** the user enters a number between 1 and the total item count and confirms it
+- **THEN** the system saves any pending text edit and navigates to the item at that position, the same way other navigation actions do
+
+#### Scenario: Reject an out-of-range or non-numeric entry
+- **WHEN** the user enters a number outside the valid range, or non-numeric text, and confirms it
+- **THEN** the system does not navigate, and returns the control to a state where the user can correct the entry
+
+#### Scenario: Cancel without navigating
+- **WHEN** the user dismisses the jump control (for example, by pressing Escape or moving focus away) without confirming a new position
+- **THEN** the system returns to displaying the static position indicator and does not navigate
 
 ### Requirement: Edit and autosave text content for the current photo
 The system SHALL display an editable plain-text field containing the current photo's associated `text_labels` `text` content (empty if none exists), and SHALL save changes to that content without requiring an explicit save action.
@@ -137,35 +160,47 @@ The system SHALL present the entire editor interface using a fixed dark color th
 - **WHEN** the user looks for a way to switch between light and dark themes
 - **THEN** the system provides no such option; the dark theme is the only theme
 
-### Requirement: Display the current photo's date prominently
-The system SHALL display the current photo's date in a prominent position centered above the photo, using the photo's real capture date when known, and SHALL show the photo's filename in that position instead when no real capture date is known.
+### Requirement: Display the current item's date prominently
+The system SHALL display the current item's date - whether the item is a photo or a title - in a prominent position centered above it, formatted according to the viewing browser's locale. For a photo, the system SHALL use the photo's real capture date when known and SHALL show the photo's filename in that position instead when no real capture date is known. For a title, the system SHALL use the title's own timestamp, which is always present.
 
-#### Scenario: Capture date is known
-- **WHEN** the current photo has a known capture date (from its embedded EXIF metadata)
-- **THEN** the system displays that date, centered above the photo, formatted to include the day of the week
+#### Scenario: Photo capture date is known
+- **WHEN** the current item is a photo with a known capture date (from its embedded EXIF metadata)
+- **THEN** the system displays that date, centered above the photo, formatted to include the day of the week, using the date and time formatting conventions of the browser's configured locale
 
-#### Scenario: Capture date is unknown
-- **WHEN** the current photo has no embedded capture date
+#### Scenario: Photo capture date is unknown
+- **WHEN** the current item is a photo with no embedded capture date
 - **THEN** the system displays the photo's filename in that position instead of a date, rather than presenting an unverified filesystem date as if it were the capture date
 
-### Requirement: Indicate the first photo of a new day
-The system SHALL display a clearly visible indicator (an icon with accompanying text) next to the date whenever the current photo's date differs from the previously displayed photo's date in the configured order.
+#### Scenario: Title date is always shown
+- **WHEN** the current item is a title
+- **THEN** the system displays that title's own timestamp, centered above it, formatted the same way as a photo's known capture date, since a title's timestamp is always present and never falls back to a filename-like label
 
-#### Scenario: Date changes from the previous photo
-- **WHEN** the current photo's date differs from the date of the photo immediately before it in the configured order, or the current photo is the first photo in the order
+#### Scenario: Formatting follows the browser's locale
+- **WHEN** two users with different browser locale settings view the same item's date, whether it belongs to a photo or a title
+- **THEN** each sees the date and time formatted according to their own browser's locale (for example, weekday/month names, date component order, and 12-hour vs. 24-hour time), without needing to configure anything in the editor itself
+
+### Requirement: Indicate the first item of a new day
+The system SHALL display a clearly visible indicator (an icon with accompanying text) next to the date whenever the current item's date differs from the previously displayed item's date in the configured order, considering photos and titles together as one sequence. The indicator SHALL be positioned to the left of the date/time and rendered as a filled, accent-colored badge so it reads as visually prominent rather than secondary.
+
+#### Scenario: Date changes from the previous item
+- **WHEN** the current item's date differs from the date of the item immediately before it in the configured order (whether that item is a photo or a title), or the current item is the first item in the order
 - **THEN** the system displays the new-day indicator next to the date
 
-#### Scenario: Date matches the previous photo
-- **WHEN** the current photo's date is the same as the date of the photo immediately before it in the configured order
+#### Scenario: Date matches the previous item
+- **WHEN** the current item's date is the same as the date of the item immediately before it in the configured order
 - **THEN** the system does not display the new-day indicator
 
+#### Scenario: A title as the first item of a new day carries the indicator, not the photo after it
+- **WHEN** a title is the first item in the order whose date differs from the item before it, and one or more photos sharing the title's date immediately follow it
+- **THEN** the system displays the new-day indicator on the title, and does not display it on the photos that follow, even though those photos' dates also differ from the item that preceded the title
+
 #### Scenario: Indicator reflects display order, not calendar uniqueness
-- **WHEN** the configuration uses `layout.order: alphabetical` and consecutive photos in that order have different dates that are not chronologically adjacent
-- **THEN** the system still displays the new-day indicator, since it reflects a change from the previously displayed photo rather than a claim that the date is unique across the whole book
+- **WHEN** the configuration uses `layout.order: alphabetical` and consecutive items in that order have different dates that are not chronologically adjacent
+- **THEN** the system still displays the new-day indicator, since it reflects a change from the previously displayed item rather than a claim that the date is unique across the whole book
 
 #### Scenario: Grouping uses best-available date even when display falls back to filename
 - **WHEN** a photo has no EXIF capture date and is therefore shown with its filename instead of a date
-- **THEN** the system still uses that photo's best-available date (falling back to the photo file's own timestamp) to determine whether the new-day indicator applies, comparing it the same way as for photos with a known capture date
+- **THEN** the system still uses that photo's best-available date (falling back to file_modified) to determine whether the new-day indicator applies, comparing it the same way as for photos with a known capture date and for titles
 
 ### Requirement: Report startup errors clearly
 The system SHALL report a clear error and refuse to start the editing session if the configured file cannot be loaded or its photo path cannot be read.
@@ -179,7 +214,7 @@ The system SHALL report a clear error and refuse to start the editing session if
 - **THEN** the system reports a clear error identifying the problem and does not start the editing session
 
 ### Requirement: Display title items without a photo
-The system SHALL display a title item without a photo frame or image, showing only its editable title content and the actions that apply to a title.
+The system SHALL display a title item without a photo frame or image, showing only its editable title content and the actions that apply to a title. The area that would otherwise hold a photo SHALL still be visually bounded (a distinct background and/or border) rather than blank space indistinguishable from the surrounding page.
 
 #### Scenario: Title item has no image
 - **WHEN** the user navigates to an item that is a title
@@ -188,6 +223,10 @@ The system SHALL display a title item without a photo frame or image, showing on
 #### Scenario: Caption field is photo-specific
 - **WHEN** the user navigates to an item that is a title
 - **THEN** the system does not display the photo caption field, since a title has no associated photo to caption
+
+#### Scenario: Empty area reads as an intentional slot
+- **WHEN** the user navigates to an item that is a title
+- **THEN** the area above the title's text field has a visible boundary distinguishing it from the page background, rather than being indistinguishable blank space
 
 ### Requirement: Edit and autosave title content
 The system SHALL display an editable field containing the current title item's content (its `title` value), and SHALL save changes to that content without requiring an explicit save action, the same autosave behavior used for photo captions.
@@ -209,7 +248,7 @@ The system SHALL display an editable field containing the current title item's c
 - **THEN** the system stores the raw text as typed and does not render or preview it as formatted output
 
 ### Requirement: Add a title before the current photo
-The system SHALL let the user, while viewing a photo item, create a new title positioned immediately before that photo in the item sequence, and SHALL navigate the user to the newly created title so its content can be edited immediately.
+The system SHALL let the user, while viewing a photo item, create a new title positioned immediately before that photo in the item sequence, via a labeled control presented in the page header rather than a large, permanently visible button beneath the caption field, and SHALL navigate the user to the newly created title so its content can be edited immediately.
 
 #### Scenario: Add title from a photo
 - **WHEN** the user is viewing a photo and requests to add a title
@@ -223,8 +262,12 @@ The system SHALL let the user, while viewing a photo item, create a new title po
 - **WHEN** the user is viewing a title item
 - **THEN** the system does not offer the add-title action from that item
 
+#### Scenario: Add-title control is unobtrusive
+- **WHEN** the user views a photo item
+- **THEN** the add-title control is presented as a small labeled control in the page header, not as a large bordered button occupying its own row beneath the caption field
+
 ### Requirement: Delete a title
-The system SHALL let the user, while viewing a title item, delete that title's entry from the configuration file, and SHALL navigate to the photo that followed it in the item sequence, if one exists.
+The system SHALL let the user, while viewing a title item, delete that title's entry from the configuration file via a labeled control presented in the page header rather than a large, permanently visible button beneath the title field, and SHALL navigate to the photo that followed it in the item sequence, if one exists.
 
 #### Scenario: Delete removes the entry
 - **WHEN** the user is viewing a title and requests to delete it
@@ -241,3 +284,7 @@ The system SHALL let the user, while viewing a title item, delete that title's e
 #### Scenario: Delete action is not available while viewing a photo
 - **WHEN** the user is viewing a photo item
 - **THEN** the system does not offer the delete-title action from that item
+
+#### Scenario: Delete-title control is unobtrusive
+- **WHEN** the user views a title item
+- **THEN** the delete-title control is presented as a small labeled control in the page header, not as a large bordered button occupying its own row beneath the title field

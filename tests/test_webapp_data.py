@@ -242,6 +242,43 @@ class TestEditorDataItems:
         # a.jpg and b.jpg differ in calendar day, despite the title in between
         assert data.is_new_day(2) is True
 
+    def test_title_date_display_and_iso(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T08:00:00"\n'
+            "    title: Day One\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+
+        assert data.is_title(0) is True
+        assert data.display_date(0) == "Saturday, June 14, 2025 · 08:00"
+        assert data.date_taken_iso(0) == datetime(2025, 6, 14, 8, 0).isoformat()
+
+    def test_title_as_first_item_of_new_day_carries_the_indicator(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        _make_photo_file_with_exif(photos_dir / "b.jpg", datetime(2025, 6, 15, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-15T00:00:00"\n'
+            "    title: Day Two\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+
+        # merged order: [a.jpg (6/14), title "Day Two" (6/15), b.jpg (6/15)]
+        assert data.is_title(1) is True
+        assert data.is_new_day(0) is True  # a.jpg: first item overall
+        assert data.is_new_day(1) is True  # title: first item of 6/15
+        assert data.is_new_day(2) is False  # b.jpg: same day as the title before it
+
     def test_no_titles_behaves_like_photo_only_sequence(self, tmp_path):
         photos_dir = _make_photos_dir(tmp_path)
         config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
