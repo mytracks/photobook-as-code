@@ -38,25 +38,28 @@ class LayoutConfig:
 @dataclass
 class PhotobookConfig:
     """Main photobook configuration."""
-    photos: str
+    photo_folders: List[str]
     output: OutputConfig
     layout: LayoutConfig
     theme: str = "clean"
     text_labels: List[Dict[str, Any]] = field(default_factory=list)
     config_file_path: Optional[Path] = field(default=None, repr=False)
-    
-    def resolve_photos_path(self) -> Path:
-        """Resolve photos path relative to config file location."""
-        photos_path = Path(self.photos)
-        
-        if photos_path.is_absolute():
-            return photos_path
-            
+
+    def resolve_photo_folders(self) -> List[Path]:
+        """Resolve each photo folder path relative to config file location."""
+        return [self._resolve_photo_folder(folder) for folder in self.photo_folders]
+
+    def _resolve_photo_folder(self, folder: str) -> Path:
+        folder_path = Path(folder)
+
+        if folder_path.is_absolute():
+            return folder_path
+
         # If relative, resolve from config file directory
         if self.config_file_path:
-            return (self.config_file_path.parent / photos_path).resolve()
+            return (self.config_file_path.parent / folder_path).resolve()
         else:
-            return photos_path.resolve()
+            return folder_path.resolve()
     
     def get_book_orientation(self) -> str:
         """The book's own page orientation ('portrait' or 'landscape'), derived
@@ -210,9 +213,15 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
         raise ConfigurationError("Configuration must be a YAML dictionary")
     
     # Validate required fields
-    if 'photos' not in data:
-        raise ConfigurationError("Missing required field: 'photos'")
-    
+    if 'photo_folders' not in data:
+        raise ConfigurationError("Missing required field: 'photo_folders'")
+
+    photo_folders = data['photo_folders']
+    if not isinstance(photo_folders, list) or len(photo_folders) == 0:
+        raise ConfigurationError(
+            "'photo_folders' must be a non-empty list of directory paths"
+        )
+
     if 'output' not in data or not isinstance(data['output'], dict):
         raise ConfigurationError("Missing or invalid 'output' section")
     
@@ -255,7 +264,7 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
         )
         
         config = PhotobookConfig(
-            photos=data['photos'],
+            photo_folders=photo_folders,
             output=output_config,
             layout=layout_config,
             theme=data.get('theme', 'clean'),
@@ -299,24 +308,23 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
     return config
 
 
-def validate_photos_path(config: PhotobookConfig) -> None:
+def validate_photo_folders(config: PhotobookConfig) -> None:
     """
-    Validate that photos path exists and is accessible.
-    
+    Validate that every configured photo folder exists and is accessible.
+
     Args:
         config: PhotobookConfig instance
-        
+
     Raises:
-        ConfigurationError: If path is invalid or inaccessible
+        ConfigurationError: If any folder is invalid or inaccessible
     """
-    photos_path = config.resolve_photos_path()
-    
-    if not photos_path.exists():
-        raise ConfigurationError(
-            f"Photos path does not exist: {photos_path}"
-        )
-    
-    if not photos_path.is_dir():
-        raise ConfigurationError(
-            f"Photos path is not a directory: {photos_path}"
-        )
+    for folder_path in config.resolve_photo_folders():
+        if not folder_path.exists():
+            raise ConfigurationError(
+                f"Photo folder does not exist: {folder_path}"
+            )
+
+        if not folder_path.is_dir():
+            raise ConfigurationError(
+                f"Photo folder is not a directory: {folder_path}"
+            )

@@ -34,7 +34,8 @@ pip install -e .
 1. Create a configuration file `my-photobook.yaml`:
 
 ```yaml
-photos: ./my-photos/
+photo_folders:
+  - ./my-photos/
 output:
   size: A4
   format: pdf
@@ -57,8 +58,9 @@ photobook --config my-photobook.yaml
 ### Basic Structure
 
 ```yaml
-# Path to photo directory (relative or absolute)
-photos: ./vacation-2024/
+# List of directories containing photos (relative or absolute paths)
+photo_folders:
+  - ./vacation-2024/
 
 # Output settings
 output:
@@ -76,6 +78,18 @@ layout:
 # Theme selection
 theme: clean                 # clean, classic, or modern
 ```
+
+### Multiple Photo Folders
+
+`photo_folders` accepts one or more directories. Photos from every listed folder are merged into a single pool before `layout.order` is applied, so listing order doesn't matter - two folders covering overlapping dates still interleave correctly under `order: date`:
+
+```yaml
+photo_folders:
+  - ./vacation-2024/alice-camera/
+  - ./vacation-2024/bob-camera/
+```
+
+An individual folder is allowed to contain no photos; only the combined total across all folders needs at least one.
 
 ### Page Distribution
 
@@ -110,7 +124,8 @@ Add descriptive text to your photobook pages! Text labels are automatically asso
 Add text labels to your configuration:
 
 ```yaml
-photos: ./my-photos/
+photo_folders:
+  - ./my-photos/
 output:
   size: A4
   format: pdf
@@ -253,7 +268,8 @@ Unlike captions (which are positioned per-layout-slot via each template's `text:
 ### Example with Multiple Labels
 
 ```yaml
-photos: ./vacation-photos/
+photo_folders:
+  - ./vacation-photos/
 output:
   size: A4
   format: pdf
@@ -315,8 +331,9 @@ photobook-edit-labels --config my-photobook.yaml --host 0.0.0.0 --port 8080
 ### Complete Configuration Example
 
 ```yaml
-# Photo source (required)
-photos: ./my-photos/
+# Photo source (required) - one or more folders, merged into one pool
+photo_folders:
+  - ./my-photos/
 
 # Output configuration (required)
 output:
@@ -431,7 +448,8 @@ Common print service requirements:
 ### Family Vacation Album
 
 ```yaml
-photos: ./vacation-2024/
+photo_folders:
+  - ./vacation-2024/
 output:
   size: A4
   format: pdf
@@ -445,7 +463,8 @@ theme: classic
 ### Instagram Grid Style
 
 ```yaml
-photos: ./instagram-exports/
+photo_folders:
+  - ./instagram-exports/
 output:
   size: Letter
   format: pdf
@@ -458,7 +477,8 @@ theme: modern
 ### Wedding Album (Archival Quality)
 
 ```yaml
-photos: ./wedding-photos/
+photo_folders:
+  - ./wedding-photos/
 output:
   size: A4
   format: png
@@ -472,7 +492,8 @@ theme: clean
 ### Social Media Preview
 
 ```yaml
-photos: ./event-photos/
+photo_folders:
+  - ./event-photos/
 output:
   size: Letter
   format: jpg
@@ -487,7 +508,7 @@ theme: modern
 
 ### "No supported image files found"
 
-- Check that your photos directory exists and contains JPG or PNG files
+- Check that your `photo_folders` directories exist and contain JPG or PNG files
 - Ensure file extensions are correct (.jpg, .jpeg, .png)
 - Check file permissions
 

@@ -32,7 +32,8 @@ class TestTextLabelsIntegration:
     @pytest.fixture
     def test_config_file(self, tmp_path):
         """Create a test configuration file with text labels."""
-        config_content = """photos: tests/fixtures/sample-photos
+        config_content = """photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -58,7 +59,7 @@ text_labels:
         assert len(config.text_labels) == 2
         
         # Collect photos
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])
         assert len(photos) > 0
         
         # Load theme
@@ -95,7 +96,8 @@ text_labels:
         """Test pipeline works without text labels (backward compatibility)."""
         # Create minimal config without text labels
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            f.write("""photos: tests/fixtures/sample-photos
+            f.write("""photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -109,7 +111,7 @@ theme: clean
             config = load_config(config_path)
             assert config.text_labels == []
             
-            photos = collect_photos(Path('tests/fixtures/sample-photos'))
+            photos = collect_photos([Path('tests/fixtures/sample-photos')])
             theme = load_theme('clean')
             
             page_width, page_height = config.get_paper_size_pixels()
@@ -130,7 +132,8 @@ theme: clean
     
     def test_pipeline_with_unmatched_text_labels(self, tmp_path):
         """Test pipeline with text labels that don't match any photos."""
-        config_content = """photos: tests/fixtures/sample-photos
+        config_content = """photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -147,7 +150,7 @@ text_labels:
         config_path.write_text(config_content)
         
         config = load_config(config_path)
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])
         
         # Labels will still be associated with closest photos
         text_associations = associate_text_labels_with_photos(config.text_labels, photos)
@@ -158,7 +161,8 @@ text_labels:
     
     def test_markdown_formatting_in_pipeline(self, tmp_path):
         """Test that markdown formatting is preserved through pipeline."""
-        config_content = """photos: tests/fixtures/sample-photos
+        config_content = """photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -177,7 +181,7 @@ text_labels:
         assert "**Bold**" in config.text_labels[0]['text']
         assert "*italic*" in config.text_labels[0]['text']
         
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])
         text_associations = associate_text_labels_with_photos(config.text_labels, photos)
         
         # Find the associated label
@@ -237,7 +241,7 @@ class TestTextRendering:
         from datetime import datetime
         
         # Create test data
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))[:2]
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])[:2]
         theme = load_theme('clean')
         
         # Create text labels
@@ -264,7 +268,7 @@ class TestTextRendering:
         """Test rendering a page without text labels."""
         from src.photobook_as_code.renderer import render_page
         
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))[:2]
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])[:2]
         theme = load_theme('clean')
         
         # Render without text labels
@@ -312,10 +316,11 @@ class TestOutputFormats:
         """Test PDF generation with text labels."""
         from src.photobook_as_code.output import generate_output
         
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))[:4]
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])[:4]
         theme = load_theme('clean')
         
-        config_content = """photos: tests/fixtures/sample-photos
+        config_content = """photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -367,10 +372,11 @@ text_labels:
         """Test PNG generation with text labels."""
         from src.photobook_as_code.output import generate_output
         
-        photos = collect_photos(Path('tests/fixtures/sample-photos'))[:2]
+        photos = collect_photos([Path('tests/fixtures/sample-photos')])[:2]
         theme = load_theme('clean')
         
-        config_content = """photos: tests/fixtures/sample-photos
+        config_content = """photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: png
@@ -442,7 +448,8 @@ class TestMixedTextAndTitleLabelsIntegration:
         title_between_b_and_c = base + timedelta(hours=1, minutes=30)  # between photo_b (+1h) and photo_c (+2h)
         caption_near_a = base + timedelta(minutes=5)  # closest to photo_a
 
-        config_content = f"""photos: {photos_dir}
+        config_content = f"""photo_folders:
+  - {photos_dir}
 output:
   size: A4
   format: pdf
@@ -468,7 +475,7 @@ text_labels:
         config = load_config(config_path)
         assert len(config.text_labels) == 3
 
-        photos = collect_photos(photos_dir, order=config.layout.order)
+        photos = collect_photos([photos_dir], order=config.layout.order)
         assert len(photos) == 4
 
         theme = load_theme(config.theme)

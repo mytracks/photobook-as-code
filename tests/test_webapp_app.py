@@ -24,7 +24,7 @@ def _make_photos_dir(tmp_path: Path) -> Path:
 def _write_config(tmp_path: Path, photos_dir: Path) -> Path:
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
-        f"photos: {photos_dir}\n"
+        f"photo_folders:\n  - {photos_dir}\n"
         "output:\n"
         "  size: A4\n"
         "layout:\n"
@@ -47,7 +47,7 @@ def _write_config_with_title(tmp_path: Path, photos_dir: Path) -> Path:
     """
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
-        f"photos: {photos_dir}\n"
+        f"photo_folders:\n  - {photos_dir}\n"
         "output:\n"
         "  size: A4\n"
         "layout:\n"
@@ -67,7 +67,7 @@ def _write_config_with_trailing_title(tmp_path: Path, photos_dir: Path) -> Path:
     """A config whose title is timestamped after every photo, so it is the last item."""
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
-        f"photos: {photos_dir}\n"
+        f"photo_folders:\n  - {photos_dir}\n"
         "output:\n"
         "  size: A4\n"
         "layout:\n"

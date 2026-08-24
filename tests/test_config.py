@@ -8,8 +8,13 @@ from pathlib import Path
 from photobook_as_code.config import (
     load_config,
     validate_text_labels,
+    validate_photo_folders,
     ConfigurationError,
+    LayoutConfig,
+    OutputConfig,
+    PhotobookConfig,
 )
+from photobook_as_code.photos import collect_photos
 
 
 class TestTextLabelValidation:
@@ -126,7 +131,8 @@ class TestConfigWithTextLabels:
     def test_load_config_with_text_labels(self):
         """Test loading config with valid text labels."""
         config_content = """
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -157,7 +163,8 @@ text_labels:
     def test_load_config_without_text_labels(self):
         """Test loading config without text labels (backward compatibility)."""
         config_content = """
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -179,7 +186,8 @@ theme: clean
     def test_load_config_with_invalid_text_labels(self):
         """Test that loading config with invalid text labels raises error."""
         config_content = """
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
   format: pdf
@@ -217,7 +225,8 @@ class TestNewPagePerDayConfig:
     def test_default_is_true(self):
         """Test new_page_per_day defaults to True when not specified."""
         config = self._write_and_load("""
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
 layout:
@@ -228,7 +237,8 @@ layout:
     def test_explicit_true(self):
         """Test new_page_per_day can be explicitly enabled."""
         config = self._write_and_load("""
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
 layout:
@@ -240,7 +250,8 @@ layout:
     def test_explicit_false(self):
         """Test new_page_per_day can be explicitly disabled."""
         config = self._write_and_load("""
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
 layout:
@@ -253,7 +264,8 @@ layout:
         """Test a non-boolean new_page_per_day raises a clear validation error."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
             f.write("""
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: A4
 layout:
@@ -274,7 +286,8 @@ class TestGetBookOrientation:
 
     def _write_and_load(self, size: str):
         config_content = f"""
-photos: tests/fixtures/sample-photos
+photo_folders:
+  - tests/fixtures/sample-photos
 output:
   size: {size}
 layout:
@@ -304,3 +317,154 @@ layout:
     def test_square_counts_as_portrait(self):
         config = self._write_and_load("2000x2000")
         assert config.get_book_orientation() == 'portrait'
+
+
+class TestPhotoFoldersField:
+    """Tests for parsing/validating the `photo_folders` list field."""
+
+    def _write_and_load(self, config_content: str) -> PhotobookConfig:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_missing_field_raises(self):
+        with pytest.raises(ConfigurationError, match="'photo_folders'"):
+            self._write_and_load("""
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+
+    def test_string_value_rejected(self):
+        with pytest.raises(ConfigurationError, match="non-empty list"):
+            self._write_and_load("""
+photo_folders: tests/fixtures/sample-photos
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+
+    def test_empty_list_rejected(self):
+        with pytest.raises(ConfigurationError, match="non-empty list"):
+            self._write_and_load("""
+photo_folders: []
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+
+    def test_multiple_folders_parsed_in_order(self):
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos-subset-1
+  - tests/fixtures/sample-photos-subset-2
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+        assert config.photo_folders == [
+            "tests/fixtures/sample-photos-subset-1",
+            "tests/fixtures/sample-photos-subset-2",
+        ]
+
+
+class TestResolvePhotoFolders:
+    """Tests for PhotobookConfig.resolve_photo_folders."""
+
+    def test_relative_and_absolute_entries(self, tmp_path):
+        config_dir = tmp_path / "configs"
+        config_dir.mkdir()
+        config_path = config_dir / "book.yaml"
+        absolute_folder = tmp_path / "abs-photos"
+        config_path.write_text(f"""
+photo_folders:
+  - ./rel-photos
+  - {absolute_folder}
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+
+        config = load_config(config_path)
+
+        assert config.resolve_photo_folders() == [
+            (config_dir / "rel-photos").resolve(),
+            absolute_folder,
+        ]
+
+
+class TestValidatePhotoFolders:
+    """Tests for validate_photo_folders."""
+
+    def _config(self, folders):
+        return PhotobookConfig(
+            photo_folders=[str(f) for f in folders],
+            output=OutputConfig(size="A4"),
+            layout=LayoutConfig(photos_per_page=4),
+        )
+
+    def test_missing_folder_raises(self, tmp_path):
+        existing = tmp_path / "existing"
+        existing.mkdir()
+        missing = tmp_path / "missing"
+
+        with pytest.raises(ConfigurationError, match="does not exist"):
+            validate_photo_folders(self._config([existing, missing]))
+
+    def test_non_directory_raises(self, tmp_path):
+        not_a_dir = tmp_path / "file.txt"
+        not_a_dir.write_text("hi")
+
+        with pytest.raises(ConfigurationError, match="not a directory"):
+            validate_photo_folders(self._config([not_a_dir]))
+
+    def test_all_valid_does_not_raise(self, tmp_path):
+        first = tmp_path / "a"
+        first.mkdir()
+        second = tmp_path / "b"
+        second.mkdir()
+
+        validate_photo_folders(self._config([first, second]))  # should not raise
+
+
+class TestMultiFolderFixtureIntegration:
+    """End-to-end config->resolve->validate->collect pipeline over the
+    tests/fixtures/config-multi-folder.yaml fixture, which lists two
+    folders (sample-photos-subset-1 with 1 photo, sample-photos-subset-2
+    with 2 photos)."""
+
+    def test_photo_folders_parsed_as_two_entries(self):
+        config = load_config("tests/fixtures/config-multi-folder.yaml")
+
+        assert config.photo_folders == [
+            "./sample-photos-subset-1/",
+            "./sample-photos-subset-2/",
+        ]
+
+    def test_folders_resolve_and_validate(self):
+        config = load_config("tests/fixtures/config-multi-folder.yaml")
+
+        resolved = config.resolve_photo_folders()
+
+        assert resolved == [
+            Path("tests/fixtures/sample-photos-subset-1").resolve(),
+            Path("tests/fixtures/sample-photos-subset-2").resolve(),
+        ]
+        validate_photo_folders(config)  # should not raise
+
+    def test_collect_photos_merges_both_folders(self):
+        config = load_config("tests/fixtures/config-multi-folder.yaml")
+
+        photos = collect_photos(config.resolve_photo_folders(), order=config.layout.order)
+
+        assert len(photos) == 3

@@ -1,4 +1,5 @@
-photos: /mnt/pictures/2026/2026-04-30+ Hamburg
+photo_folders:
+  - /mnt/pictures/2026/2026-04-30+ Hamburg
 output:
   size: A4
   format: pdf

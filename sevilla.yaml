@@ -1,4 +1,5 @@
-photos: /mnt/pictures/2026/2026-03-17+ Sevilla + La Barrosa/
+photo_folders:
+  - /mnt/pictures/2026/2026-03-17+ Sevilla + La Barrosa/
 output:
   size: A4
   format: pdf

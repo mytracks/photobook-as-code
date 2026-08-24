@@ -11,7 +11,7 @@ from typing import Optional
 import click
 
 from . import __version__
-from .config import load_config, validate_photos_path, ConfigurationError
+from .config import load_config, validate_photo_folders, ConfigurationError
 from .photos import collect_photos, format_text_label_stubs, PhotoCollectionError
 from .themes import load_theme, ThemeError
 from .layout import (
@@ -91,14 +91,14 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
         if not extract_labels:
             click.echo("📖 Loading configuration...")
         pb_config = load_config(config)
-        validate_photos_path(pb_config)
+        validate_photo_folders(pb_config)
 
         # Stage 2: Collect photos
         if not extract_labels:
             click.echo("📷 Collecting photos...")
-        photos_path = pb_config.resolve_photos_path()
+        photo_folders = pb_config.resolve_photo_folders()
         photos = collect_photos(
-            photos_path,
+            photo_folders,
             order=pb_config.layout.order,
             recursive=False
         )

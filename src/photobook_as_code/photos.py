@@ -48,53 +48,62 @@ class PhotoCollectionError(Exception):
     pass
 
 
-def discover_photos(directory: Path, recursive: bool = False) -> List[Path]:
+def discover_photos(directories: List[Path], recursive: bool = False) -> List[Path]:
     """
-    Discover all supported image files in a directory.
-    
+    Discover all supported image files across one or more directories.
+
+    Each directory is validated and searched independently; an individual
+    directory is allowed to contain zero supported images. The discovered
+    files are merged into one pool and deduplicated by resolved path, so a
+    directory listed more than once (or two paths resolving to the same
+    directory) contributes its photos only once.
+
     Args:
-        directory: Directory to search
+        directories: Directories to search
         recursive: Whether to search subdirectories
-        
+
     Returns:
-        List of photo file paths
-        
+        List of photo file paths, deduplicated and sorted
+
     Raises:
-        PhotoCollectionError: If directory is invalid
+        PhotoCollectionError: If a directory is invalid, or no photos are
+            found across all directories combined
     """
-    if not directory.exists():
-        raise PhotoCollectionError(f"Directory does not exist: {directory}")
-    
-    if not directory.is_dir():
-        raise PhotoCollectionError(f"Not a directory: {directory}")
-    
     photos = []
-    
-    if recursive:
-        # Search recursively
-        for ext in SUPPORTED_EXTENSIONS:
-            # Normalize extension for glob
-            ext_lower = ext.lower()
-            photos.extend(directory.rglob(f"*{ext_lower}"))
-            # Also check uppercase
-            ext_upper = ext.upper()
-            if ext_upper != ext_lower:
-                photos.extend(directory.rglob(f"*{ext_upper}"))
-    else:
-        # Search single level only
-        for item in directory.iterdir():
-            if item.is_file() and item.suffix in SUPPORTED_EXTENSIONS:
-                photos.append(item)
-    
-    # Remove duplicates and sort
-    photos = sorted(set(photos))
-    
+
+    for directory in directories:
+        if not directory.exists():
+            raise PhotoCollectionError(f"Directory does not exist: {directory}")
+
+        if not directory.is_dir():
+            raise PhotoCollectionError(f"Not a directory: {directory}")
+
+        if recursive:
+            # Search recursively
+            for ext in SUPPORTED_EXTENSIONS:
+                # Normalize extension for glob
+                ext_lower = ext.lower()
+                photos.extend(directory.rglob(f"*{ext_lower}"))
+                # Also check uppercase
+                ext_upper = ext.upper()
+                if ext_upper != ext_lower:
+                    photos.extend(directory.rglob(f"*{ext_upper}"))
+        else:
+            # Search single level only
+            for item in directory.iterdir():
+                if item.is_file() and item.suffix in SUPPORTED_EXTENSIONS:
+                    photos.append(item)
+
+    # Remove duplicates by resolved path (across directories too) and sort
+    photos = sorted({photo.resolve() for photo in photos})
+
     if not photos:
+        directories_desc = ", ".join(str(d) for d in directories)
         raise PhotoCollectionError(
-            f"No supported image files found in {directory}. "
+            f"No supported image files found in {directories_desc}. "
             f"Supported formats: JPG, JPEG, PNG"
         )
-    
+
     return photos
 
 
@@ -167,26 +176,26 @@ def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
     )
 
 
-def collect_photos(directory: Path, order: str = "alphabetical", 
+def collect_photos(directories: List[Path], order: str = "alphabetical",
                    recursive: bool = False) -> List[PhotoMetadata]:
     """
-    Collect and order photos from a directory.
-    
+    Collect and order photos from one or more directories.
+
     Args:
-        directory: Directory containing photos
+        directories: Directories containing photos
         order: Ordering method - 'alphabetical' or 'date'
         recursive: Whether to search subdirectories
-        
+
     Returns:
-        Ordered list of photo metadata
-        
+        Ordered list of photo metadata, merged across all directories
+
     Raises:
         PhotoCollectionError: If collection fails
     """
-    # Discover photo files
-    photo_paths = discover_photos(directory, recursive)
-    
-    logger.info(f"Found {len(photo_paths)} photos in {directory}")
+    # Discover photo files across all directories, merged into one pool
+    photo_paths = discover_photos(directories, recursive)
+
+    logger.info(f"Found {len(photo_paths)} photos across {len(directories)} folder(s)")
     
     # Read metadata for each photo
     photos = []
