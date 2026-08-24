@@ -17,12 +17,14 @@ text:
   text_background_color: "#ffffff"  # Background color (hex)
   text_background_opacity: 65       # Background opacity 0-100 (0=transparent, 100=opaque)
   text_padding: 12                  # Padding around text in pixels
+  line_spacing: 16
 title:
   font_family: DejaVuSans
   base_font_size: 72
   text_color: "#ffffff"
   text_background_enabled: false
   text_padding: 16
+  line_spacing: 32
   align: center
 layouts:
 # 1 Photo - all orientation combinations

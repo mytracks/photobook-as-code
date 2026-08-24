@@ -6,7 +6,7 @@ output:
 
 layout:
   #photos_per_page: 2
-  pages: 160
+  pages: 140
 
 theme: clean2
 text_labels:

@@ -79,6 +79,7 @@ class TextStyle:
     text_background_color: str = "#FFFFFF"
     text_background_opacity: int = 85  # 0-100, where 100 is fully opaque
     text_padding: int = 8  # Padding in pixels around text
+    line_spacing: int = 10  # Gap in pixels between consecutive rendered lines
 
 
 @dataclass
@@ -91,6 +92,7 @@ class TitleStyle:
     text_background_color: str = "#FFFFFF"
     text_background_opacity: int = 85  # 0-100, where 100 is fully opaque
     text_padding: int = 8  # Padding in pixels around text
+    line_spacing: int = 10  # Gap in pixels between consecutive rendered lines
     align: str = "center"  # left, center, right
 
 
