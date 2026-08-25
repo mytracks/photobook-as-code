@@ -49,3 +49,10 @@ Repository = "https://github.com/yourusername/photobook-as-code"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+photobook_as_code = [
+    "themes/*.yaml",
+    "webapp/templates/*",
+    "webapp/static/*",
+]
