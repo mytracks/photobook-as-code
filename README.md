@@ -305,6 +305,7 @@ Then open the printed URL (`http://127.0.0.1:5000/` by default) in your browser.
 - While viewing a photo, "Add title before this photo" creates a new, empty title positioned right before it, timestamped to that photo, ready to edit immediately.
 - While viewing a title, "Delete title" removes it from the configuration file.
 - The editor only ever writes to the one configuration file it was started with. Photos themselves are never modified, moved, or deleted.
+- If a photo's EXIF data includes a GPS location, the geotag button next to it looks up that location's name (via the public Nominatim/OpenStreetMap service) and inserts it into the caption field. This is the one editor feature that requires internet access - it's opt-in (only runs when clicked) and its unavailability doesn't affect anything else in the app, which otherwise works entirely offline.
 
 Options:
 

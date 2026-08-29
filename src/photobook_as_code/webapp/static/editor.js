@@ -9,6 +9,9 @@
   var nextZone = document.getElementById("nav-next");
   var addTitleButton = document.getElementById("add-title-button");
   var deleteTitleButton = document.getElementById("delete-title-button");
+  var geoButton = document.getElementById("geo-button");
+  var geoIconSvg = document.getElementById("geo-icon-svg");
+  var geoIconUse = document.getElementById("geo-icon-use");
   var positionDisplay = document.getElementById("position-display");
   var positionInput = document.getElementById("position-input");
   var index = parseInt(document.currentScript.dataset.index, 10);
@@ -16,11 +19,15 @@
 
   var savedText = textarea.value;
 
-  if (sessionStorage.getItem(FOCUS_FIELD_FLAG)) {
-    sessionStorage.removeItem(FOCUS_FIELD_FLAG);
+  function focusTextareaAtEnd() {
     textarea.focus();
     var end = textarea.value.length;
     textarea.setSelectionRange(end, end);
+  }
+
+  if (sessionStorage.getItem(FOCUS_FIELD_FLAG)) {
+    sessionStorage.removeItem(FOCUS_FIELD_FLAG);
+    focusTextareaAtEnd();
   }
 
   function setStatus(text) {
@@ -120,6 +127,46 @@
     });
   }
 
+  if (geoButton) {
+    geoButton.addEventListener("click", function () {
+      geoButton.disabled = true;
+      geoIconUse.setAttribute("href", "#icon-spinner");
+      geoIconSvg.classList.add("spin");
+      setStatus("Looking up location…");
+
+      fetch("/items/" + index + "/reverse-geocode", { method: "POST" })
+        .then(function (response) {
+          return response.json().then(function (payload) {
+            return { ok: response.ok, payload: payload };
+          });
+        })
+        .then(function (result) {
+          if (!result.ok || result.payload.status !== "ok") {
+            if (result.payload && result.payload.reason === "no_location_found") {
+              setStatus("No location found for this photo");
+            } else {
+              setStatus("Could not look up location - check your connection and try again");
+            }
+            return;
+          }
+
+          var locationText = result.payload.text;
+          textarea.value = textarea.value ? textarea.value + "\n" + locationText : locationText;
+          setStatus("");
+          focusTextareaAtEnd();
+          return save();
+        })
+        .catch(function () {
+          setStatus("Could not look up location - check your connection and try again");
+        })
+        .then(function () {
+          geoButton.disabled = false;
+          geoIconUse.setAttribute("href", "#icon-geo");
+          geoIconSvg.classList.remove("spin");
+        });
+    });
+  }
+
   // Locale-aware date/time formatting: the server renders a plain-English
   // fallback (and the raw ISO timestamp in data-date); replace it with the
   // viewer's own locale formatting when Intl is available.
@@ -206,6 +253,21 @@
         sessionStorage.setItem(FOCUS_FIELD_FLAG, "1");
       }
       navigate(event.shiftKey ? prevZone : nextZone);
+      return;
+    }
+
+    if (event.key === "g" || event.key === "G") {
+      // Bare "g" only fires outside editable fields (it would otherwise
+      // just type the letter); Cmd/Ctrl+G fires everywhere, including
+      // while typing in the caption field, mirroring the Cmd/Ctrl+Enter
+      // navigation shortcut above.
+      if (!withModifier && (focusedInField || document.activeElement === positionInput)) {
+        return;
+      }
+      if (geoButton && !geoButton.disabled) {
+        event.preventDefault();
+        geoButton.click();
+      }
     }
   });
 })();

@@ -20,29 +20,55 @@ text_labels:
 
       # in **Hamburg**'
   - timestamp: "2026-04-30T12:23:30"  # 2026-04-30 12-23-30.jpg
-    text: Ladepause
+    text: "**Ladepause** - Lüneburger Heide Ost Ladestation"
+  - timestamp: "2026-04-30T14:02:56"  # 2026-04-30 14-02-56.jpg
+    text: ''
+  - timestamp: "2026-04-30T14:04:06"  # 2026-04-30 14-04-06.jpg
+    text: ''
+  - timestamp: "2026-04-30T14:09:07"  # 2026-04-30 14-09-07.jpg
+    text: ''
+  - timestamp: "2026-04-30T14:09:26"  # 2026-04-30 14-09-26.jpg
+    text: ''
+  - timestamp: "2026-04-30T14:39:59"  # 2026-04-30 14-39-59.jpg
+    text: ''
   - timestamp: "2026-04-30T15:03:10"  # 2026-04-30 15-03-10.jpg
     text: Das Haus, in dem **Rainer** wohnt.
   - timestamp: "2026-04-30T15:29:51"  # 2026-04-30 15-29-51.jpg
-    text: Rainers **Dachterrasse**
+    text: Die **Dachterrasse**
+  - timestamp: "2026-04-30T16:42:16"  # 2026-04-30 16-42-16.jpg
+    text: Tokiostraße
+  - timestamp: "2026-04-30T16:48:46"  # 2026-04-30 16-48-46.jpg
+    text: 'Westfield Einkaufszentrum '
+  - timestamp: "2026-04-30T17:13:33"  # 2026-04-30 17-13-33.jpg
+    text: 25hours Hotel Hamburg HafenCity
+  - timestamp: "2026-04-30T17:37:18"  # 2026-04-30 17-37-18.jpg
+    text: View Point
+  - timestamp: "2026-04-30T20:00:13"  # 2026-04-30 20-00-13.jpg
+    text: ''
   - timestamp: "2026-05-01T09:06:33"  # 2026-05-01 09-06-33.jpg
     text: '# 1. Mai 2026'
+  - timestamp: "2026-05-01T09:15:33"  # 2026-05-01 09-15-33.jpg
+    text: ''
   - timestamp: "2026-05-01T10:03:45"  # 2026-05-01 10-03-45.jpg
     text: '# Besuch der **Elphi**'
   - timestamp: "2026-05-01T10:11:57"  # 2026-05-01 10-11-57.jpg
     text: Blick auf **Rainers Dachterrasse**
   - timestamp: "2026-05-01T10:57:12"  # 2026-05-01 10-57-12.jpg
-    text: Der alte **Elbtunnel**
+    text: "Der alte **Elbtunnel**\n"
   - timestamp: "2026-05-01T11:51:16"  # 2026-05-01 11-51-16.jpg
-    text: Der **Hauptbahnhof**
+    text: "Der **Hauptbahnhof**\n"
   - timestamp: "2026-05-01T13:09:39"  # 2026-05-01 13-09-39.jpg
     text: '# Blankenese'
+  - timestamp: "2026-05-01T13:12:14"  # 2026-05-01 13-12-14.jpg
+    text: ''
   - timestamp: "2026-05-01T15:55:37"  # 2026-05-01 15-55-37.jpg
     text: '# Binnenalster'
   - timestamp: "2026-05-01T15:57:56"  # 2026-05-01 15-57-56.jpg
     text: '# Das **Rathaus**'
   - timestamp: "2026-05-01T16:20:04"  # 2026-05-01 16-20-04.jpg
     text: Die **Speicherstadt**
+  - timestamp: "2026-05-01T20:19:44"  # 2026-05-01 20-19-44.jpg
+    text: ''
   - timestamp: "2026-05-02T07:04:44"  # 2026-05-02 07-04-44.jpg
     text: '# 2. Mai 2026'
   - timestamp: "2026-05-02T07:04:49"  # 2026-05-02 07-04-49.jpg

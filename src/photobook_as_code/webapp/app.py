@@ -9,7 +9,7 @@ from typing import Optional
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_file, url_for
 from PIL import Image
 
-from . import yaml_store
+from . import geocoding, yaml_store
 from .data import EditorData, PhotoDirectoryCache, load_editor_data
 
 MAX_IMAGE_DIMENSION = 1600
@@ -45,6 +45,7 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             date_display=data.display_date(index),
             date_taken_iso=data.date_taken_iso(index),
             is_new_day=data.is_new_day(index),
+            has_gps=data.has_gps(index),
         )
 
         if data.is_title(index):
@@ -135,6 +136,38 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
 
         # The new title takes the photo's old slot, immediately before it.
         return jsonify({"status": "ok", "index": index})
+
+    @app.post("/items/<int:index>/reverse-geocode")
+    def reverse_geocode_item(index: int):
+        data = _load_data_or_404(index)
+        if data.is_title(index):
+            abort(400)
+
+        photo = data.photo_at(index)
+        if photo.gps is None:
+            abort(400)
+
+        lat, lon = photo.gps
+        accept_language = request.headers.get("Accept-Language", "")
+
+        try:
+            response = geocoding.reverse_geocode(lat, lon, accept_language=accept_language)
+        except geocoding.GeocodingError:
+            return jsonify({
+                "status": "error",
+                "reason": "service_error",
+                "message": "Reverse geocoding service is unavailable",
+            }), 502
+
+        place_name = geocoding.resolve_place_name(response)
+        if place_name is None:
+            return jsonify({
+                "status": "error",
+                "reason": "no_location_found",
+                "message": "No location could be resolved for this photo",
+            }), 404
+
+        return jsonify({"status": "ok", "text": place_name})
 
     @app.post("/items/<int:index>/delete-title")
     def delete_title(index: int):

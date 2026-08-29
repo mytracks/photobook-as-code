@@ -4,9 +4,10 @@ Integration tests for the web editor's Flask routes.
 
 from pathlib import Path
 
-from PIL import Image
+from PIL import ExifTags, Image
 
 import photobook_as_code.webapp.data as data_module
+import photobook_as_code.webapp.geocoding as geocoding_module
 from photobook_as_code.config import load_config
 from photobook_as_code.webapp.app import create_app
 
@@ -16,6 +17,23 @@ def _make_photos_dir(tmp_path: Path) -> Path:
     photos_dir.mkdir()
     exif = Image.Exif()
     exif[36867] = "2025:06:14 10:00:00"  # DateTimeOriginal
+    Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "a.jpg", exif=exif.tobytes())
+    Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "b.jpg")
+    return photos_dir
+
+
+def _make_photos_dir_with_gps(tmp_path: Path) -> Path:
+    """Like _make_photos_dir, but a.jpg also carries a GPS EXIF location."""
+    photos_dir = tmp_path / "photos"
+    photos_dir.mkdir()
+    exif = Image.Exif()
+    exif[36867] = "2025:06:14 10:00:00"  # DateTimeOriginal
+    exif[ExifTags.IFD.GPSInfo] = {
+        1: "N",
+        2: (53.0, 33.0, 12.6),
+        3: "E",
+        4: (10.0, 0.0, 0.0),
+    }
     Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "a.jpg", exif=exif.tobytes())
     Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "b.jpg")
     return photos_dir
@@ -100,6 +118,14 @@ def make_client_with_title(tmp_path):
 def make_client_with_trailing_title(tmp_path):
     photos_dir = _make_photos_dir(tmp_path)
     config_path = _write_config_with_trailing_title(tmp_path, photos_dir)
+    app = create_app(config_path)
+    app.config["TESTING"] = True
+    return app.test_client(), config_path
+
+
+def make_client_with_gps(tmp_path):
+    photos_dir = _make_photos_dir_with_gps(tmp_path)
+    config_path = _write_config(tmp_path, photos_dir)
     app = create_app(config_path)
     app.config["TESTING"] = True
     return app.test_client(), config_path
@@ -373,3 +399,99 @@ class TestDeleteTitle:
         client, _ = make_client_with_title(tmp_path)
         response = client.post("/items/99/delete-title")
         assert response.status_code == 404
+
+
+class TestGeoButtonMarkup:
+    def test_photo_with_gps_shows_enabled_button(self, tmp_path):
+        client, _ = make_client_with_gps(tmp_path)  # a.jpg (index 0) has GPS
+        body = client.get("/items/0").get_data(as_text=True)
+
+        assert 'id="geo-button"' in body
+        button_tag = body.split('id="geo-button"')[1].split(">")[0]
+        assert "disabled" not in button_tag
+
+    def test_photo_without_gps_shows_disabled_button_with_reason(self, tmp_path):
+        client, _ = make_client_with_gps(tmp_path)  # b.jpg (index 1) has no GPS
+        body = client.get("/items/1").get_data(as_text=True)
+
+        button_tag = body.split('id="geo-button"')[1].split(">")[0]
+        assert "disabled" in button_tag
+        assert "title=" in button_tag
+
+    def test_title_item_does_not_show_button(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/1").get_data(as_text=True)  # the title item
+
+        assert 'id="geo-button"' not in body
+
+
+class TestReverseGeocode:
+    def test_photo_with_gps_returns_resolved_place_name(self, tmp_path, monkeypatch):
+        client, _ = make_client_with_gps(tmp_path)  # a.jpg (index 0) has GPS
+
+        def fake_reverse_geocode(lat, lon, accept_language=""):
+            return {"name": "St. Michaelis Church"}
+
+        monkeypatch.setattr(geocoding_module, "reverse_geocode", fake_reverse_geocode)
+
+        response = client.post("/items/0/reverse-geocode")
+
+        assert response.status_code == 200
+        assert response.get_json() == {"status": "ok", "text": "St. Michaelis Church"}
+
+    def test_forwards_accept_language_header(self, tmp_path, monkeypatch):
+        client, _ = make_client_with_gps(tmp_path)
+        captured = {}
+
+        def fake_reverse_geocode(lat, lon, accept_language=""):
+            captured["accept_language"] = accept_language
+            return {"name": "Plaza España"}
+
+        monkeypatch.setattr(geocoding_module, "reverse_geocode", fake_reverse_geocode)
+
+        client.post("/items/0/reverse-geocode", headers={"Accept-Language": "es-ES"})
+
+        assert captured["accept_language"] == "es-ES"
+
+    def test_photo_without_gps_is_bad_request(self, tmp_path):
+        client, _ = make_client_with_gps(tmp_path)  # b.jpg (index 1) has no GPS
+        response = client.post("/items/1/reverse-geocode")
+        assert response.status_code == 400
+
+    def test_title_index_is_bad_request(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        response = client.post("/items/1/reverse-geocode")
+        assert response.status_code == 400
+
+    def test_out_of_range_index_is_404(self, tmp_path):
+        client, _ = make_client_with_gps(tmp_path)
+        response = client.post("/items/99/reverse-geocode")
+        assert response.status_code == 404
+
+    def test_service_error_is_non_2xx_with_error_status(self, tmp_path, monkeypatch):
+        client, _ = make_client_with_gps(tmp_path)
+
+        def failing_reverse_geocode(lat, lon, accept_language=""):
+            raise geocoding_module.GeocodingError("boom")
+
+        monkeypatch.setattr(geocoding_module, "reverse_geocode", failing_reverse_geocode)
+
+        response = client.post("/items/0/reverse-geocode")
+
+        assert response.status_code >= 400
+        payload = response.get_json()
+        assert payload["status"] == "error"
+
+    def test_no_resolvable_location_is_non_2xx_with_error_status(self, tmp_path, monkeypatch):
+        client, _ = make_client_with_gps(tmp_path)
+
+        def empty_reverse_geocode(lat, lon, accept_language=""):
+            return {}
+
+        monkeypatch.setattr(geocoding_module, "reverse_geocode", empty_reverse_geocode)
+
+        response = client.post("/items/0/reverse-geocode")
+
+        assert response.status_code >= 400
+        payload = response.get_json()
+        assert payload["status"] == "error"

@@ -5,7 +5,7 @@ Photo discovery, metadata reading, and ordering.
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import logging
 
 from PIL import Image
@@ -31,7 +31,8 @@ class PhotoMetadata:
     width: int = 0
     height: int = 0
     file_modified: Optional[datetime] = None
-    
+    gps: Optional[Tuple[float, float]] = None
+
     @property
     def orientation(self) -> str:
         """Get photo orientation ('landscape' or 'portrait')."""
@@ -142,6 +143,55 @@ def read_exif_date(image_path: Path) -> Optional[datetime]:
         return None
 
 
+def _dms_to_decimal(dms, ref) -> Optional[float]:
+    """
+    Convert an EXIF (degrees, minutes, seconds) rational tuple and its ref
+    tag ('N'/'S'/'E'/'W') into signed decimal degrees, or None if either is
+    missing or malformed.
+    """
+    if dms is None or ref is None:
+        return None
+    try:
+        degrees, minutes, seconds = (float(v) for v in dms)
+    except (TypeError, ValueError):
+        return None
+
+    decimal = degrees + minutes / 60 + seconds / 3600
+    return -decimal if ref in ("S", "W") else decimal
+
+
+def read_exif_gps(image_path: Path) -> Optional[Tuple[float, float]]:
+    """
+    Read GPS location from EXIF data.
+
+    Args:
+        image_path: Path to image file
+
+    Returns:
+        (latitude, longitude) in signed decimal degrees if found, None otherwise
+    """
+    try:
+        with Image.open(image_path) as img:
+            exif_data = img._getexif()
+
+            if not exif_data or 34853 not in exif_data:  # GPSInfo
+                return None
+
+            gps_info = exif_data[34853]
+            # GPSLatitudeRef=1, GPSLatitude=2, GPSLongitudeRef=3, GPSLongitude=4
+            latitude = _dms_to_decimal(gps_info.get(2), gps_info.get(1))
+            longitude = _dms_to_decimal(gps_info.get(4), gps_info.get(3))
+
+            if latitude is None or longitude is None:
+                return None
+
+            return (latitude, longitude)
+
+    except Exception as e:
+        logger.debug(f"Could not read GPS EXIF from {image_path}: {e}")
+        return None
+
+
 def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
     """
     Read metadata for a single photo.
@@ -157,7 +207,10 @@ def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
     
     # Try to read EXIF date
     date_taken = read_exif_date(photo_path)
-    
+
+    # Try to read EXIF GPS location
+    gps = read_exif_gps(photo_path)
+
     # Read image dimensions
     width, height = 0, 0
     try:
@@ -165,7 +218,7 @@ def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
             width, height = img.size
     except Exception as e:
         logger.warning(f"Could not read dimensions from {photo_path}: {e}")
-    
+
     return PhotoMetadata(
         path=photo_path,
         filename=photo_path.name,
@@ -173,6 +226,7 @@ def read_photo_metadata(photo_path: Path) -> PhotoMetadata:
         width=width,
         height=height,
         file_modified=file_modified,
+        gps=gps,
     )
 
 
