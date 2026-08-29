@@ -472,6 +472,35 @@ class TestGeoButtonMarkup:
         assert 'id="geo-button"' not in body
 
 
+class TestMapsButtonMarkup:
+    def test_photo_with_gps_shows_enabled_link_to_apple_maps(self, tmp_path):
+        client, _ = make_client_with_gps(tmp_path)  # a.jpg (index 0) has GPS
+        body = client.get("/items/0").get_data(as_text=True)
+
+        assert 'id="maps-button"' in body
+        button_tag = body.split('id="maps-button"')[1].split(">")[0]
+        assert "aria-disabled" not in button_tag
+        assert 'href="https://maps.apple.com/?ll=53.5' in button_tag
+        assert "10.0" in button_tag
+        assert 'target="_blank"' in button_tag
+        assert 'rel="noopener"' in button_tag
+
+    def test_photo_without_gps_shows_disabled_link_with_reason(self, tmp_path):
+        client, _ = make_client_with_gps(tmp_path)  # b.jpg (index 1) has no GPS
+        body = client.get("/items/1").get_data(as_text=True)
+
+        button_tag = body.split('id="maps-button"')[1].split(">")[0]
+        assert 'href="' not in button_tag
+        assert 'aria-disabled="true"' in button_tag
+        assert "title=" in button_tag
+
+    def test_title_item_does_not_show_button(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/1").get_data(as_text=True)  # the title item
+
+        assert 'id="maps-button"' not in body
+
+
 class TestReverseGeocode:
     def test_photo_with_gps_returns_resolved_place_name(self, tmp_path, monkeypatch):
         client, _ = make_client_with_gps(tmp_path)  # a.jpg (index 0) has GPS

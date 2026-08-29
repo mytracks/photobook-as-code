@@ -174,7 +174,8 @@ header {
   background: rgba(248, 113, 113, 0.12);
 }
 
-.header-action:disabled {
+.header-action:disabled,
+.header-action[aria-disabled="true"] {
   opacity: 0.35;
   cursor: not-allowed;
   pointer-events: none;

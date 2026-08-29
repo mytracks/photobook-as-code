@@ -30,6 +30,10 @@
     <symbol id="icon-spinner" viewBox="0 0 24 24">
       <path d="M12 3a9 9 0 019 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </symbol>
+    <symbol id="icon-map" viewBox="0 0 24 24">
+      <path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
   </svg>
 
   <header>
@@ -72,6 +76,10 @@
           {% if has_gps %}title="Look up location from photo GPS (shortcut: G, or ⌘G/Ctrl+G while editing the text)"{% else %}disabled title="This photo has no GPS location in its EXIF data"{% endif %}>
           <svg id="geo-icon-svg" class="icon" aria-hidden="true"><use id="geo-icon-use" href="#icon-geo"></use></svg>
         </button>
+        <a id="maps-button" class="header-action" aria-label="Open location in Maps"
+          {% if has_gps %}href="https://maps.apple.com/?ll={{ lat }},{{ lon }}&q={{ lat }},{{ lon }}" target="_blank" rel="noopener" title="Open this photo's location in Maps (shortcut: ⌥G/Alt+G)"{% else %}aria-disabled="true" title="This photo has no GPS location in its EXIF data"{% endif %}>
+          <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg>
+        </a>
         <button type="button" id="add-title-button" class="header-action">
           <svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
           Add title before this photo

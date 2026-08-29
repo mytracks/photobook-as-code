@@ -12,6 +12,7 @@
   var geoButton = document.getElementById("geo-button");
   var geoIconSvg = document.getElementById("geo-icon-svg");
   var geoIconUse = document.getElementById("geo-icon-use");
+  var mapsButton = document.getElementById("maps-button");
   var positionDisplay = document.getElementById("position-display");
   var positionInput = document.getElementById("position-input");
   var index = parseInt(document.currentScript.dataset.index, 10);
@@ -256,17 +257,31 @@
       return;
     }
 
-    if (event.key === "g" || event.key === "G") {
+    if ((event.key === "g" || event.key === "G") && !event.altKey) {
       // Bare "g" only fires outside editable fields (it would otherwise
       // just type the letter); Cmd/Ctrl+G fires everywhere, including
       // while typing in the caption field, mirroring the Cmd/Ctrl+Enter
-      // navigation shortcut above.
+      // navigation shortcut above. Excluded whenever Alt is held so it
+      // never fires alongside the Alt+G maps shortcut below.
       if (!withModifier && (focusedInField || document.activeElement === positionInput)) {
         return;
       }
       if (geoButton && !geoButton.disabled) {
         event.preventDefault();
         geoButton.click();
+      }
+    }
+
+    if (event.altKey && event.code === "KeyG") {
+      // Matched on `code` (the physical key), not `key`: on macOS, Option+G
+      // composes "©" rather than producing the letter "g", so `key`
+      // can't be used here the way the plain-G/Cmd+G branch above uses it.
+      // Fires everywhere, including while typing in the caption field, same
+      // as Cmd/Ctrl+G above - there's no bare-letter form, since this is an
+      // occasional fallback action, not the frequent one "g" alone serves.
+      if (mapsButton && mapsButton.hasAttribute("href")) {
+        event.preventDefault();
+        mapsButton.click();
       }
     }
   });

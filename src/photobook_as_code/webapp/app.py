@@ -37,6 +37,9 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
     def view_item(index: int):
         data = _load_data_or_404(index)
 
+        has_gps = data.has_gps(index)
+        lat, lon = data.photo_at(index).gps if has_gps else (None, None)
+
         common_context = dict(
             index=index,
             total=data.count,
@@ -45,7 +48,9 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             date_display=data.display_date(index),
             date_taken_iso=data.date_taken_iso(index),
             is_new_day=data.is_new_day(index),
-            has_gps=data.has_gps(index),
+            has_gps=has_gps,
+            lat=lat,
+            lon=lon,
         )
 
         if data.is_title(index):

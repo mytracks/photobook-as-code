@@ -33,3 +33,18 @@ The system SHALL, when the user activates an enabled open-in-Maps control, immed
 #### Scenario: Native maps app opens where available
 - **WHEN** the user activates an enabled open-in-Maps control in a browser and operating system where the Apple Maps URL resolves to an installed native maps application
 - **THEN** the operating system may open that application instead of displaying the page in the new browser tab, and the system does not attempt to detect or control this platform behavior
+
+### Requirement: Activate the open-in-Maps control via keyboard
+The system SHALL let the user activate an enabled open-in-Maps control from the keyboard, without needing the mouse. Alt+G (Option+G on macOS) SHALL activate it regardless of where focus currently is, including while the caption field has focus. The shortcut SHALL have no effect while the control is disabled, and SHALL NOT also trigger the reverse-geocode control's own "G" shortcut.
+
+#### Scenario: Modifier shortcut activates the control regardless of focus
+- **WHEN** the user presses Alt+G, including while the caption field has focus, and the open-in-Maps control is enabled
+- **THEN** the system activates the open-in-Maps control as if it had been clicked, opening the Maps URL in a new tab
+
+#### Scenario: Shortcut has no effect when the control is unavailable
+- **WHEN** the user presses Alt+G while the open-in-Maps control is disabled
+- **THEN** the system takes no action
+
+#### Scenario: Does not also activate the reverse-geocode control
+- **WHEN** the user presses Alt+G
+- **THEN** the system does not activate the reverse-geocode control, even though both shortcuts share the "G" key
