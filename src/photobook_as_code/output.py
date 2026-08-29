@@ -213,49 +213,48 @@ def generate_jpg_pages(pages: Iterator[Image.Image], output_dir: Path,
 
 
 def generate_output(pages: Iterator[Image.Image], output_format: str,
-                    output_path: Path, page_width: int, page_height: int,
+                    output_dir: Path, base_filename: str, page_width: int, page_height: int,
                     total_pages: int, quality: int = 95, dpi: int = 300) -> List[Path]:
     """
     Generate output files in specified format using streaming approach.
-    
+
     Processes pages one at a time to minimize memory usage. The pages iterator
     can only be consumed once.
-    
+
     Args:
         pages: Iterator of rendered page images (yields pages one at a time)
         output_format: Output format ('pdf', 'png', or 'jpg')
-        output_path: Output file path (for PDF) or directory (for images)
+        output_dir: Directory to write output into (created if missing)
+        base_filename: Base name for output (without extension) - used as the
+            whole PDF filename's stem, or as the prefix for each page image
         page_width: Page width in pixels
         page_height: Page height in pixels
         total_pages: Expected number of pages for progress reporting
         quality: JPEG quality for JPG output
         dpi: DPI for PDF conversion
-        
+
     Returns:
         List of generated file paths
-        
+
     Raises:
         OutputError: If output generation fails
     """
     if total_pages <= 0:
         raise OutputError("No pages to output")
-    
-    # Ensure output directory exists
-    output_dir = output_path.parent if output_format == 'pdf' else output_path
+
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     if output_format == 'pdf':
+        output_path = output_dir / f"{base_filename}.pdf"
         generate_pdf(pages, output_path, page_width, page_height, total_pages, dpi, quality)
         return [output_path]
-    
+
     elif output_format == 'png':
-        base_name = output_path.stem if output_path.suffix else output_path.name
-        return generate_png_pages(pages, output_dir, base_name, total_pages)
-    
+        return generate_png_pages(pages, output_dir, base_filename, total_pages)
+
     elif output_format == 'jpg':
-        base_name = output_path.stem if output_path.suffix else output_path.name
-        return generate_jpg_pages(pages, output_dir, base_name, total_pages, quality)
-    
+        return generate_jpg_pages(pages, output_dir, base_filename, total_pages, quality)
+
     else:
         raise OutputError(f"Unsupported output format: {output_format}")
 
@@ -283,32 +282,34 @@ def ensure_unique_filename(path: Path) -> Path:
 
 
 def prepare_output_path(output_dir: Path, filename: str,
-                        format: str, ensure_unique: bool = False) -> Path:
+                        ensure_unique: bool = False) -> Path:
     """
-    Prepare output path with proper extension.
-    
+    Prepare the single output file path for PDF output, with a .pdf extension.
+
+    PDF is the only format that resolves to one file path; png/jpg resolve to
+    an output directory plus a base filename instead (see generate_output),
+    so this helper is PDF-specific.
+
     Args:
         output_dir: Output directory
-        filename: Desired filename (may or may not have extension)
-        format: Output format ('pdf', 'png', or 'jpg')
+        filename: Desired filename (may or may not have a .pdf extension)
         ensure_unique: Whether to ensure filename is unique
-        
+
     Returns:
         Prepared output path
     """
     # Ensure directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Add extension if missing
     path = Path(filename)
-    expected_ext = f".{format}"
-    
-    if path.suffix.lower() != expected_ext:
-        filename = f"{path.stem}{expected_ext}"
-    
+
+    if path.suffix.lower() != '.pdf':
+        filename = f"{path.stem}.pdf"
+
     output_path = output_dir / filename
-    
+
     if ensure_unique:
         output_path = ensure_unique_filename(output_path)
-    
+
     return output_path

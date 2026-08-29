@@ -25,21 +25,29 @@ def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 
-def create_blank_page(width: int, height: int, background_color: str) -> Image.Image:
+def create_blank_page(width: int, height: int, background_color: str,
+                      transparent: bool = False) -> Image.Image:
     """
-    Create a blank page image with background color.
-    
+    Create a blank RGBA page, either filled with background_color (opaque,
+    alpha 255) or, when transparent is True, fully transparent (alpha 0) so
+    that only content actually drawn onto it later - photos, text, borders -
+    ends up opaque. Always RGBA (rather than RGB for the opaque case) so the
+    rest of the rendering pipeline has one image mode to handle; render_page
+    flattens to RGB at the end unless transparent output was requested.
+
     Args:
         width: Page width in pixels
         height: Page height in pixels
-        background_color: Hex color string (e.g., "#FFFFFF")
-        
+        background_color: Hex color string (e.g., "#FFFFFF"), used unless transparent
+        transparent: When True, ignore background_color and start fully transparent
+
     Returns:
-        PIL Image instance
+        PIL Image instance (RGBA)
     """
+    if transparent:
+        return Image.new('RGBA', (width, height), (0, 0, 0, 0))
     rgb = hex_to_rgb(background_color)
-    image = Image.new('RGB', (width, height), rgb)
-    return image
+    return Image.new('RGBA', (width, height), rgb + (255,))
 
 
 def load_and_resize_photo(photo: PhotoMetadata, target_width: int, 
@@ -129,11 +137,11 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
         fill=shadow_color
     )
     
-    # Convert page to RGBA for compositing
+    # Convert page to RGBA for compositing. Return the composited RGBA result
+    # directly (not flattened to RGB) so a shadow drawn over a transparent
+    # page keeps its own partial alpha instead of being forced opaque.
     page_rgba = page.convert('RGBA')
-    page_rgba = Image.alpha_composite(page_rgba, shadow)
-    
-    return page_rgba.convert('RGB')
+    return Image.alpha_composite(page_rgba, shadow)
 
 
 def _load_font_variants(font_family: str, base_font_size: int):
@@ -274,20 +282,77 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
     return all_lines_info, total_text_height
 
 
-def _draw_text_background(draw: ImageDraw.Draw, box_x: int, box_y: int,
-                          box_width: int, box_height: int,
-                          background_color: str, opacity_pct: int) -> None:
-    """Draw a semi-transparent background rectangle behind a text box."""
+def _build_text_background_layer(box_width: int, box_height: int,
+                                 background_color: str, opacity_pct: int) -> Image.Image:
+    """Build a solid, semi-transparent RGBA layer for a text box's
+    background, to be merged onto the page with _alpha_composite_region."""
     bg_color = hex_to_rgb(background_color)
     opacity = int(255 * opacity_pct / 100)
+    return Image.new('RGBA', (int(box_width), int(box_height)), bg_color + (opacity,))
 
-    overlay = Image.new('RGBA', (int(box_width), int(box_height)), bg_color + (opacity,))
-    page_img = draw._image
-    if page_img.mode != 'RGBA':
-        page_img = page_img.convert('RGBA')
-    page_img.paste(overlay, (int(box_x), int(box_y)), overlay)
-    if draw._image.mode == 'RGB':
-        draw._image.paste(page_img.convert('RGB'), (0, 0))
+
+def _alpha_composite_region(page: Image.Image, layer: Image.Image, x: int, y: int) -> Image.Image:
+    """
+    Alpha-composite a small RGBA layer onto page at (x, y) and return page,
+    mutated in place.
+
+    This performs correct Porter-Duff "over" compositing, unlike a raw
+    ImageDraw call or a plain Image.paste with a mask: both of those only
+    blend correctly when the destination pixel starts fully transparent or
+    fully opaque, not when it already carries partial alpha (which is
+    exactly what layer's own translucent fill produces once merged) - see
+    draw_shadow above for the same alpha_composite technique applied to a
+    photo-sized shadow layer. Image.crop/paste both clip silently for a
+    box that falls partly or fully outside page, so x/y need no clamping.
+    """
+    x, y = int(x), int(y)
+    region = page.crop((x, y, x + layer.width, y + layer.height))
+    merged = Image.alpha_composite(region, layer)
+    page.paste(merged, (x, y))
+    return page
+
+
+def _render_text_block(draw: ImageDraw.Draw, box_x: int, box_y: int, box_width: int, box_height: int,
+                       all_lines_info, text_box_x: int, text_box_y: int, text_box_width: int,
+                       align: str, rgb: tuple, height_limit: Optional[int], line_spacing: int,
+                       background_enabled: bool, background_color: str, background_opacity: int) -> None:
+    """
+    Draw a text block's optional semi-transparent background box and its
+    word-wrapped glyph lines onto draw's image, in place.
+
+    Without a background box, the glyphs are drawn directly (the pixels
+    underneath them are always either fully transparent or fully opaque,
+    which Pillow's anti-aliased text rendering blends correctly). With a
+    background box, drawing the glyphs directly on top of it would repeat
+    the same failure mode the box itself has: Pillow's raw ImageDraw text
+    only blends anti-aliased edges correctly against a destination that
+    starts fully transparent or fully opaque, not one with the box's own
+    partial alpha - drawing glyphs straight onto the box would bake in
+    wrong, fringed colors at every anti-aliased edge. Instead, the box and
+    the glyphs are each built on their own fully-transparent temporary
+    layer and merged onto the page with two separate Image.alpha_composite
+    calls (via _alpha_composite_region for the box, and directly for the
+    page-sized glyph layer), each of which composites correctly regardless
+    of what's underneath.
+    """
+    if not background_enabled:
+        _draw_wrapped_lines(draw, all_lines_info, text_box_x, text_box_y,
+                            text_box_width, align, rgb, height_limit, line_spacing)
+        return
+
+    page = draw._image
+    working = page.convert('RGBA')
+
+    bg_layer = _build_text_background_layer(box_width, box_height, background_color, background_opacity)
+    working = _alpha_composite_region(working, bg_layer, box_x, box_y)
+
+    text_layer = Image.new('RGBA', working.size, (0, 0, 0, 0))
+    text_draw = ImageDraw.Draw(text_layer)
+    _draw_wrapped_lines(text_draw, all_lines_info, text_box_x, text_box_y,
+                        text_box_width, align, rgb, height_limit, line_spacing)
+    working = Image.alpha_composite(working, text_layer)
+
+    page.paste(working.convert(page.mode), (0, 0))
 
 
 def _draw_wrapped_lines(draw: ImageDraw.Draw, all_lines_info, text_box_x: int, start_y: int,
@@ -426,15 +491,14 @@ def render_text_label(draw: ImageDraw.Draw, text_label: TextLabel, text_pos: Tex
     text_box_y = box_y + padding
     text_box_height = box_height - 2 * padding
 
-    # Draw semi-transparent background if enabled
-    if theme.text.text_background_enabled:
-        _draw_text_background(draw, box_x, box_y, box_width, box_height,
-                              theme.text.text_background_color, theme.text.text_background_opacity)
-
-    # SECOND PASS: render each wrapped display line using pre-calculated dimensions
+    # SECOND PASS: render the background box (if enabled) and each wrapped
+    # display line using pre-calculated dimensions
     height_limit = text_box_height if text_pos.height is not None else None
-    _draw_wrapped_lines(draw, all_lines_info, text_box_x, text_box_y,
-                        text_box_width, text_pos.align, rgb, height_limit, line_spacing)
+    _render_text_block(draw, box_x, box_y, box_width, box_height,
+                       all_lines_info, text_box_x, text_box_y, text_box_width,
+                       text_pos.align, rgb, height_limit, line_spacing,
+                       theme.text.text_background_enabled, theme.text.text_background_color,
+                       theme.text.text_background_opacity)
 
 
 def render_title_slot(draw: ImageDraw.Draw, title_label: TitleLabel,
@@ -476,23 +540,23 @@ def render_title_slot(draw: ImageDraw.Draw, title_label: TitleLabel,
         text_box_width, line_spacing
     )
 
-    if theme.title.text_background_enabled:
-        _draw_text_background(draw, box_x, box_y, box_width, box_height,
-                              theme.title.text_background_color, theme.title.text_background_opacity)
-
     # Vertically center the rendered text within the slot's box; a title
     # taller than its box top-aligns instead (slack floored at 0), then clips.
     vertical_slack = max(0, text_box_height - total_text_height)
     text_box_x = box_x + padding
     text_box_y = box_y + padding + vertical_slack // 2
 
-    _draw_wrapped_lines(draw, all_lines_info, text_box_x, text_box_y,
-                        text_box_width, align, rgb, text_box_height, line_spacing)
+    _render_text_block(draw, box_x, box_y, box_width, box_height,
+                       all_lines_info, text_box_x, text_box_y, text_box_width,
+                       align, rgb, text_box_height, line_spacing,
+                       theme.title.text_background_enabled, theme.title.text_background_color,
+                       theme.title.text_background_opacity)
 
 
 def render_page(page_width: int, page_height: int, photos: List[Union[PhotoMetadata, TitleLabel]],
                 theme: Theme, page_number: int = 0,
-                text_labels: Optional[List[Optional[TextLabel]]] = None) -> Image.Image:
+                text_labels: Optional[List[Optional[TextLabel]]] = None,
+                transparent: bool = False) -> Image.Image:
     """
     Render a single page with photos, title slots, and styling.
 
@@ -504,22 +568,29 @@ def render_page(page_width: int, page_height: int, photos: List[Union[PhotoMetad
         page_number: Page number for logging (0-indexed)
         text_labels: Optional list of text labels for each photo (same length as photos;
             entries corresponding to a title slot are ignored)
+        transparent: When True, leave everything but photo/text/border pixels
+            fully transparent instead of filling theme.background.color, and
+            return an RGBA image instead of flattening to RGB
 
     Returns:
-        Rendered page as PIL Image
+        Rendered page as PIL Image (RGB, unless transparent is True - then RGBA)
     """
     logger.info(f"Rendering page {page_number + 1} with {len(photos)} items")
-    
-    # Create blank page
+
+    # Create blank page. Always built as RGBA internally regardless of
+    # transparent, so every drawing step below has one image mode to handle;
+    # flattened to RGB at each return point unless transparent output was
+    # requested.
     page = create_blank_page(
         page_width,
         page_height,
-        theme.background.color
+        theme.background.color,
+        transparent
     )
-    
+
     if not photos:
-        return page
-        
+        return page if transparent else page.convert('RGB')
+
     # Match template
     template = match_template(theme.layouts, photos)
     
@@ -634,13 +705,14 @@ def render_page(page_width: int, page_height: int, photos: List[Union[PhotoMetad
         except Exception as e:
             logger.error(f"Failed to render border/text for item on page {page_number + 1}: {e}")
             # Continue with other elements
-    
-    return page
+
+    return page if transparent else page.convert('RGB')
 
 
 def render_all_pages(page_width: int, page_height: int, all_photos: List[Union[PhotoMetadata, TitleLabel]],
                      distribution, theme: Theme,
-                     text_label_associations: Optional[List[Tuple[PhotoMetadata, Optional[TextLabel]]]] = None):
+                     text_label_associations: Optional[List[Tuple[PhotoMetadata, Optional[TextLabel]]]] = None,
+                     transparent: bool = False):
     """
     Render all pages for the photobook incrementally.
 
@@ -655,6 +727,8 @@ def render_all_pages(page_width: int, page_height: int, all_photos: List[Union[P
         distribution: PhotoDistribution instance
         theme: Theme to apply
         text_label_associations: Optional list of (photo, text_label) tuples for captions
+        transparent: When True, render pages with a transparent background
+            instead of theme.background.color (see render_page)
 
     Yields:
         Rendered page images (Iterator[Image.Image])
@@ -679,7 +753,7 @@ def render_all_pages(page_width: int, page_height: int, all_photos: List[Union[P
             ]
 
         # Render page
-        page = render_page(page_width, page_height, page_photos, theme, page_num, page_text_labels)
+        page = render_page(page_width, page_height, page_photos, theme, page_num, page_text_labels, transparent)
 
         # Yield page for processing (memory-efficient streaming)
         yield page

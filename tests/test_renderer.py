@@ -1,6 +1,6 @@
 import pytest
 from PIL import Image, ImageDraw, ImageFont
-from photobook_as_code.renderer import render_page, render_text_label
+from photobook_as_code.renderer import render_page, render_text_label, draw_shadow, create_blank_page
 from photobook_as_code.themes import Theme, BackgroundStyle, BorderStyle, SpacingStyle, TextStyle, TitleStyle, TextPosition, LayoutTemplate, LayoutPhoto, LayoutPosition, LayoutPhotoSize
 from photobook_as_code.photos import PhotoMetadata
 from photobook_as_code.text_labels import TextLabel, TitleLabel
@@ -729,3 +729,179 @@ def test_text_label_words_on_line_share_baseline():
     over_bottom = _last_ink_row(img, wall_w + space_w, box_width_px, photo_pos_y, photo_pos_y + 100)
 
     assert wall_bottom == over_bottom
+
+
+# --- Transparent PNG output tests (add-transparent-png-output) -------------
+
+
+def test_create_blank_page_transparent_is_fully_transparent_rgba():
+    page = create_blank_page(100, 50, "#123456", transparent=True)
+    assert page.mode == 'RGBA'
+    assert page.getpixel((10, 10)) == (0, 0, 0, 0)
+
+
+def test_create_blank_page_opaque_is_filled_rgba():
+    # Always RGBA (even for the opaque/default case) so the rest of the
+    # rendering pipeline has one image mode to handle - render_page flattens
+    # to RGB at the very end unless transparent output was requested.
+    page = create_blank_page(100, 50, "#123456", transparent=False)
+    assert page.mode == 'RGBA'
+    assert page.getpixel((10, 10)) == (0x12, 0x34, 0x56, 255)
+
+
+def test_render_page_transparent_true_returns_rgba():
+    theme = Theme(
+        name="t", description="",
+        background=BackgroundStyle("#000000"),
+        borders=BorderStyle(enabled=False, width=0, color="#000000", shadow=False),
+        spacing=SpacingStyle(page_margin=10),
+    )
+    page = render_page(page_width=100, page_height=100, photos=[], theme=theme, transparent=True)
+    assert page.mode == 'RGBA'
+    assert page.getpixel((10, 10)) == (0, 0, 0, 0)
+
+
+def test_render_page_transparent_false_returns_rgb():
+    theme = Theme(
+        name="t", description="",
+        background=BackgroundStyle("#000000"),
+        borders=BorderStyle(enabled=False, width=0, color="#000000", shadow=False),
+        spacing=SpacingStyle(page_margin=10),
+    )
+    page = render_page(page_width=100, page_height=100, photos=[], theme=theme, transparent=False)
+    assert page.mode == 'RGB'
+    assert page.getpixel((10, 10)) == (0, 0, 0)
+
+
+def test_transparent_page_photo_opaque_margin_transparent(tmp_path):
+    img1_path = tmp_path / "img1.jpg"
+    Image.new("RGB", (900, 900), color="red").save(img1_path)
+    photos = [make_photo('landscape', str(img1_path))]
+
+    theme = Theme(
+        name="t", description="",
+        background=BackgroundStyle("#000000"),
+        borders=BorderStyle(enabled=False, width=0, color="#000000", shadow=False),
+        spacing=SpacingStyle(page_margin=50, photo_margin=0),
+        layouts=[
+            LayoutTemplate(
+                count=1,
+                photos=[LayoutPhoto('landscape', LayoutPosition(0.5, 0.5), LayoutPhotoSize(width=1.0, height=1.0))]
+            )
+        ]
+    )
+    page = render_page(page_width=1000, page_height=1000, photos=photos, theme=theme, transparent=True)
+
+    assert page.mode == 'RGBA'
+    # Photo fills the full usable area (50,50)-(950,950) exactly (900x900 file, no letterbox).
+    # LANCZOS resampling can shift red by a shade even at matching dimensions, so allow slack.
+    r, g, b, a = page.getpixel((500, 500))
+    assert r > 250 and g < 5 and b < 5 and a == 255  # inside photo: opaque red
+    assert page.getpixel((10, 10)) == (0, 0, 0, 0)  # page margin: fully transparent
+
+
+def test_transparent_page_border_stays_opaque(tmp_path):
+    img1_path = tmp_path / "img1.jpg"
+    Image.new("RGB", (900, 900), color="red").save(img1_path)
+    photos = [make_photo('landscape', str(img1_path))]
+
+    theme = Theme(
+        name="t", description="",
+        background=BackgroundStyle("#000000"),
+        borders=BorderStyle(enabled=True, width=5, color="#00FF00", shadow=False),
+        spacing=SpacingStyle(page_margin=50, photo_margin=0),
+        layouts=[
+            LayoutTemplate(
+                count=1,
+                photos=[LayoutPhoto('landscape', LayoutPosition(0.5, 0.5), LayoutPhotoSize(width=1.0, height=1.0))]
+            )
+        ]
+    )
+    page = render_page(page_width=1000, page_height=1000, photos=photos, theme=theme, transparent=True)
+
+    # Photo spans (50,50)-(950,950); border's outermost outline sits exactly
+    # on that edge (col 50, full row span) - must stay fully opaque green.
+    assert page.getpixel((50, 500)) == (0, 255, 0, 255)
+
+
+def test_draw_shadow_preserves_alpha_on_transparent_canvas():
+    page = create_blank_page(200, 200, "#000000", transparent=True)
+    result = draw_shadow(page, x=50, y=50, width=50, height=50)
+
+    assert result.mode == 'RGBA'
+    # Shadow rectangle spans (55,55)-(105,105): flat gray fill at alpha 128,
+    # not flattened to opaque and not discarded.
+    assert result.getpixel((80, 80)) == (128, 128, 128, 128)
+    # Well outside the shadow band: untouched, still fully transparent.
+    assert result.getpixel((190, 190)) == (0, 0, 0, 0)
+
+
+def test_draw_shadow_opaque_background_blend_matches_expected_value():
+    # Regression check for the default (non-transparent) output path: draw_shadow
+    # now returns RGBA instead of flattening to RGB itself, but render_page still
+    # flattens at the very end, and Porter-Duff "over" onto a fully-opaque
+    # destination reduces to the same blend the old code computed - verify the
+    # final flattened color is unchanged.
+    page = create_blank_page(200, 200, "#FFFFFF", transparent=False)
+    result = draw_shadow(page, x=50, y=50, width=50, height=50)
+    flattened = result.convert('RGB')
+
+    sa = 128 / 255
+    expected = round(128 * sa + 255 * (1 - sa))
+    r, g, b = flattened.getpixel((80, 80))
+    assert abs(r - expected) <= 1
+    assert abs(g - expected) <= 1
+    assert abs(b - expected) <= 1
+
+
+def test_text_background_box_on_transparent_canvas_correct_alpha_and_color():
+    # Direct reproduction check for the paste-based compositing bug found
+    # during design: pasting a translucent overlay onto a transparent
+    # destination used to produce both wrong color and wrong alpha (e.g.
+    # (128, 0, 0, 64) instead of (255, 0, 0, 128) for a 50%-opacity red box
+    # over nothing). This verifies the box and the glyphs drawn over it both
+    # composite correctly on a genuinely transparent canvas.
+    img = Image.new("RGBA", (300, 150), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    theme = Theme(
+        name="t", description="",
+        background=BackgroundStyle("#FFFFFF"),
+        borders=BorderStyle(enabled=False, width=0, color="#000000", shadow=False),
+        spacing=SpacingStyle(page_margin=0, photo_margin=0),
+        text=TextStyle(
+            base_font_size=40,
+            font_family="DejaVuSans",
+            text_color="#000000",
+            text_background_enabled=True,
+            text_background_color="#FF0000",
+            text_background_opacity=50,
+            text_padding=10,
+        ),
+    )
+    label = TextLabel(datetime.now(), "HHHH")
+    text_pos = TextPosition(x=0, y=0, width=100, height=40)
+    render_text_label(draw, label, text_pos, page_width=300, page_height=150,
+                       photo_pos_x=0, photo_pos_y=0, photo_width=300, photo_height=150, theme=theme)
+
+    # Fully outside the box: untouched, still fully transparent.
+    assert img.getpixel((250, 120)) == (0, 0, 0, 0)
+
+    # Inside the box, away from glyph ink: pure background color at the
+    # configured opacity - proves the box composited correctly (both color
+    # and alpha) onto a fully-transparent destination. Matches
+    # _build_text_background_layer's own int() truncation, not round().
+    expected_alpha = int(255 * 50 / 100)
+    assert img.getpixel((5, 5)) == (255, 0, 0, expected_alpha)
+
+    # Any fully-covered (alpha=255) pixel in the text region must be pure
+    # ink color - the bug being fixed fringed exactly these pixels toward
+    # the box's color instead.
+    solid_ink_pixels = [
+        (x, y, img.getpixel((x, y)))
+        for y in range(10, 60)
+        for x in range(10, 250)
+        if img.getpixel((x, y))[3] == 255
+    ]
+    assert solid_ink_pixels, "expected at least one fully-opaque glyph interior pixel"
+    for x, y, (r, g, b, a) in solid_ink_pixels:
+        assert (r, g, b) == (0, 0, 0), f"fringed glyph pixel at ({x},{y}): {(r, g, b, a)}"

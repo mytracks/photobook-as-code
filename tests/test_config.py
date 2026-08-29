@@ -281,6 +281,217 @@ layout:
             config_path.unlink()
 
 
+class TestOutputTransparentConfig:
+    """Tests for the output.transparent configuration field (transparent PNG output)."""
+
+    def _write_and_load(self, config_content: str):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_default_is_false(self):
+        """Test transparent defaults to False when not specified."""
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: png
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.transparent is False
+
+    def test_true_accepted_with_png_format(self):
+        """Test transparent: true is accepted when format is png."""
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: png
+  transparent: true
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.transparent is True
+
+    def test_false_accepted_with_any_format(self):
+        """Test transparent: false is accepted regardless of format."""
+        for fmt in ('pdf', 'png', 'jpg'):
+            config = self._write_and_load(f"""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: {fmt}
+  transparent: false
+layout:
+  photos_per_page: 4
+""")
+            assert config.output.transparent is False
+
+    def test_true_rejected_with_jpg_format(self):
+        """Test transparent: true with format: jpg raises a configuration error."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: jpg
+  transparent: true
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="output.transparent"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_true_rejected_with_pdf_format(self):
+        """Test transparent: true with format: pdf (the default format) raises a configuration error."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: pdf
+  transparent: true
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="output.transparent"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+
+class TestOutputPageMarginConfig:
+    """Tests for the output.page_margin configuration field (overrides theme.spacing.page_margin)."""
+
+    def _write_and_load(self, config_content: str):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_default_is_none(self):
+        """Test page_margin defaults to None (falls through to theme) when not specified."""
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.page_margin is None
+
+    def test_positive_value_accepted(self):
+        """Test a positive integer page_margin is accepted and stored exactly."""
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  page_margin: 42
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.page_margin == 42
+
+    def test_explicit_zero_accepted(self):
+        """Test page_margin: 0 is accepted and stored as 0, not treated as unset."""
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  page_margin: 0
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.page_margin == 0
+        assert config.output.page_margin is not None
+
+    def test_negative_value_rejected(self):
+        """Test a negative page_margin raises a configuration error."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  page_margin: -1
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="page_margin"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_non_integer_value_rejected(self):
+        """Test a non-numeric string page_margin raises a configuration error."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  page_margin: "wide"
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="page_margin"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_boolean_value_rejected(self):
+        """Test a boolean page_margin raises a configuration error (bool is an int subclass)."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  page_margin: true
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="page_margin"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+
 class TestGetBookOrientation:
     """Tests for PhotobookConfig.get_book_orientation, used to rank orientation-matched splits."""
 

@@ -24,7 +24,9 @@ class OutputConfig:
     filename: Optional[str] = None
     directory: Optional[str] = None
     quality: int = 95  # For JPG output
-    
+    transparent: bool = False  # PNG only: render with a transparent background
+    page_margin: Optional[int] = None  # Overrides the selected theme's spacing.page_margin (pixels) when set
+
 
 @dataclass
 class LayoutConfig:
@@ -254,6 +256,8 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
             filename=data['output'].get('filename'),
             directory=data['output'].get('directory'),
             quality=data['output'].get('quality', 95),
+            transparent=data['output'].get('transparent', False),
+            page_margin=data['output'].get('page_margin'),
         )
         
         layout_config = LayoutConfig(
@@ -281,7 +285,28 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
             f"Invalid output format: {config.output.format}. "
             f"Must be 'pdf', 'png', or 'jpg'"
         )
-    
+
+    # Validate transparent background: only PNG supports an alpha channel
+    if config.output.transparent and config.output.format != 'png':
+        raise ConfigurationError(
+            f"output.transparent is only supported with format: png "
+            f"(got format: {config.output.format})"
+        )
+
+    # Validate page_margin: overrides theme.spacing.page_margin when set, so
+    # it must satisfy the same non-negative-integer constraint themes.py
+    # already enforces on that field. bool is a subclass of int, so it must
+    # be rejected explicitly (same pattern as timestamp validation above).
+    if config.output.page_margin is not None:
+        if isinstance(config.output.page_margin, bool) or not isinstance(config.output.page_margin, int):
+            raise ConfigurationError(
+                f"Invalid output.page_margin: {config.output.page_margin!r}. Must be an integer"
+            )
+        if config.output.page_margin < 0:
+            raise ConfigurationError(
+                f"Invalid output.page_margin: {config.output.page_margin}. Must be non-negative"
+            )
+
     # Validate layout values
     if config.layout.photos_per_page is not None:
         if config.layout.photos_per_page < 1:
