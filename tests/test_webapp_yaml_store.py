@@ -211,6 +211,38 @@ class TestSaveTitleText:
         assert reloaded_titles[0].title == "New Title"
 
 
+class TestPrependToTitleEntry:
+    def test_prepends_before_existing_content(self, tmp_path):
+        config_path = _write_config(tmp_path, SAMPLE_CONFIG)
+        config = load_config(config_path)
+        titles = parse_title_labels(config.text_labels)
+
+        yaml_store.prepend_to_title_entry(config_path, config.text_labels, titles[0], "30. April 2026")
+
+        content = config_path.read_text()
+        assert '    text: "existing text"' in content  # b.jpg entry untouched
+        assert '    text: ""' in content  # a.jpg entry untouched
+
+        reloaded = load_config(config_path)
+        reloaded_titles = parse_title_labels(reloaded.text_labels)
+        assert len(reloaded_titles) == 1
+        assert reloaded_titles[0].title == "30. April 2026\n\n# Trip Title\n\n## January 2026\n"
+
+    def test_becomes_entire_content_when_title_was_empty(self, tmp_path):
+        config_with_empty_title = SAMPLE_CONFIG.replace(
+            '    title: |\n      # Trip Title\n\n      ## January 2026\n', '    title: ""\n'
+        )
+        config_path = _write_config(tmp_path, config_with_empty_title)
+        config = load_config(config_path)
+        titles = parse_title_labels(config.text_labels)
+
+        yaml_store.prepend_to_title_entry(config_path, config.text_labels, titles[0], "30. April 2026")
+
+        reloaded = load_config(config_path)
+        reloaded_titles = parse_title_labels(reloaded.text_labels)
+        assert reloaded_titles[0].title == "30. April 2026"
+
+
 class TestInsertNewTitleEntry:
     def test_insert_in_chronological_middle(self, tmp_path):
         config_path = _write_config(tmp_path, SAMPLE_CONFIG)

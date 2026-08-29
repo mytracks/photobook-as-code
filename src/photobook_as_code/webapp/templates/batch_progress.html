@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Batch Progress - Photobook Text Editor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <a class="nav-button" href="{{ url_for('view_item', index=0) }}" aria-label="Back to editor">
+      <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <span class="filename">Batch operation</span>
+  </header>
+
+  <main>
+    <div class="batch-progress">
+      <p id="batch-status-line" class="batch-status-line">Starting…</p>
+
+      <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+        <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+      </div>
+      <p id="progress-count" class="progress-count">0 / 0</p>
+
+      <p id="current-label" class="batch-hint"></p>
+
+      <dl class="batch-stats">
+        <div><dt>Updated</dt><dd id="stat-updated">0</dd></div>
+        <div><dt>Skipped (existing content)</dt><dd id="stat-skipped-existing">0</dd></div>
+        <div><dt>No location found</dt><dd id="stat-skipped-no-poi">0</dd></div>
+        <div><dt>Duplicate location skipped</dt><dd id="stat-skipped-duplicate-location">0</dd></div>
+        <div><dt>Failed</dt><dd id="stat-failed">0</dd></div>
+      </dl>
+
+      <button type="button" id="cancel-button" class="header-action header-action-danger">Cancel</button>
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='batch_progress.js') }}"
+    data-job-id="{{ job_id }}"></script>
+</body>
+</html>

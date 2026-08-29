@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Batch Operation - Photobook Text Editor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <a class="nav-button" href="{{ url_for('view_item', index=0) }}" aria-label="Back to editor">
+      <svg class="icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <span class="filename">Batch operation</span>
+  </header>
+
+  <main>
+    <form id="batch-form" class="batch-form" method="post" action="{{ url_for('batch_start') }}">
+      <section class="batch-section">
+        <label class="batch-toggle">
+          <input type="checkbox" name="date_enabled" id="date-enabled">
+          Insert date on each new day
+        </label>
+        <div class="batch-suboptions" id="date-suboptions" hidden>
+          <label class="batch-radio">
+            <input type="radio" name="date_destination" value="text-label" checked>
+            As a text label on the first photo of the day
+          </label>
+          <label class="batch-radio">
+            <input type="radio" name="date_destination" value="title">
+            As a new title
+          </label>
+        </div>
+      </section>
+
+      <section class="batch-section">
+        <label class="batch-toggle">
+          <input type="checkbox" name="geocode_enabled" id="geocode-enabled">
+          Reverse-geocode every photo with GPS data
+        </label>
+        <div class="batch-suboptions" id="geocode-suboptions" hidden>
+          <label class="batch-radio">
+            <input type="radio" name="geocode_strictness" value="strict" checked>
+            Landmarks/points of interest only
+          </label>
+          <label class="batch-radio">
+            <input type="radio" name="geocode_strictness" value="fallback">
+            Landmarks, falling back to city and country
+          </label>
+        </div>
+        <p class="batch-hint">Reverse-geocoding is rate-limited to one request per second, so a large book can take several minutes.</p>
+      </section>
+
+      <section class="batch-section">
+        <p class="batch-section-title">When a photo or title already has content</p>
+        <label class="batch-radio">
+          <input type="radio" name="skip_mode" value="skip" checked>
+          Leave it alone
+        </label>
+        <label class="batch-radio">
+          <input type="radio" name="skip_mode" value="append">
+          Add to it
+        </label>
+      </section>
+
+      <button type="submit" id="batch-start-button" class="batch-start-button" disabled>Start batch</button>
+    </form>
+  </main>
+
+  <script src="{{ url_for('static', filename='batch.js') }}"></script>
+</body>
+</html>

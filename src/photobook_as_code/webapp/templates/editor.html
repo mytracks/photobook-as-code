@@ -60,6 +60,7 @@
     <span class="filename">{{ filename if not is_title else "Title entry" }}</span>
 
     <div class="header-actions">
+      <a class="header-action" href="{{ url_for('batch_settings') }}">Batch…</a>
       {% if is_title %}
         <button type="button" id="delete-title-button" class="header-action header-action-danger">
           <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>

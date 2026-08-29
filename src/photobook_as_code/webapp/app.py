@@ -9,7 +9,7 @@ from typing import Optional
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_file, url_for
 from PIL import Image
 
-from . import geocoding, yaml_store
+from . import batch, geocoding, yaml_store
 from .data import EditorData, PhotoDirectoryCache, load_editor_data
 
 MAX_IMAGE_DIMENSION = 1600
@@ -168,6 +168,55 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             }), 404
 
         return jsonify({"status": "ok", "text": place_name})
+
+    @app.get("/batch")
+    def batch_settings():
+        return render_template("batch.html")
+
+    @app.post("/batch/start")
+    def batch_start():
+        form = request.form
+        settings = batch.BatchSettings(
+            date_enabled=form.get("date_enabled") == "on",
+            date_destination=form.get("date_destination", batch.DATE_DESTINATION_TEXT_LABEL),
+            geocode_enabled=form.get("geocode_enabled") == "on",
+            geocode_strict=form.get("geocode_strictness") == "strict",
+            skip_mode=form.get("skip_mode", batch.SKIP_MODE_SKIP),
+        )
+        accept_language = request.headers.get("Accept-Language", "")
+
+        try:
+            job_id = batch.start_batch_job(
+                app.config["PHOTOBOOK_CONFIG_PATH"], photo_cache, settings, accept_language
+            )
+        except ValueError:
+            abort(400)
+        except batch.BatchAlreadyRunningError as e:
+            # Send the user to the job that's already running instead of
+            # failing the request outright.
+            job_id = e.job_id
+
+        return redirect(url_for("batch_progress", job_id=job_id))
+
+    @app.get("/batch/progress/<job_id>")
+    def batch_progress(job_id: str):
+        if batch.get_job(job_id) is None:
+            abort(404)
+        return render_template("batch_progress.html", job_id=job_id)
+
+    @app.get("/batch/status/<job_id>")
+    def batch_status(job_id: str):
+        job = batch.get_job(job_id)
+        if job is None:
+            abort(404)
+        return jsonify(job.to_dict())
+
+    @app.post("/batch/cancel/<job_id>")
+    def batch_cancel(job_id: str):
+        if batch.get_job(job_id) is None:
+            abort(404)
+        batch.cancel_job(job_id)
+        return jsonify({"status": "ok"})
 
     @app.post("/items/<int:index>/delete-title")
     def delete_title(index: int):

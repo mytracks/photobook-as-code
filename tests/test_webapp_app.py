@@ -2,14 +2,61 @@
 Integration tests for the web editor's Flask routes.
 """
 
+import threading
+import time
 from pathlib import Path
 
+import pytest
 from PIL import ExifTags, Image
 
+import photobook_as_code.webapp.batch as batch_module
 import photobook_as_code.webapp.data as data_module
 import photobook_as_code.webapp.geocoding as geocoding_module
 from photobook_as_code.config import load_config
 from photobook_as_code.webapp.app import create_app
+
+
+@pytest.fixture(autouse=True)
+def _reset_batch_job_store():
+    batch_module._jobs.clear()
+    batch_module._active_job_id = None
+    yield
+    batch_module._jobs.clear()
+    batch_module._active_job_id = None
+
+
+def _start_batch(client, **form_overrides):
+    form = {"date_enabled": "on", "date_destination": "title", "skip_mode": "skip"}
+    form.update(form_overrides)
+    return client.post("/batch/start", data=form)
+
+
+def _job_id_from_redirect(response) -> str:
+    return response.headers["Location"].rsplit("/", 1)[-1]
+
+
+def _wait_until_finished(job_id, timeout_seconds=5):
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        job = batch_module.get_job(job_id)
+        if job.status != batch_module.STATUS_RUNNING:
+            return job
+        time.sleep(0.02)
+    raise AssertionError(f"job {job_id} did not finish within {timeout_seconds}s")
+
+
+def _block_worker(monkeypatch):
+    """Blocks the batch worker's per-photo title step until the returned
+    event is set, so a test can observe the job while it's still running."""
+    release = threading.Event()
+    real = batch_module._process_new_title_for_photo
+
+    def blocking(*args, **kwargs):
+        release.wait(timeout=5)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(batch_module, "_process_new_title_for_photo", blocking)
+    return release
 
 
 def _make_photos_dir(tmp_path: Path) -> Path:
@@ -495,3 +542,218 @@ class TestReverseGeocode:
         assert response.status_code >= 400
         payload = response.get_json()
         assert payload["status"] == "error"
+
+
+class TestBatchSettingsPage:
+    def test_renders_settings_form(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        response = client.get("/batch")
+
+        assert response.status_code == 200
+        body = response.get_data(as_text=True)
+        assert 'name="date_enabled"' in body
+        assert 'name="geocode_enabled"' in body
+        assert 'name="skip_mode"' in body
+
+    def test_header_link_present_on_photo_item(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        body = client.get("/items/0").get_data(as_text=True)
+
+        assert 'href="/batch"' in body
+
+    def test_header_link_present_on_title_item(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+
+        body = client.get("/items/1").get_data(as_text=True)  # the title item
+
+        assert 'href="/batch"' in body
+
+
+class TestBatchStart:
+    def test_start_redirects_to_progress_page(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        response = _start_batch(client)
+
+        assert response.status_code == 302
+        assert "/batch/progress/" in response.headers["Location"]
+        _wait_until_finished(_job_id_from_redirect(response))
+
+    def test_neither_action_enabled_is_bad_request(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        response = client.post("/batch/start", data={"skip_mode": "skip"})
+
+        assert response.status_code == 400
+
+    def test_does_not_block_for_the_jobs_duration(self, tmp_path, monkeypatch):
+        client, _ = make_client(tmp_path)
+        release = _block_worker(monkeypatch)
+
+        started = time.monotonic()
+        response = _start_batch(client)
+        elapsed = time.monotonic() - started
+
+        assert response.status_code == 302
+        assert elapsed < 1.0  # the worker is blocked indefinitely - a blocking route would hang here
+
+        release.set()
+        _wait_until_finished(_job_id_from_redirect(response))
+
+    def test_second_start_redirects_to_the_already_running_job(self, tmp_path, monkeypatch):
+        client, _ = make_client(tmp_path)
+        release = _block_worker(monkeypatch)
+
+        first = _start_batch(client)
+        second = _start_batch(client)
+
+        assert second.status_code == 302
+        assert _job_id_from_redirect(second) == _job_id_from_redirect(first)
+
+        release.set()
+        _wait_until_finished(_job_id_from_redirect(first))
+
+
+class TestBatchProgressAndStatus:
+    def test_progress_page_renders_for_known_job(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        job_id = _job_id_from_redirect(_start_batch(client))
+
+        response = client.get(f"/batch/progress/{job_id}")
+
+        assert response.status_code == 200
+        assert job_id in response.get_data(as_text=True)
+        _wait_until_finished(job_id)
+
+    def test_progress_page_404_for_unknown_job(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        response = client.get("/batch/progress/does-not-exist")
+
+        assert response.status_code == 404
+
+    def test_status_json_shape_and_completion(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        job_id = _job_id_from_redirect(_start_batch(client))
+        _wait_until_finished(job_id)
+
+        response = client.get(f"/batch/status/{job_id}")
+
+        assert response.status_code == 200
+        payload = response.get_json()
+        for key in (
+            "job_id", "total", "processed", "updated", "skipped_existing",
+            "skipped_no_poi", "skipped_duplicate_location", "failed", "current_label", "status",
+        ):
+            assert key in payload
+        assert payload["status"] == "done"
+
+    def test_status_404_for_unknown_job(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        response = client.get("/batch/status/does-not-exist")
+
+        assert response.status_code == 404
+
+
+class TestBatchCancel:
+    def test_cancel_stops_a_running_job(self, tmp_path, monkeypatch):
+        client, _ = make_client(tmp_path)
+        release = _block_worker(monkeypatch)
+        job_id = _job_id_from_redirect(_start_batch(client))
+
+        response = client.post(f"/batch/cancel/{job_id}")
+        assert response.status_code == 200
+
+        release.set()
+        job = _wait_until_finished(job_id)
+
+        assert job.status == batch_module.STATUS_CANCELLED
+
+    def test_cancel_404_for_unknown_job(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        response = client.post("/batch/cancel/does-not-exist")
+
+        assert response.status_code == 404
+
+
+class TestBatchEndToEnd:
+    """
+    Exercises the real HTTP flow (start -> poll status -> read the saved
+    file) rather than calling the worker loop directly, against a fixture
+    covering multiple spec rules at once: a day-boundary photo with GPS
+    (date + geocode combined), a non-boundary photo with no GPS (untouched),
+    and a second day's boundary photo that already has a caption (append
+    mode adds to it, in date-then-location order).
+    """
+
+    def _make_fixture(self, tmp_path: Path) -> Path:
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+
+        def make(filename, date_str, with_gps):
+            exif = Image.Exif()
+            exif[36867] = date_str
+            if with_gps:
+                exif[ExifTags.IFD.GPSInfo] = {1: "N", 2: (53.0, 33.0, 12.6), 3: "E", 4: (10.0, 0.0, 0.0)}
+            Image.new("RGB", (2000, 1500), color="white").save(photos_dir / filename, exif=exif.tobytes())
+
+        make("p1_day1_gps.jpg", "2026:04:30 09:00:00", with_gps=True)
+        make("p2_day1_no_gps.jpg", "2026:04:30 15:00:00", with_gps=False)
+        make("p3_day2_gps.jpg", "2026:05:01 09:00:00", with_gps=True)
+        make("p4_day2_no_gps.jpg", "2026:05:01 15:00:00", with_gps=False)
+
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            f"photo_folders:\n  - {photos_dir}\n"
+            "output:\n  size: A4\n"
+            "layout:\n  photos_per_page: 2\n  order: date\n"
+            "theme: clean\n"
+            "text_labels:\n"
+            '  - timestamp: "2026-05-01T09:00:00"  # p3_day2_gps.jpg\n'
+            "    text: Existing caption\n"
+        )
+        return config_path
+
+    def test_full_flow_matches_eligibility_combination_and_append_rules(self, tmp_path, monkeypatch):
+        config_path = self._make_fixture(tmp_path)
+        app = create_app(config_path)
+        app.config["TESTING"] = True
+        client = app.test_client()
+
+        # Distinct names per call: p1 and p3 must not collide under the
+        # duplicate-location-suppression rule, since this test is about the
+        # append-combination behavior, not deduplication (which has its own
+        # dedicated tests in test_webapp_batch.py).
+        names = iter(["Brandenburger Tor", "Reichstag"])
+        monkeypatch.setattr(geocoding_module, "reverse_geocode", lambda *a, **k: {"name": next(names)})
+
+        response = client.post(
+            "/batch/start",
+            data={
+                "date_enabled": "on",
+                "date_destination": "text-label",
+                "geocode_enabled": "on",
+                "geocode_strictness": "fallback",
+                "skip_mode": "append",
+            },
+            headers={"Accept-Language": "de-DE"},
+        )
+        assert response.status_code == 302
+        job_id = _job_id_from_redirect(response)
+        job = _wait_until_finished(job_id)
+
+        assert job.status == batch_module.STATUS_DONE
+        assert job.updated == 2  # p1 (empty -> date+geocode) and p3 (append)
+        assert job.skipped_duplicate_location == 0
+        assert job.total == 4
+
+        reloaded = load_config(config_path)
+        by_comment_order = {e["timestamp"]: e["text"] for e in reloaded.text_labels}
+        assert by_comment_order["2026-04-30T09:00:00"] == "30. April 2026\nBrandenburger Tor"
+        assert "2026-04-30T15:00:00" not in by_comment_order  # p2: no GPS, not a boundary
+        assert by_comment_order["2026-05-01T09:00:00"] == "Existing caption\n1. Mai 2026\nReichstag"
+        assert "2026-05-01T15:00:00" not in by_comment_order  # p4: no GPS, not a boundary
