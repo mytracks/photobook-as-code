@@ -5,9 +5,11 @@ output:
   #size: "4960x7016"  # Custom size in pixels
   #format: pdf
   #filename: /mnt/downloads/mondsee.pdf
-  format: jpg
+  format: png
   directory: /mnt/downloads/mondsee
-  quality: 95   
+  #quality: 95
+  transparent: true
+  page_margin: 0
 
 layout:
   #photos_per_page: 2

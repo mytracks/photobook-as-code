@@ -348,11 +348,11 @@ text_labels:
             page_width, page_height, photos, distribution, theme, text_associations
         )
 
-        output_path = tmp_path / "test-output.pdf"
         output_files = generate_output(
             pages=pages_gen,
             output_format='pdf',
-            output_path=output_path,
+            output_dir=tmp_path,
+            base_filename='test-output',
             page_width=page_width,
             page_height=page_height,
             total_pages=distribution.total_pages,
@@ -404,23 +404,24 @@ text_labels:
             page_width, page_height, photos, distribution, theme, text_associations
         )
 
-        output_path = tmp_path / "test-output.png"
         output_files = generate_output(
             pages=pages_gen,
             output_format='png',
-            output_path=output_path,
+            output_dir=tmp_path,
+            base_filename='test-output',
             page_width=page_width,
             page_height=page_height,
             total_pages=distribution.total_pages,
             quality=85,
             dpi=300
         )
-        
-        # PNG format creates one file per page
+
+        # PNG format creates one file per page, directly in output_dir
         assert len(output_files) >= 1
         for output_file in output_files:
             assert Path(output_file).exists()
             assert Path(output_file).stat().st_size > 0
+            assert Path(output_file).parent == tmp_path
 
 
 class TestMixedTextAndTitleLabelsIntegration:

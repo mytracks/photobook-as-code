@@ -2,6 +2,7 @@
 Command-line interface for photobook generation.
 """
 
+import dataclasses
 import sys
 import logging
 import tracemalloc
@@ -112,7 +113,17 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
         # Stage 3: Load theme
         click.echo(f"🎨 Loading theme '{pb_config.theme}'...")
         theme = load_theme(pb_config.theme)
-        
+
+        # Config's output.page_margin, when set, overrides the theme's own
+        # spacing.page_margin for this run - applied once here so every
+        # downstream consumer (distribute_photos, render_all_pages) sees it
+        # through the theme object without any further plumbing.
+        if pb_config.output.page_margin is not None:
+            theme = dataclasses.replace(
+                theme,
+                spacing=dataclasses.replace(theme.spacing, page_margin=pb_config.output.page_margin)
+            )
+
         # Stage 3.5: Associate text labels with photos, and parse title slots
         text_label_associations = None
         if pb_config.text_labels:
@@ -156,24 +167,33 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
         click.echo("🖼️  Rendering pages...")
 
         # Create page generator (memory-efficient streaming)
-        pages_generator = render_all_pages(page_width, page_height, page_items, distribution, theme, text_label_associations)
+        pages_generator = render_all_pages(page_width, page_height, page_items, distribution, theme,
+                                            text_label_associations, pb_config.output.transparent)
         
         # Stage 6: Generate output
         click.echo("💾 Generating output...")
         
-        # Determine output path
+        # Determine output directory and base filename. PDF resolves to a
+        # single file (output_dir/base_filename.pdf); png/jpg resolve to
+        # output_dir itself, with base_filename used as each page's prefix -
+        # never as a subfolder name.
         if output:
-            output_path = output
+            if pb_config.output.format == 'pdf':
+                output_dir = output.parent
+                base_filename = output.stem
+            else:
+                output_dir = output
+                base_filename = Path(pb_config.get_output_filename(config.name)).stem
         else:
             output_dir = pb_config.get_output_directory()
             filename = pb_config.get_output_filename(config.name)
-            output_path = prepare_output_path(
-                output_dir,
-                filename,
-                pb_config.output.format,
-                ensure_unique=False
-            )
-        
+            if pb_config.output.format == 'pdf':
+                output_path = prepare_output_path(output_dir, filename, ensure_unique=False)
+                output_dir = output_path.parent
+                base_filename = output_path.stem
+            else:
+                base_filename = Path(filename).stem
+
         # Generate output files with streaming pages
         with click.progressbar(
             length=distribution.total_pages,
@@ -185,7 +205,8 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
             output_files = generate_output(
                 pages=pages_generator,
                 output_format=pb_config.output.format,
-                output_path=output_path,
+                output_dir=output_dir,
+                base_filename=base_filename,
                 page_width=page_width,
                 page_height=page_height,
                 total_pages=distribution.total_pages,

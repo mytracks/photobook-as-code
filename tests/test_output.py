@@ -5,7 +5,7 @@ import pikepdf
 import pytest
 from PIL import Image
 
-from photobook_as_code.output import OutputError, generate_pdf
+from photobook_as_code.output import OutputError, generate_pdf, generate_output
 
 
 def make_solid_page(color, size=(400, 566)):
@@ -77,3 +77,98 @@ def test_generate_pdf_cleans_up_and_leaves_no_partial_file_on_failure(tmp_path, 
     assert not (tmp_path / "out.pdf.tmp").exists()
     assert created_dirs, "expected tempfile.mkdtemp to be called"
     assert not Path(created_dirs[0]).exists()
+
+
+def test_generate_output_jpg_writes_pages_directly_into_output_dir(tmp_path):
+    colors = [(255, 0, 0), (0, 255, 0)]
+    pages = (make_solid_page(c) for c in colors)
+    output_dir = tmp_path / "out"
+
+    output_files = generate_output(
+        pages=pages,
+        output_format='jpg',
+        output_dir=output_dir,
+        base_filename='album',
+        page_width=400,
+        page_height=566,
+        total_pages=len(colors),
+    )
+
+    expected = [output_dir / "album_page_001.jpg", output_dir / "album_page_002.jpg"]
+    assert output_files == expected
+    for path in expected:
+        assert path.is_file()
+
+    # No subfolder named after the base filename/format was created - the
+    # output directory contains exactly the page files, nothing else.
+    assert sorted(p.name for p in output_dir.iterdir()) == [p.name for p in expected]
+
+
+def test_generate_output_png_writes_pages_directly_into_output_dir(tmp_path):
+    colors = [(10, 20, 30), (40, 50, 60), (70, 80, 90)]
+    pages = (make_solid_page(c) for c in colors)
+    output_dir = tmp_path / "out"
+
+    output_files = generate_output(
+        pages=pages,
+        output_format='png',
+        output_dir=output_dir,
+        base_filename='book',
+        page_width=400,
+        page_height=566,
+        total_pages=len(colors),
+    )
+
+    expected = [output_dir / f"book_page_{i:03d}.png" for i in range(1, 4)]
+    assert output_files == expected
+    for path in expected:
+        assert path.is_file()
+
+    assert sorted(p.name for p in output_dir.iterdir()) == [p.name for p in expected]
+
+
+def test_generate_output_png_preserves_alpha_channel_for_transparent_pages(tmp_path):
+    # generate_png_pages needs no special handling for RGBA pages - PIL's PNG
+    # writer already preserves an image's alpha channel as-is - but this
+    # confirms the round-trip actually holds: a page with a genuinely
+    # transparent pixel and a genuinely opaque one both survive save+reload.
+    page = Image.new('RGBA', (100, 60), (0, 0, 0, 0))
+    for x in range(50, 100):
+        for y in range(60):
+            page.putpixel((x, y), (255, 0, 0, 255))
+    pages = iter([page])
+    output_dir = tmp_path / "out"
+
+    output_files = generate_output(
+        pages=pages,
+        output_format='png',
+        output_dir=output_dir,
+        base_filename='book',
+        page_width=100,
+        page_height=60,
+        total_pages=1,
+    )
+
+    saved = Image.open(output_files[0])
+    assert saved.mode == 'RGBA'
+    assert saved.getpixel((10, 10)) == (0, 0, 0, 0)
+    assert saved.getpixel((75, 30)) == (255, 0, 0, 255)
+
+
+def test_generate_output_pdf_builds_file_from_dir_and_base_filename(tmp_path):
+    colors = [(1, 2, 3)]
+    pages = (make_solid_page(c) for c in colors)
+    output_dir = tmp_path / "out"
+
+    output_files = generate_output(
+        pages=pages,
+        output_format='pdf',
+        output_dir=output_dir,
+        base_filename='album',
+        page_width=400,
+        page_height=566,
+        total_pages=len(colors),
+    )
+
+    assert output_files == [output_dir / "album.pdf"]
+    assert output_files[0].is_file()
