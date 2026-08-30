@@ -40,7 +40,7 @@ The system SHALL let the user move forward and backward through the items of the
 - **THEN** the system does not navigate to a different item, and the browser's native text-editing behavior for that combination is left to run unmodified
 
 #### Scenario: Smooth transition on navigation
-- **WHEN** the user navigates to a different item by any means (previous/next controls, jump-to-number, keyboard shortcut, or after adding/deleting a title)
+- **WHEN** the user navigates to a different item by any means (previous/next controls, jump-to-number, keyboard shortcut, a filmstrip item, or after adding/deleting a title)
 - **THEN** the system transitions to the new item with a smooth visual transition rather than an abrupt, unstyled page reload
 
 ### Requirement: Jump directly to an item by number
@@ -605,3 +605,95 @@ The system SHALL let the user activate an enabled open-in-Maps control from the 
 #### Scenario: Does not also activate the reverse-geocode control
 - **WHEN** the user presses Alt+G
 - **THEN** the system does not activate the reverse-geocode control, even though both shortcuts share the "G" key
+
+### Requirement: Display a filmstrip of all items for visual navigation
+The system SHALL display a persistent, always-visible strip at the bottom of the per-item editor showing every item in the book's merged order (photos and titles), in a fixed-height, horizontally scrollable container, and SHALL let the user click any item in the strip to navigate to it.
+
+#### Scenario: Filmstrip is always visible
+- **WHEN** the user views any item in the per-item editor
+- **THEN** the system displays the filmstrip below the caption field, with a fixed height that does not change as the user navigates
+
+#### Scenario: Filmstrip contains every item
+- **WHEN** the user views the filmstrip
+- **THEN** it contains one cell for every item in the book's merged order, matching the same order used for previous/next navigation
+
+#### Scenario: Clicking a filmstrip item navigates to it
+- **WHEN** the user clicks a cell in the filmstrip
+- **THEN** the system saves any pending text edit first, then navigates to that item, the same way other navigation actions do
+
+#### Scenario: Filmstrip scrolls horizontally
+- **WHEN** the book has more items than fit within the filmstrip's width
+- **THEN** the user can scroll the filmstrip horizontally to reveal items outside the initially visible range
+
+### Requirement: Filmstrip photo cells show only a thumbnail
+The system SHALL render each photo item's filmstrip cell as a small thumbnail image of that photo, with no caption text or date displayed on the cell, other than the small caption-presence overlay described below.
+
+#### Scenario: Photo cell shows a thumbnail
+- **WHEN** a photo item appears in the filmstrip
+- **THEN** its cell displays a thumbnail image of that photo and no caption or date text
+
+### Requirement: Filmstrip photo cells indicate whether they have a caption
+The system SHALL display a small "T" overlay badge on a photo's filmstrip cell when that photo has non-empty caption text, and SHALL NOT display it when the photo's caption is empty or absent. The badge SHALL NOT display the caption's own text content.
+
+#### Scenario: Photo has a non-empty caption
+- **WHEN** a photo item with non-empty caption text appears in the filmstrip
+- **THEN** its cell displays a small "T" overlay badge over the thumbnail
+
+#### Scenario: Photo has no caption or an empty caption
+- **WHEN** a photo item with no associated caption, or an associated caption whose text is empty, appears in the filmstrip
+- **THEN** its cell does not display the overlay badge
+
+#### Scenario: Badge does not leak caption content
+- **WHEN** a photo's filmstrip cell displays the caption-presence badge
+- **THEN** the badge shows only the "T" glyph, never the caption's own text
+
+### Requirement: Filmstrip title cells show a placeholder, not the title's text
+The system SHALL render each title item's filmstrip cell as a bounded placeholder cell containing only a "T" glyph, visually distinct from a photo cell, without displaying the title's own text content.
+
+#### Scenario: Title cell shows a placeholder
+- **WHEN** a title item appears in the filmstrip
+- **THEN** its cell displays a bounded placeholder containing the letter "T" and does not display the title's text content
+
+### Requirement: Filmstrip indicates day boundaries
+The system SHALL display a compact, date-labeled divider between two consecutive filmstrip cells whenever the later item's date differs from the earlier item's date, determined the same way as the per-item editor's own new-day indicator (considering photos and titles together as one sequence).
+
+#### Scenario: Date changes between consecutive items
+- **WHEN** two consecutive items in the filmstrip have different dates
+- **THEN** the system displays a divider with a compact date label between their cells
+
+#### Scenario: Date matches between consecutive items
+- **WHEN** two consecutive items in the filmstrip have the same date
+- **THEN** the system does not display a divider between their cells
+
+### Requirement: Filmstrip highlights and tracks the current item
+The system SHALL visually highlight the filmstrip cell for the item currently displayed in the per-item editor, and SHALL keep that highlight correct across every navigation trigger - filmstrip clicks, previous/next controls, keyboard shortcuts, jump-to-number, and adding or deleting a title.
+
+#### Scenario: Current item is highlighted
+- **WHEN** the user views any item
+- **THEN** the filmstrip cell corresponding to that item is visually highlighted, distinguishing it from every other cell
+
+#### Scenario: Highlight follows non-filmstrip navigation
+- **WHEN** the user navigates using the header's previous/next controls, a keyboard shortcut, jump-to-number, or by adding or deleting a title
+- **THEN** the filmstrip's highlighted cell updates to match the newly displayed item
+
+#### Scenario: Current cell scrolls into view
+- **WHEN** the editor loads a new item, by any navigation trigger
+- **THEN** the system scrolls the filmstrip so the current item's cell is visible without requiring the user to scroll manually
+
+### Requirement: Serve a small thumbnail image for filmstrip cells
+The system SHALL serve each photo's filmstrip thumbnail at a substantially smaller size than the item's main display image, suitable for a strip that may contain hundreds of cells on the same page, without degrading the responsiveness of loading the currently displayed photo.
+
+#### Scenario: Thumbnail is smaller than the main image
+- **WHEN** the system serves a photo's filmstrip thumbnail
+- **THEN** the served image is scaled to a small display size and does not require decoding or transferring the same amount of data as the item's main display image
+
+### Requirement: Filmstrip cells are accessible to assistive technology
+The system SHALL give each filmstrip cell an accessible name that identifies its item without relying on the visual thumbnail or "T" glyph alone.
+
+#### Scenario: Photo cell accessible name
+- **WHEN** a screen reader user reaches a photo's filmstrip cell
+- **THEN** it announces an accessible name identifying it as that photo (for example, its filename or position), not merely an unlabeled image
+
+#### Scenario: Title cell accessible name
+- **WHEN** a screen reader user reaches a title's filmstrip cell
+- **THEN** it announces an accessible name identifying it as a title item, not merely the letter "T"
