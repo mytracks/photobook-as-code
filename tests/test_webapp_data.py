@@ -11,7 +11,8 @@ from pathlib import Path
 from PIL import ExifTags, Image
 
 import photobook_as_code.webapp.data as data_module
-from photobook_as_code.webapp.data import PhotoDirectoryCache, load_editor_data
+from photobook_as_code.photos import PhotoMetadata
+from photobook_as_code.webapp.data import PhotoDirectoryCache, ThumbnailCache, load_editor_data
 
 
 def _counting_collect_photos(monkeypatch):
@@ -398,3 +399,99 @@ class TestPhotoDirectoryCache:
 
         assert calls["count"] == 1
         assert first is second
+
+
+class TestThumbnailCache:
+    def test_second_lookup_reuses_rendered_bytes(self, tmp_path, monkeypatch):
+        photo_path = tmp_path / "a.jpg"
+        Image.new("RGB", (400, 300), color="white").save(photo_path)
+        photo = PhotoMetadata(path=photo_path, filename="a.jpg", width=400, height=300)
+
+        original = data_module._render_thumbnail
+        calls = {"count": 0}
+
+        def wrapper(p):
+            calls["count"] += 1
+            return original(p)
+
+        monkeypatch.setattr(data_module, "_render_thumbnail", wrapper)
+        cache = ThumbnailCache()
+
+        first = cache.get(photo)
+        second = cache.get(photo)
+
+        assert calls["count"] == 1
+        assert first == second
+
+    def test_different_photos_are_cached_independently(self, tmp_path):
+        path_a = tmp_path / "a.jpg"
+        path_b = tmp_path / "b.jpg"
+        Image.new("RGB", (400, 300), color="white").save(path_a)
+        Image.new("RGB", (400, 300), color="black").save(path_b)
+        photo_a = PhotoMetadata(path=path_a, filename="a.jpg", width=400, height=300)
+        photo_b = PhotoMetadata(path=path_b, filename="b.jpg", width=400, height=300)
+        cache = ThumbnailCache()
+
+        assert cache.get(photo_a) != cache.get(photo_b)
+
+
+class TestFilmstripItems:
+    def test_one_entry_per_item_in_merged_order(self, tmp_path):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert [item.index for item in items] == [0, 1, 2]
+        assert [item.filename for item in items] == [
+            "a_taken_last.jpg",
+            "b_taken_middle.jpg",
+            "c_taken_first.jpg",
+        ]
+        assert all(item.is_title is False for item in items)
+
+    def test_title_entry_has_no_filename(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T08:00:00"\n'
+            "    title: Day One\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert items[0].is_title is True
+        assert items[0].filename is None
+
+    def test_new_day_carries_a_compact_date_label(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        _make_photo_file_with_exif(photos_dir / "b.jpg", datetime(2025, 6, 15, 9, 0))
+        config_path = _write_config(tmp_path, photos_dir, order="date")
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert items[0].is_new_day is True
+        assert items[0].date_label == "Jun 14"
+        assert items[1].is_new_day is True
+        assert items[1].date_label == "Jun 15"
+
+    def test_same_day_has_no_date_label(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        _make_photo_file_with_exif(photos_dir / "b.jpg", datetime(2025, 6, 14, 15, 0))
+        config_path = _write_config(tmp_path, photos_dir, order="date")
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert items[1].is_new_day is False
+        assert items[1].date_label is None

@@ -10,18 +10,24 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, sen
 from PIL import Image
 
 from . import batch, geocoding, yaml_store
-from .data import EditorData, PhotoDirectoryCache, load_editor_data
+from .data import EditorData, PhotoDirectoryCache, ThumbnailCache, load_editor_data
 
 MAX_IMAGE_DIMENSION = 1600
 JPEG_QUALITY = 85
 
 
-def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = None) -> Flask:
+def create_app(
+    config_path: Path,
+    photo_cache: Optional[PhotoDirectoryCache] = None,
+    thumbnail_cache: Optional[ThumbnailCache] = None,
+) -> Flask:
     """Build the Flask app bound to a single photobook configuration file."""
     app = Flask(__name__)
     app.config["PHOTOBOOK_CONFIG_PATH"] = Path(config_path)
     if photo_cache is None:
         photo_cache = PhotoDirectoryCache()
+    if thumbnail_cache is None:
+        thumbnail_cache = ThumbnailCache()
 
     def _load_data_or_404(index: int) -> EditorData:
         data = load_editor_data(app.config["PHOTOBOOK_CONFIG_PATH"], photo_cache=photo_cache)
@@ -51,6 +57,7 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             has_gps=has_gps,
             lat=lat,
             lon=lon,
+            filmstrip_items=data.filmstrip_items(),
         )
 
         if data.is_title(index):
@@ -87,6 +94,16 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             buf.seek(0)
 
         return send_file(buf, mimetype="image/jpeg")
+
+    @app.get("/items/<int:index>/thumbnail")
+    def item_thumbnail(index: int):
+        data = _load_data_or_404(index)
+        if data.is_title(index):
+            abort(404)
+        photo = data.photo_at(index)
+
+        thumbnail_bytes = thumbnail_cache.get(photo)
+        return send_file(io.BytesIO(thumbnail_bytes), mimetype="image/jpeg")
 
     @app.post("/items/<int:index>/text")
     def save_text(index: int):

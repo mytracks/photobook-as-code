@@ -35,6 +35,23 @@ def _job_id_from_redirect(response) -> str:
     return response.headers["Location"].rsplit("/", 1)[-1]
 
 
+def _filmstrip_markup(body: str) -> str:
+    """Extracts the <footer id="filmstrip">...</footer> markup."""
+    start = body.index('<footer id="filmstrip"')
+    end = body.index("</footer>", start) + len("</footer>")
+    return body[start:end]
+
+
+def _filmstrip_cell_markup(body: str, index: int) -> str:
+    """Extracts the <a class="filmstrip-cell...">...</a> markup for one filmstrip item."""
+    filmstrip = _filmstrip_markup(body)
+    marker = f'data-index="{index}"'
+    start = filmstrip.index(marker)
+    tag_start = filmstrip.rindex("<a", 0, start)
+    tag_end = filmstrip.index("</a>", start) + len("</a>")
+    return filmstrip[tag_start:tag_end]
+
+
 def _wait_until_finished(job_id, timeout_seconds=5):
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
@@ -265,6 +282,27 @@ class TestPhotoImage:
         assert client.get("/items/99/image").status_code == 404
 
 
+class TestPhotoThumbnail:
+    def test_thumbnail_is_served_as_jpeg_and_smaller_than_the_main_image(self, tmp_path):
+        client, _ = make_client(tmp_path)
+
+        thumbnail = client.get("/items/0/thumbnail")
+        full = client.get("/items/0/image")
+
+        assert thumbnail.status_code == 200
+        assert thumbnail.mimetype == "image/jpeg"
+        assert len(thumbnail.data) < len(full.data)
+
+    def test_thumbnail_out_of_range_is_404(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        assert client.get("/items/99/thumbnail").status_code == 404
+
+    def test_thumbnail_on_title_index_is_404(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        response = client.get("/items/1/thumbnail")  # merged order: [a.jpg, title, b.jpg]
+        assert response.status_code == 404
+
+
 class TestSaveText:
     def test_saving_new_text_for_unassociated_photo_creates_entry(self, tmp_path):
         client, config_path = make_client(tmp_path)
@@ -343,7 +381,9 @@ class TestTitleNavigation:
         body = response.get_data(as_text=True)
         assert "Existing Title" in body
         assert 'id="delete-title-button"' in body
-        assert "<img" not in body
+        # the main display area has no photo; the filmstrip legitimately
+        # still shows thumbnails for the book's other photo items
+        assert '<img class="photo"' not in body
 
     def test_view_photo_around_title_offers_add_title_not_delete(self, tmp_path):
         client, _ = make_client_with_title(tmp_path)
@@ -446,6 +486,44 @@ class TestDeleteTitle:
         client, _ = make_client_with_title(tmp_path)
         response = client.post("/items/99/delete-title")
         assert response.status_code == 404
+
+
+class TestFilmstripMarkup:
+    def test_filmstrip_contains_one_cell_per_item(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)  # merged order: [a.jpg, title, b.jpg]
+        body = client.get("/items/0").get_data(as_text=True)
+        assert 'id="filmstrip"' in body
+        assert _filmstrip_markup(body).count('data-index="') == 3
+
+    def test_current_item_cell_has_aria_current(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/2").get_data(as_text=True)
+        assert 'aria-current="true"' in _filmstrip_cell_markup(body, 2)
+        assert 'aria-current="true"' not in _filmstrip_cell_markup(body, 0)
+        assert 'aria-current="true"' not in _filmstrip_cell_markup(body, 1)
+
+    def test_photo_cell_shows_thumbnail_with_filename_as_accessible_name(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+        cell = _filmstrip_cell_markup(body, 0)
+        assert "<img" in cell
+        assert 'alt="a.jpg"' in cell
+        assert "/items/0/thumbnail" in cell
+        assert 'loading="lazy"' in cell
+
+    def test_title_cell_shows_placeholder_not_title_text(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+        cell = _filmstrip_cell_markup(body, 1)
+        assert "filmstrip-cell-title" in cell
+        assert 'aria-label="Title entry"' in cell
+        assert "Existing Title" not in cell
+        assert "<img" not in cell
+
+    def test_cell_links_to_its_own_item(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+        assert 'href="/items/2"' in _filmstrip_cell_markup(body, 2)
 
 
 class TestGeoButtonMarkup:

@@ -114,6 +114,27 @@
     <span id="save-status" class="save-status" aria-live="polite"></span>
   </main>
 
+  <footer id="filmstrip" class="filmstrip" aria-label="All items in the photobook">
+    {% for item in filmstrip_items %}
+      {% if item.is_new_day %}
+        <div class="filmstrip-divider" aria-hidden="true"><span class="filmstrip-divider-label">{{ item.date_label }}</span></div>
+      {% endif %}
+      {% if item.is_title %}
+        <a class="filmstrip-cell filmstrip-cell-title{{ ' filmstrip-cell-current' if item.index == index else '' }}"
+          href="{{ url_for('view_item', index=item.index) }}" data-index="{{ item.index }}"
+          aria-label="Title entry"{% if item.index == index %} aria-current="true"{% endif %}>
+          <span aria-hidden="true">T</span>
+        </a>
+      {% else %}
+        <a class="filmstrip-cell{{ ' filmstrip-cell-current' if item.index == index else '' }}"
+          href="{{ url_for('view_item', index=item.index) }}" data-index="{{ item.index }}"
+          {% if item.index == index %}aria-current="true"{% endif %}>
+          <img src="{{ url_for('item_thumbnail', index=item.index) }}" alt="{{ item.filename }}" loading="lazy">
+        </a>
+      {% endif %}
+    {% endfor %}
+  </footer>
+
   <script src="{{ url_for('static', filename='editor.js') }}"
     data-index="{{ index }}" data-is-title="{{ 'true' if is_title else 'false' }}"></script>
 </body>
