@@ -15,6 +15,7 @@
   var mapsButton = document.getElementById("maps-button");
   var positionDisplay = document.getElementById("position-display");
   var positionInput = document.getElementById("position-input");
+  var filmstrip = document.getElementById("filmstrip");
   var index = parseInt(document.currentScript.dataset.index, 10);
   var isTitle = document.currentScript.dataset.isTitle === "true";
 
@@ -84,6 +85,23 @@
       event.preventDefault();
       navigate(nextZone);
     });
+  }
+
+  if (filmstrip) {
+    filmstrip.addEventListener("click", function (event) {
+      var cell = event.target.closest(".filmstrip-cell");
+      if (cell) {
+        event.preventDefault();
+        navigate(cell);
+      }
+    });
+
+    // Fresh page load - jump straight to the current item's position,
+    // no animation to run it from.
+    var currentCell = filmstrip.querySelector('[aria-current="true"]');
+    if (currentCell) {
+      currentCell.scrollIntoView({ inline: "center", behavior: "instant" });
+    }
   }
 
   if (addTitleButton) {

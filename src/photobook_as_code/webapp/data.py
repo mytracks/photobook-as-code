@@ -5,10 +5,14 @@ the renderer does, and looking up each item's current text_labels content -
 built from the existing config/photos/text_labels modules.
 """
 
+import io
+from dataclasses import dataclass
 from datetime import date as CalendarDate
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
+
+from PIL import Image
 
 from ..config import PhotobookConfig, load_config, validate_photo_folders
 from ..photos import PhotoMetadata, collect_photos
@@ -21,6 +25,56 @@ from ..text_labels import (
 )
 
 Item = Union[PhotoMetadata, TitleLabel]
+
+THUMBNAIL_MAX_DIMENSION = 120
+THUMBNAIL_JPEG_QUALITY = 70
+
+
+def _render_thumbnail(photo: PhotoMetadata) -> bytes:
+    """Decode, downscale, and JPEG-encode a small filmstrip thumbnail for one photo."""
+    with Image.open(photo.path) as img:
+        # Ask the JPEG decoder for a reduced scale up front, instead of
+        # decoding at full (often multi-megapixel camera) resolution and
+        # throwing most of it away in the resize below - a no-op for
+        # non-JPEG sources. Must be called before any load-triggering
+        # operation (convert/thumbnail/etc.).
+        img.draft("RGB", (THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION))
+        img = img.convert("RGB")
+        img.thumbnail((THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=THUMBNAIL_JPEG_QUALITY)
+        return buf.getvalue()
+
+
+class ThumbnailCache:
+    """
+    Caches small filmstrip-thumbnail JPEG bytes per photo, keyed by resolved
+    photo path, so the PIL decode/resize/encode work happens once per photo
+    per running editor session rather than once per page load - mirrors
+    PhotoDirectoryCache's read-once-reuse-many approach, resting on the same
+    read-only-photo-directory assumption for this single-session tool.
+    """
+
+    def __init__(self):
+        self._cache: Dict[str, bytes] = {}
+
+    def get(self, photo: PhotoMetadata) -> bytes:
+        key = str(photo.path)
+        if key not in self._cache:
+            self._cache[key] = _render_thumbnail(photo)
+        return self._cache[key]
+
+
+@dataclass
+class FilmstripItem:
+    """One cell's worth of data for the per-item editor's filmstrip."""
+
+    index: int
+    is_title: bool
+    filename: Optional[str]
+    is_new_day: bool
+    date_label: Optional[str]
+    has_caption: bool
 
 
 class PhotoDirectoryCache:
@@ -162,6 +216,36 @@ class EditorData:
         if index == 0:
             return True
         return self._item_date(index) != self._item_date(index - 1)
+
+    @staticmethod
+    def _format_compact_date(d: CalendarDate) -> str:
+        return f"{d.strftime('%b')} {d.day}"
+
+    def filmstrip_items(self) -> List[FilmstripItem]:
+        """
+        The full merged item sequence, reduced to what the editor's
+        filmstrip needs to render: for a photo, its filename (used as the
+        thumbnail's accessible name) and whether it has a non-empty
+        caption; for a title, nothing but its position; plus, for every
+        item, whether it starts a new day and - only then - a compact date
+        label, using the same day-boundary logic the single-item "new day"
+        badge already uses (`is_new_day`).
+        """
+        result = []
+        for i in range(self.count):
+            is_title = self.is_title(i)
+            new_day = self.is_new_day(i)
+            result.append(
+                FilmstripItem(
+                    index=i,
+                    is_title=is_title,
+                    filename=None if is_title else self.photo_at(i).filename,
+                    is_new_day=new_day,
+                    date_label=self._format_compact_date(self._item_date(i)) if new_day else None,
+                    has_caption=False if is_title else bool(self.text_for(i)),
+                )
+            )
+        return result
 
 
 def load_editor_data(
