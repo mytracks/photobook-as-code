@@ -74,6 +74,7 @@ class FilmstripItem:
     filename: Optional[str]
     is_new_day: bool
     date_label: Optional[str]
+    has_caption: bool
 
 
 class PhotoDirectoryCache:
@@ -224,10 +225,11 @@ class EditorData:
         """
         The full merged item sequence, reduced to what the editor's
         filmstrip needs to render: for a photo, its filename (used as the
-        thumbnail's accessible name); for a title, nothing but its
-        position; plus, for every item, whether it starts a new day and -
-        only then - a compact date label, using the same day-boundary logic
-        the single-item "new day" badge already uses (`is_new_day`).
+        thumbnail's accessible name) and whether it has a non-empty
+        caption; for a title, nothing but its position; plus, for every
+        item, whether it starts a new day and - only then - a compact date
+        label, using the same day-boundary logic the single-item "new day"
+        badge already uses (`is_new_day`).
         """
         result = []
         for i in range(self.count):
@@ -240,6 +242,7 @@ class EditorData:
                     filename=None if is_title else self.photo_at(i).filename,
                     is_new_day=new_day,
                     date_label=self._format_compact_date(self._item_date(i)) if new_day else None,
+                    has_caption=False if is_title else bool(self.text_for(i)),
                 )
             )
         return result

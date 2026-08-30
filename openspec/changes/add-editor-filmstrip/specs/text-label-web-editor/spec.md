@@ -61,11 +61,26 @@ The system SHALL display a persistent, always-visible strip at the bottom of the
 - **THEN** the user can scroll the filmstrip horizontally to reveal items outside the initially visible range
 
 ### Requirement: Filmstrip photo cells show only a thumbnail
-The system SHALL render each photo item's filmstrip cell as a small thumbnail image of that photo, with no caption, date, or other text displayed on the cell.
+The system SHALL render each photo item's filmstrip cell as a small thumbnail image of that photo, with no caption text or date displayed on the cell, other than the small caption-presence overlay described below.
 
 #### Scenario: Photo cell shows a thumbnail
 - **WHEN** a photo item appears in the filmstrip
-- **THEN** its cell displays a thumbnail image of that photo and no other visible text
+- **THEN** its cell displays a thumbnail image of that photo and no caption or date text
+
+### Requirement: Filmstrip photo cells indicate whether they have a caption
+The system SHALL display a small "T" overlay badge on a photo's filmstrip cell when that photo has non-empty caption text, and SHALL NOT display it when the photo's caption is empty or absent. The badge SHALL NOT display the caption's own text content.
+
+#### Scenario: Photo has a non-empty caption
+- **WHEN** a photo item with non-empty caption text appears in the filmstrip
+- **THEN** its cell displays a small "T" overlay badge over the thumbnail
+
+#### Scenario: Photo has no caption or an empty caption
+- **WHEN** a photo item with no associated caption, or an associated caption whose text is empty, appears in the filmstrip
+- **THEN** its cell does not display the overlay badge
+
+#### Scenario: Badge does not leak caption content
+- **WHEN** a photo's filmstrip cell displays the caption-presence badge
+- **THEN** the badge shows only the "T" glyph, never the caption's own text
 
 ### Requirement: Filmstrip title cells show a placeholder, not the title's text
 The system SHALL render each title item's filmstrip cell as a bounded placeholder cell containing only a "T" glyph, visually distinct from a photo cell, without displaying the title's own text content.

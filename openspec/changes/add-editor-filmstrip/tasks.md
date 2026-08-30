@@ -36,3 +36,11 @@ User-reported: opening a 600-photo book took ~1-2s for the filmstrip to fill in.
 - [x] 6.2 Add long-lived, `public`/`immutable` `Cache-Control` headers to the `/items/<index>/thumbnail` response (`webapp/app.py`) so the browser stops re-fetching already-seen thumbnails on every subsequent navigation, for the rest of the session; added a test asserting the header shape (`tests/test_webapp_app.py`).
 - [x] 6.3 Considered and rejected `threaded=True` on the dev server as a fix: measured head-to-head with a real separate-process client (curl, not sharing a GIL with the server) against 60 concurrent thumbnail requests, threaded=True was slower (1.26s) than the current single-threaded default (0.28s) for this CPU-bound workload - not applied.
 - [ ] 6.4 (Not done - deferred per user's choice) Pre-warm the thumbnail cache in a background thread at server startup, to hide the remaining cold-generation cost behind the time the user spends looking at the first item rather than paying it reactively while scrolling.
+
+## 7. Caption-presence badge on photo cells (follow-up request)
+
+- [x] 7.1 Add a `has_caption: bool` field to `FilmstripItem` and compute it in `EditorData.filmstrip_items()` (`webapp/data.py`) from `text_for(index)` being non-empty; `False` for title items.
+- [x] 7.2 In `templates/editor.html`, render a small `aria-hidden="true"` "T" overlay badge on a photo cell when `item.has_caption` is true.
+- [x] 7.3 Style the badge in `style.css`: small, positioned over a corner of the thumbnail, visually distinct from a title cell's full-size "T" placeholder.
+- [x] 7.4 Add unit/integration tests: `filmstrip_items()` reports `has_caption` correctly for captioned/uncaptioned/empty-caption photos; markup test confirming the badge appears only for a captioned photo's cell.
+- [x] 7.5 Run the full test suite and confirm it still passes. (456 passed.) Not visually eyeballed in a real browser - same standing limitation as the rest of this change's visual checks (no browser tooling available this session).

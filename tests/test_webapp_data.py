@@ -511,3 +511,61 @@ class TestFilmstripItems:
 
         assert items[1].is_new_day is False
         assert items[1].date_label is None
+
+    def test_has_caption_true_for_photo_with_non_empty_text(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T09:00:00"\n'
+            "    text: A caption\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert items[0].has_caption is True
+
+    def test_has_caption_false_when_entry_has_empty_text(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T09:00:00"\n'
+            '    text: ""\n'
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert items[0].has_caption is False
+
+    def test_has_caption_false_when_no_entry_at_all(self, tmp_path):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert all(item.has_caption is False for item in items)
+
+    def test_has_caption_false_for_title_item(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T08:00:00"\n'
+            "    title: Day One\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+        items = data.filmstrip_items()
+
+        assert items[0].is_title is True
+        assert items[0].has_caption is False

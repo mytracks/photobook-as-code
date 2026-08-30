@@ -532,6 +532,20 @@ class TestFilmstripMarkup:
         body = client.get("/items/0").get_data(as_text=True)
         assert 'href="/items/2"' in _filmstrip_cell_markup(body, 2)
 
+    def test_captioned_photo_shows_badge_uncaptioned_does_not(self, tmp_path):
+        # a.jpg (index 0) has "existing caption for a"; b.jpg (index 2) has none.
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+
+        assert "filmstrip-cell-caption-badge" in _filmstrip_cell_markup(body, 0)
+        assert "filmstrip-cell-caption-badge" not in _filmstrip_cell_markup(body, 2)
+
+    def test_badge_does_not_leak_caption_text(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+
+        assert "existing caption for a" not in _filmstrip_cell_markup(body, 0)
+
 
 class TestGeoButtonMarkup:
     def test_photo_with_gps_shows_enabled_button(self, tmp_path):

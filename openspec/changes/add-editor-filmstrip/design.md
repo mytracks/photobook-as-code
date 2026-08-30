@@ -66,3 +66,11 @@ Two fixes were applied instead:
 2. **Long-lived `Cache-Control: public, max-age=31536000, immutable` on the thumbnail response**: this is the "browser-side caching" gap that prompted the investigation. It doesn't help the very first open (nothing's cached anywhere yet), but this tool's normal workflow is paging through the whole book one item at a time, and the filmstrip re-renders on every single navigation (full page reload, no client-side state) - without this header, every already-seen thumbnail was being re-fetched over the network on every subsequent item view, for the entire session. Justified by the same read-only-photo-directory-for-the-session assumption `PhotoDirectoryCache` already relies on elsewhere.
 
 **Not applied**: pre-warming the thumbnail cache in a background thread at server startup (would hide the remaining cold-generation cost entirely behind the time the user spends on the first item) - deferred by user choice; the two fixes above were judged sufficient for now. Left as a documented option if the remaining first-open cost is ever worth eliminating.
+
+## Addendum: caption-presence badge on photo cells
+
+Added at user request, after the base filmstrip shipped: a small "T" overlay badge on a photo's cell when it has a caption, so the filmstrip also works as an at-a-glance "what's already captioned" view, not just a position map.
+
+- **"Has a caption" means non-empty text**, not merely "a `text_labels` entry exists for this photo". A first visit to a photo can auto-create an entry with empty text (per the existing "Auto-create a text_labels entry on first edit" requirement); showing the badge for that case would read as "already captioned" when it isn't. Reuses `EditorData.text_for(index)`, the same source the main caption field already reads from.
+- **Decorative only for assistive technology** (`aria-hidden="true"` on the badge): the photo cell's accessible name stays exactly the filename, unchanged from the base filmstrip work, since the user's ask was specifically a visual indicator.
+- Deliberately reuses the "T" glyph already established for title cells, per the user's own phrasing of the request - distinguished from a title cell by size/position (a small corner badge over a real thumbnail, not a full-cell placeholder standing in for a missing photo).
