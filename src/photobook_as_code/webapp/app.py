@@ -102,12 +102,16 @@ def create_app(
 
         return send_file(buf, mimetype="image/jpeg")
 
-    @app.get("/items/<int:index>/thumbnail")
-    def item_thumbnail(index: int):
-        data = _load_data_or_404(index)
-        if data.is_title(index):
+    @app.get("/photos/<key>/thumbnail")
+    def photo_thumbnail(key: str):
+        # Addressed by the photo's own stable identity, not its position in
+        # the merged item order - see photo_thumbnail_key - so this
+        # long-lived cache header is actually true regardless of title
+        # add/delete or a photo folder change picked up on restart.
+        data = load_editor_data(app.config["PHOTOBOOK_CONFIG_PATH"], photo_cache=photo_cache)
+        photo = data.photo_by_thumbnail_key(key)
+        if photo is None:
             abort(404)
-        photo = data.photo_at(index)
 
         thumbnail_bytes = thumbnail_cache.get(photo)
         response = send_file(

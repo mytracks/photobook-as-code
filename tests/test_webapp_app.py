@@ -35,6 +35,13 @@ def _job_id_from_redirect(response) -> str:
     return response.headers["Location"].rsplit("/", 1)[-1]
 
 
+def _thumbnail_url(config_path: Path, index: int) -> str:
+    """The identity-keyed thumbnail URL for the photo at merged-sequence `index`."""
+    data = data_module.load_editor_data(config_path)
+    key = data_module.photo_thumbnail_key(data.photo_at(index))
+    return f"/photos/{key}/thumbnail"
+
+
 def _filmstrip_markup(body: str) -> str:
     """Extracts the <footer id="filmstrip">...</footer> markup."""
     start = body.index('<footer id="filmstrip"')
@@ -284,30 +291,62 @@ class TestPhotoImage:
 
 class TestPhotoThumbnail:
     def test_thumbnail_is_served_as_jpeg_and_smaller_than_the_main_image(self, tmp_path):
-        client, _ = make_client(tmp_path)
+        client, config_path = make_client(tmp_path)
 
-        thumbnail = client.get("/items/0/thumbnail")
+        thumbnail = client.get(_thumbnail_url(config_path, 0))
         full = client.get("/items/0/image")
 
         assert thumbnail.status_code == 200
         assert thumbnail.mimetype == "image/jpeg"
         assert len(thumbnail.data) < len(full.data)
 
-    def test_thumbnail_out_of_range_is_404(self, tmp_path):
+    def test_unrecognized_key_is_404(self, tmp_path):
         client, _ = make_client(tmp_path)
-        assert client.get("/items/99/thumbnail").status_code == 404
+        assert client.get("/photos/does-not-exist/thumbnail").status_code == 404
 
     def test_thumbnail_is_cacheable_long_term_by_the_browser(self, tmp_path):
-        client, _ = make_client(tmp_path)
-        response = client.get("/items/0/thumbnail")
+        client, config_path = make_client(tmp_path)
+        response = client.get(_thumbnail_url(config_path, 0))
         assert response.cache_control.public
         assert response.cache_control.immutable
         assert int(response.cache_control.max_age) > 0
 
-    def test_thumbnail_on_title_index_is_404(self, tmp_path):
-        client, _ = make_client_with_title(tmp_path)
-        response = client.get("/items/1/thumbnail")  # merged order: [a.jpg, title, b.jpg]
-        assert response.status_code == 404
+
+class TestThumbnailUrlStabilityAcrossTitleEdits:
+    """
+    Regression tests for the reported bug: adding or deleting a title shifts
+    every subsequent item's merged-sequence index by one, which used to
+    change that photo's thumbnail URL (/items/<index>/thumbnail) - so a
+    browser's long-lived cache of the old URL would show the wrong photo
+    after the shift. The fix addresses thumbnails by photo identity, not
+    position, so the URL itself must be unaffected by the shift.
+    """
+
+    def test_url_survives_a_title_added_before_the_photo(self, tmp_path):
+        client, config_path = make_client(tmp_path)  # merged order: [a.jpg(0), b.jpg(1)]
+        url_before = _thumbnail_url(config_path, 1)  # b.jpg
+        bytes_before = client.get(url_before).data
+
+        response = client.post("/items/1/add-title")
+        assert response.status_code == 200
+        # merged order is now [a.jpg(0), new title(1), b.jpg(2)] - b.jpg shifted
+
+        url_after = _thumbnail_url(config_path, 2)
+        assert url_after == url_before
+        assert client.get(url_after).data == bytes_before
+
+    def test_url_survives_a_title_deleted_before_the_photo(self, tmp_path):
+        client, config_path = make_client_with_title(tmp_path)  # merged order: [a.jpg(0), title(1), b.jpg(2)]
+        url_before = _thumbnail_url(config_path, 2)  # b.jpg
+        bytes_before = client.get(url_before).data
+
+        response = client.post("/items/1/delete-title")
+        assert response.status_code == 200
+        # merged order is now [a.jpg(0), b.jpg(1)] - b.jpg shifted back
+
+        url_after = _thumbnail_url(config_path, 1)
+        assert url_after == url_before
+        assert client.get(url_after).data == bytes_before
 
 
 class TestSaveText:
@@ -510,12 +549,12 @@ class TestFilmstripMarkup:
         assert 'aria-current="true"' not in _filmstrip_cell_markup(body, 1)
 
     def test_photo_cell_shows_thumbnail_with_filename_as_accessible_name(self, tmp_path):
-        client, _ = make_client_with_title(tmp_path)
+        client, config_path = make_client_with_title(tmp_path)
         body = client.get("/items/0").get_data(as_text=True)
         cell = _filmstrip_cell_markup(body, 0)
         assert "<img" in cell
         assert 'alt="a.jpg"' in cell
-        assert "/items/0/thumbnail" in cell
+        assert _thumbnail_url(config_path, 0) in cell
         assert 'loading="lazy"' in cell
 
     def test_title_cell_shows_placeholder_not_title_text(self, tmp_path):

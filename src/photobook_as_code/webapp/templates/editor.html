@@ -129,7 +129,7 @@
         <a class="filmstrip-cell{{ ' filmstrip-cell-current' if item.index == index else '' }}"
           href="{{ url_for('view_item', index=item.index) }}" data-index="{{ item.index }}"
           {% if item.index == index %}aria-current="true"{% endif %}>
-          <img src="{{ url_for('item_thumbnail', index=item.index) }}" alt="{{ item.filename }}" loading="lazy">
+          <img src="{{ url_for('photo_thumbnail', key=item.thumbnail_key) }}" alt="{{ item.filename }}" loading="lazy">
           {% if item.has_caption %}
             <span class="filmstrip-cell-caption-badge" aria-hidden="true">T</span>
           {% endif %}

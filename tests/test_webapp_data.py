@@ -13,7 +13,12 @@ from PIL import ExifTags, Image
 
 import photobook_as_code.webapp.data as data_module
 from photobook_as_code.photos import PhotoMetadata
-from photobook_as_code.webapp.data import PhotoDirectoryCache, ThumbnailCache, load_editor_data
+from photobook_as_code.webapp.data import (
+    PhotoDirectoryCache,
+    ThumbnailCache,
+    load_editor_data,
+    photo_thumbnail_key,
+)
 
 
 def _counting_collect_photos(monkeypatch):
@@ -402,6 +407,53 @@ class TestPhotoDirectoryCache:
         assert first is second
 
 
+class TestPhotoThumbnailKey:
+    def test_same_photo_yields_the_same_key(self, tmp_path):
+        photo = PhotoMetadata(
+            path=tmp_path / "a.jpg", filename="a.jpg", width=10, height=10,
+            file_modified=datetime(2025, 6, 14, 9, 0),
+        )
+        assert photo_thumbnail_key(photo) == photo_thumbnail_key(photo)
+
+    def test_different_paths_yield_different_keys(self, tmp_path):
+        mtime = datetime(2025, 6, 14, 9, 0)
+        photo_a = PhotoMetadata(path=tmp_path / "a.jpg", filename="a.jpg", width=10, height=10, file_modified=mtime)
+        photo_b = PhotoMetadata(path=tmp_path / "b.jpg", filename="b.jpg", width=10, height=10, file_modified=mtime)
+        assert photo_thumbnail_key(photo_a) != photo_thumbnail_key(photo_b)
+
+    def test_same_path_different_mtime_yields_different_key(self, tmp_path):
+        path = tmp_path / "a.jpg"
+        before = PhotoMetadata(path=path, filename="a.jpg", width=10, height=10, file_modified=datetime(2025, 6, 14))
+        after = PhotoMetadata(path=path, filename="a.jpg", width=10, height=10, file_modified=datetime(2025, 6, 15))
+        assert photo_thumbnail_key(before) != photo_thumbnail_key(after)
+
+    def test_key_survives_a_new_earlier_sorting_photo_being_added_before_a_restart(self, tmp_path):
+        # Regression test for the photo-folder-plus-restart scenario: a
+        # photo's thumbnail key must not depend on its position in the
+        # collected/ordered photo list, since adding a new photo that sorts
+        # earlier shifts every existing photo's position once the server is
+        # restarted (PhotoDirectoryCache is process-lifetime, so a fresh
+        # load_editor_data call here stands in for "after a restart").
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file(photos_dir / "banana.jpg", mtime_offset_seconds=10)
+        _make_photo_file(photos_dir / "cherry.jpg", mtime_offset_seconds=20)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+
+        before = load_editor_data(config_path)
+        banana_before = next(p for p in before.photos if p.filename == "banana.jpg")
+        key_before = photo_thumbnail_key(banana_before)
+        assert [p.filename for p in before.photos] == ["banana.jpg", "cherry.jpg"]
+
+        _make_photo_file(photos_dir / "apple.jpg", mtime_offset_seconds=30)  # sorts before "banana"
+
+        after = load_editor_data(config_path)  # fresh load, standing in for a restart
+        assert [p.filename for p in after.photos] == ["apple.jpg", "banana.jpg", "cherry.jpg"]
+        banana_after = next(p for p in after.photos if p.filename == "banana.jpg")
+
+        assert photo_thumbnail_key(banana_after) == key_before
+
+
 class TestThumbnailCache:
     def test_second_lookup_reuses_rendered_bytes(self, tmp_path, monkeypatch):
         photo_path = tmp_path / "a.jpg"
@@ -423,6 +475,29 @@ class TestThumbnailCache:
 
         assert calls["count"] == 1
         assert first == second
+
+    def test_same_filename_different_mtime_is_not_reused(self, tmp_path, monkeypatch):
+        # A file replaced in place under the same name (different content,
+        # different mtime) must not silently reuse a stale cached render.
+        path = tmp_path / "a.jpg"
+        Image.new("RGB", (400, 300), color="white").save(path)
+        older = PhotoMetadata(path=path, filename="a.jpg", width=400, height=300, file_modified=datetime(2025, 6, 14))
+        newer = PhotoMetadata(path=path, filename="a.jpg", width=400, height=300, file_modified=datetime(2025, 6, 15))
+        cache = ThumbnailCache()
+
+        cache.get(older)  # warm the cache under the "older" key
+
+        original = data_module._render_thumbnail
+        calls = {"count": 0}
+
+        def wrapper(p):
+            calls["count"] += 1
+            return original(p)
+
+        monkeypatch.setattr(data_module, "_render_thumbnail", wrapper)
+        cache.get(newer)
+
+        assert calls["count"] == 1  # rendered fresh for "newer", not served from "older"'s cache entry
 
     def test_thumbnail_dimensions_are_bounded_regardless_of_source_resolution(self, tmp_path):
         # Regression check for draft-mode decoding: libjpeg's reduced-scale
@@ -449,6 +524,24 @@ class TestThumbnailCache:
         cache = ThumbnailCache()
 
         assert cache.get(photo_a) != cache.get(photo_b)
+
+
+class TestPhotoByThumbnailKey:
+    def test_known_key_returns_the_photo(self, tmp_path):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+        data = load_editor_data(config_path)
+
+        key = photo_thumbnail_key(data.photos[0])
+
+        assert data.photo_by_thumbnail_key(key) is data.photos[0]
+
+    def test_unrecognized_key_returns_none(self, tmp_path):
+        photos_dir = _make_photos_dir(tmp_path)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+        data = load_editor_data(config_path)
+
+        assert data.photo_by_thumbnail_key("does-not-exist") is None
 
 
 class TestFilmstripItems:
