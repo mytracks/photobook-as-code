@@ -5,6 +5,7 @@ Page rendering with photos and styling.
 from pathlib import Path
 from typing import Iterator, List, Optional, Tuple, Union
 import logging
+import re
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -200,6 +201,7 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
         current_width = 0
         current_top = None
         current_bottom = None
+        pending_space = False
 
         for segment in segments:
             # Select font based on style
@@ -227,16 +229,26 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
                 except:
                     pass  # Keep default if loading fails
 
-            # Tokenize this segment into words, each keeping the segment's style
-            for word in segment.text.split():
+            # Tokenize this segment into alternating word/whitespace tokens,
+            # so a segment boundary with no source whitespace (e.g. the "-Kurs"
+            # right after "**Cocktail**") is not mistaken for a normal word
+            # boundary. pending_space carries across segments within a source
+            # line rather than resetting per segment.
+            for token in re.findall(r'\S+|\s+', segment.text):
+                if token.isspace():
+                    pending_space = True
+                    continue
+
+                word = token
                 bbox = draw.textbbox((0, 0), word, font=font)
                 word_width = bbox[2] - bbox[0]
                 word_height = bbox[3] - bbox[1]
                 word_top = bbox[1]
                 word_bottom = bbox[3]
 
+                has_leading_space = pending_space and bool(current_words)
                 added_width = word_width
-                if current_words:
+                if has_leading_space:
                     added_width += space_width_for(font)
 
                 if current_words and current_width + added_width > text_box_width:
@@ -251,11 +263,13 @@ def _wrap_markdown_lines(draw: ImageDraw.Draw, parsed_lines, base_font_size: int
                     current_top = None
                     current_bottom = None
                     added_width = word_width
+                    has_leading_space = False  # now first word of its display line
 
-                current_words.append((word, font, word_width, word_height))
+                current_words.append((word, font, word_width, word_height, has_leading_space))
                 current_width += added_width
                 current_top = word_top if current_top is None else min(current_top, word_top)
                 current_bottom = word_bottom if current_bottom is None else max(current_bottom, word_bottom)
+                pending_space = False
 
         # A source line with no words (blank, or whitespace-only) still needs
         # real height - otherwise it renders as a near-invisible line_spacing
@@ -397,13 +411,11 @@ def _draw_wrapped_lines(draw: ImageDraw.Draw, all_lines_info, text_box_x: int, s
         # guaranteed the line fits text_box_width, except for a lone word
         # wider than the box on its own, which is drawn anyway rather than
         # dropped (see design.md).
-        first_word = True
-        for word, font, word_width, word_height in word_infos:
-            if not first_word:
+        for word, font, word_width, word_height, has_leading_space in word_infos:
+            if has_leading_space:
                 current_x += space_width_for(font)
             draw.text((current_x, draw_y), word, fill=rgb, font=font)
             current_x += word_width
-            first_word = False
 
         current_y += line_height + line_spacing
 

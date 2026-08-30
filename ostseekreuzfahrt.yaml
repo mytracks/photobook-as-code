@@ -285,7 +285,9 @@ text_labels:
   - timestamp: "2025-09-29T06:55:52"  # 2025-09-29 06-55-52.jpg
     title: '29. September 2025
 
-      # **Gdingen** und **Danzig**'
+      # **Danzig** und **Zoppot**'
+  - timestamp: "2025-09-29T07:05:24"  # 2025-09-29 07-05-24.jpg
+    text: Der Hafen von **Gdingen**
   - timestamp: "2025-09-29T09:44:39"  # 2025-09-29 09-44-39.jpg
     text: '**Private Führung** durch **Danzig**'
   - timestamp: "2025-09-29T10:11:27"  # 2025-09-29 10-11-27.jpg
@@ -302,6 +304,8 @@ text_labels:
     text: ''
   - timestamp: "2025-09-29T13:20:14"  # 2025-09-29 13-20-14.jpg
     text: Spaziergang mit unserem **Taxifahrer** durch **Zoppot**
+  - timestamp: "2025-09-29T14:44:57"  # 2025-09-29 14-44-57.jpg
+    text: Zurück auf dem **Schiff**
   - timestamp: "2025-09-29T17:19:25"  # 2025-09-29 17-19-25.jpg
     text: '**Cocktailkurs**'
   - timestamp: "2025-09-30T10:12:51"  # 2025-09-30 10-12-51.jpg

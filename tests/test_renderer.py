@@ -424,6 +424,38 @@ def _last_ink_row(img, x0, x1, y0, y1):
     return last
 
 
+def _last_ink_col(img, x0, x1, y0, y1):
+    """Column of the last white (glyph ink) pixel within the given region, left to right."""
+    last = None
+    for x in range(max(x0, 0), min(x1, img.width)):
+        if _has_ink(img, x, x + 1, y0, y1):
+            last = x
+    return last
+
+
+def _last_nonbg_col(img, x0, x1, y0, y1, bg=(0, 0, 0)):
+    """Column of the last pixel that isn't pure background within the given
+    region - unlike _last_ink_col, this also counts antialiased glyph edge
+    pixels (not just pure white), needed for pixel-accurate width checks."""
+    last = None
+    for x in range(max(x0, 0), min(x1, img.width)):
+        for y in range(max(y0, 0), min(y1, img.height)):
+            if img.getpixel((x, y)) != bg:
+                last = x
+                break
+    return last
+
+
+def _first_nonbg_col(img, x0, x1, y0, y1, bg=(0, 0, 0)):
+    """Column of the first pixel that isn't pure background within the given
+    region, left to right - see _last_nonbg_col."""
+    for x in range(max(x0, 0), min(x1, img.width)):
+        for y in range(max(y0, 0), min(y1, img.height)):
+            if img.getpixel((x, y)) != bg:
+                return x
+    return None
+
+
 def _box_height_at(img, x, start_y):
     """Count contiguous black (box background) rows from start_y down at
     column x. Callers must pick x so no glyph ink ever reaches it (e.g. the
@@ -507,6 +539,86 @@ def test_text_label_wrapped_word_keeps_bold_style():
     regular_ink = _count_ink(regular_img, 0, word_w + 20, photo_pos_y, photo_pos_y + h)
 
     assert wrapped_ink > regular_ink  # bold strokes cover more pixels than regular
+
+
+def test_text_label_bold_immediately_adjacent_hyphenated_word_no_space():
+    # Regression test: "**Cocktail**-Kurs" must render as "Cocktail-Kurs",
+    # not "Cocktail -Kurs" - no space belongs at a markdown segment boundary
+    # that had no whitespace in the source.
+    expected_w, h = _measure("Cocktail-Kurs")
+    box_width_px = expected_w + 50
+    photo_pos_y = 300
+    img = _render_wrap_box("**Cocktail**-Kurs", box_width_px=box_width_px,
+                            photo_pos_y=photo_pos_y, page_width=box_width_px + 100)
+    rendered_w = _last_nonbg_col(img, 0, box_width_px, photo_pos_y, photo_pos_y + h) + 1
+    assert rendered_w == pytest.approx(expected_w, abs=3)
+
+
+def test_text_label_bold_immediately_followed_by_comma_no_space():
+    # Regression test: "**links**, das Schloss" must not render with a
+    # phantom space before the comma.
+    expected_w, h = _measure("links, das Schloss")
+    box_width_px = expected_w + 50
+    photo_pos_y = 300
+    img = _render_wrap_box("**links**, das Schloss", box_width_px=box_width_px,
+                            photo_pos_y=photo_pos_y, page_width=box_width_px + 100)
+    rendered_w = _last_nonbg_col(img, 0, box_width_px, photo_pos_y, photo_pos_y + h) + 1
+    assert rendered_w == pytest.approx(expected_w, abs=3)
+
+
+def test_text_label_bold_followed_by_real_space_keeps_one_space():
+    # A genuine source space at a segment boundary must still render as
+    # exactly one space - the segment-boundary fix must not remove
+    # intentional spacing.
+    expected_w, h = _measure("bold word")
+    box_width_px = expected_w + 50
+    photo_pos_y = 300
+    img = _render_wrap_box("**bold** word", box_width_px=box_width_px,
+                            photo_pos_y=photo_pos_y, page_width=box_width_px + 100)
+    rendered_w = _last_nonbg_col(img, 0, box_width_px, photo_pos_y, photo_pos_y + h) + 1
+    assert rendered_w == pytest.approx(expected_w, abs=3)
+
+
+def test_text_label_plain_multiword_segment_single_space_unchanged():
+    # Words within a single (non-markdown) segment keep single-space
+    # separation, unaffected by the segment-boundary fix.
+    expected_w, h = _measure("one two three")
+    box_width_px = expected_w + 50
+    photo_pos_y = 300
+    img = _render_wrap_box("one two three", box_width_px=box_width_px,
+                            photo_pos_y=photo_pos_y, page_width=box_width_px + 100)
+    rendered_w = _last_nonbg_col(img, 0, box_width_px, photo_pos_y, photo_pos_y + h) + 1
+    assert rendered_w == pytest.approx(expected_w, abs=3)
+
+
+def test_text_label_no_space_boundary_right_aligns_correctly():
+    # line_width computed during packing (now excluding the segment-boundary
+    # phantom space) must still match what drawing uses for alignment - a
+    # right-aligned line's content should still sit flush with the box's
+    # right edge, not overshoot or undershoot by the space that no longer
+    # gets counted.
+    content_w, h = _measure("Cocktail-Kurs")
+    box_width_px = content_w + 40  # slack so right-alignment is visually meaningful
+    photo_pos_y = 300
+    img = _render_wrap_box("**Cocktail**-Kurs", box_width_px=box_width_px,
+                            photo_pos_y=photo_pos_y, page_width=box_width_px + 100,
+                            align='right')
+    rendered_right = _last_nonbg_col(img, 0, box_width_px, photo_pos_y, photo_pos_y + h) + 1
+    assert rendered_right == pytest.approx(box_width_px, abs=3)
+
+
+def test_text_label_no_space_boundary_centers_correctly():
+    # Same as above, for center alignment: content should be centered within
+    # the box using the corrected (space-free) line width.
+    content_w, h = _measure("Cocktail-Kurs")
+    box_width_px = content_w + 40
+    photo_pos_y = 300
+    img = _render_wrap_box("**Cocktail**-Kurs", box_width_px=box_width_px,
+                            photo_pos_y=photo_pos_y, page_width=box_width_px + 100,
+                            align='center')
+    rendered_left = _first_nonbg_col(img, 0, box_width_px, photo_pos_y, photo_pos_y + h)
+    expected_left = (box_width_px - content_w) // 2
+    assert rendered_left == pytest.approx(expected_left, abs=3)
 
 
 def test_text_label_wrapped_content_clips_at_fixed_height():
