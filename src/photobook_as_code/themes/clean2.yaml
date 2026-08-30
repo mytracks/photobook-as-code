@@ -203,24 +203,24 @@ layouts:
 - count: 3
   photos:
   - orientation: landscape
-    position: {x: 0.5, y: 0.165}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.5, y: 0.2}
+    size: {width: 1.0, height: 0.4}
     text:
       x: 50
       y: 98
       width: 50
       align: center
   - orientation: portrait
-    position: {x: 0.5, y: 0.5}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.25, y: 0.7}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
       width: 80
       align: center
   - orientation: portrait
-    position: {x: 0.5, y: 0.835}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.75, y: 0.7}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
@@ -255,24 +255,24 @@ layouts:
 - count: 3
   photos:
   - orientation: portrait
-    position: {x: 0.5, y: 0.165}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.25, y: 0.3}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
       width: 80
       align: center
   - orientation: landscape
-    position: {x: 0.5, y: 0.5}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.5, y: 0.8}
+    size: {width: 1.0, height: 0.4}
     text:
       x: 50
       y: 98
       width: 50
       align: center
   - orientation: portrait
-    position: {x: 0.5, y: 0.835}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.75, y: 0.3}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
@@ -281,24 +281,24 @@ layouts:
 - count: 3
   photos:
   - orientation: portrait
-    position: {x: 0.5, y: 0.165}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.25, y: 0.3}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
       width: 80
       align: center
   - orientation: portrait
-    position: {x: 0.5, y: 0.5}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.75, y: 0.3}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
       width: 80
       align: center
   - orientation: landscape
-    position: {x: 0.5, y: 0.835}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.5, y: 0.8}
+    size: {width: 1.0, height: 0.4}
     text:
       x: 50
       y: 98
@@ -307,24 +307,24 @@ layouts:
 - count: 3
   photos:
   - orientation: portrait
-    position: {x: 0.5, y: 0.165}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.25, y: 0.3}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
       width: 80
       align: center
   - orientation: portrait
-    position: {x: 0.5, y: 0.5}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.75, y: 0.3}
+    size: {width: 0.5, height: 0.6}
     text:
       x: 50
       y: 98
       width: 80
       align: center
   - orientation: portrait
-    position: {x: 0.5, y: 0.835}
-    size: {width: 1.0, height: 0.33}
+    position: {x: 0.5, y: 0.8}
+    size: {width: 1.0, height: 0.4}
     text:
       x: 50
       y: 98

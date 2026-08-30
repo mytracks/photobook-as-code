@@ -1,0 +1,15 @@
+photo_folders:
+  - /mnt/pictures/Testfotos/photobook/3
+output:
+  size: A4
+  format: png
+  directory: /mnt/downloads/photobook3
+  # transparent: true
+  page_margin: 0
+
+layout:
+  #photos_per_page: 3
+  pages: 8
+  order: date
+
+theme: clean2

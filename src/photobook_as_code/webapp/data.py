@@ -5,6 +5,7 @@ the renderer does, and looking up each item's current text_labels content -
 built from the existing config/photos/text_labels modules.
 """
 
+import hashlib
 import io
 from dataclasses import dataclass
 from datetime import date as CalendarDate
@@ -30,6 +31,21 @@ THUMBNAIL_MAX_DIMENSION = 120
 THUMBNAIL_JPEG_QUALITY = 70
 
 
+def photo_thumbnail_key(photo: PhotoMetadata) -> str:
+    """
+    A short, URL-safe, deterministic identity key for a photo's thumbnail -
+    depends only on the photo's own resolved path and modification time,
+    never on its position in any ordering. Two different files always
+    differ (via path); the same filename replaced with different content
+    also differs (via file_modified), so neither a browser's long-lived
+    cache of a URL built from this key, nor ThumbnailCache's own cache, can
+    end up pointing at the wrong photo or stale content.
+    """
+    mtime = photo.file_modified.isoformat() if photo.file_modified is not None else ""
+    raw = f"{photo.path}:{mtime}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 def _render_thumbnail(photo: PhotoMetadata) -> bytes:
     """Decode, downscale, and JPEG-encode a small filmstrip thumbnail for one photo."""
     with Image.open(photo.path) as img:
@@ -48,18 +64,21 @@ def _render_thumbnail(photo: PhotoMetadata) -> bytes:
 
 class ThumbnailCache:
     """
-    Caches small filmstrip-thumbnail JPEG bytes per photo, keyed by resolved
-    photo path, so the PIL decode/resize/encode work happens once per photo
-    per running editor session rather than once per page load - mirrors
-    PhotoDirectoryCache's read-once-reuse-many approach, resting on the same
-    read-only-photo-directory assumption for this single-session tool.
+    Caches small filmstrip-thumbnail JPEG bytes per photo, keyed by
+    photo_thumbnail_key (identity + modification time, not the photo's
+    position in any ordering), so the PIL decode/resize/encode work happens
+    once per distinct photo version per running editor session rather than
+    once per page load - mirrors PhotoDirectoryCache's read-once-reuse-many
+    approach. Keying by modification time (rather than path alone) also
+    means a photo file replaced in place under the same name gets a fresh
+    render instead of reusing a stale one from earlier in the same session.
     """
 
     def __init__(self):
         self._cache: Dict[str, bytes] = {}
 
     def get(self, photo: PhotoMetadata) -> bytes:
-        key = str(photo.path)
+        key = photo_thumbnail_key(photo)
         if key not in self._cache:
             self._cache[key] = _render_thumbnail(photo)
         return self._cache[key]
@@ -75,6 +94,7 @@ class FilmstripItem:
     is_new_day: bool
     date_label: Optional[str]
     has_caption: bool
+    thumbnail_key: Optional[str]
 
 
 class PhotoDirectoryCache:
@@ -147,6 +167,19 @@ class EditorData:
 
     def photo_at(self, index: int) -> PhotoMetadata:
         return self.photos[self._photo_index(index)]
+
+    def photo_by_thumbnail_key(self, key: str) -> Optional[PhotoMetadata]:
+        """
+        Look up a photo by its stable thumbnail identity key (see
+        `photo_thumbnail_key`), independent of its position in the merged
+        item order - this is what makes the filmstrip's thumbnail URLs
+        immune to shifting when titles are added/deleted or the photo
+        folder changes across a restart.
+        """
+        for photo in self.photos:
+            if photo_thumbnail_key(photo) == key:
+                return photo
+        return None
 
     def text_for(self, index: int) -> str:
         """Current caption text for the photo at `index`, or '' if it has none yet."""
@@ -225,11 +258,12 @@ class EditorData:
         """
         The full merged item sequence, reduced to what the editor's
         filmstrip needs to render: for a photo, its filename (used as the
-        thumbnail's accessible name) and whether it has a non-empty
-        caption; for a title, nothing but its position; plus, for every
-        item, whether it starts a new day and - only then - a compact date
-        label, using the same day-boundary logic the single-item "new day"
-        badge already uses (`is_new_day`).
+        thumbnail's accessible name), whether it has a non-empty caption,
+        and its stable thumbnail identity key (used to address its
+        thumbnail, independent of its position here); for a title, nothing
+        but its position. Plus, for every item, whether it starts a new day
+        and - only then - a compact date label, using the same day-boundary
+        logic the single-item "new day" badge already uses (`is_new_day`).
         """
         result = []
         for i in range(self.count):
@@ -243,6 +277,7 @@ class EditorData:
                     is_new_day=new_day,
                     date_label=self._format_compact_date(self._item_date(i)) if new_day else None,
                     has_caption=False if is_title else bool(self.text_for(i)),
+                    thumbnail_key=None if is_title else photo_thumbnail_key(self.photo_at(i)),
                 )
             )
         return result
