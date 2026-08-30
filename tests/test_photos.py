@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from PIL import Image
+from PIL import ExifTags, Image
 
 from photobook_as_code.photos import (
     PhotoCollectionError,
@@ -10,6 +10,8 @@ from photobook_as_code.photos import (
     collect_photos,
     discover_photos,
     group_photos_by_timestamp,
+    read_exif_gps,
+    read_photo_metadata,
     format_text_label_stubs,
 )
 
@@ -32,6 +34,13 @@ def _make_image(path: Path, date_taken: datetime = None) -> None:
         img.save(path, exif=exif.tobytes())
     else:
         img.save(path)
+
+
+def _make_image_with_gps(path: Path, gps_ifd: dict) -> None:
+    img = Image.new("RGB", (20, 20), color="white")
+    exif = Image.Exif()
+    exif[ExifTags.IFD.GPSInfo] = gps_ifd
+    img.save(path, exif=exif.tobytes())
 
 
 def test_group_photos_by_timestamp_distinct_timestamps():
@@ -249,3 +258,121 @@ class TestCollectPhotosMultipleFolders:
 
         with pytest.raises(PhotoCollectionError):
             collect_photos([empty_a, empty_b], order="alphabetical")
+
+
+class TestReadExifGps:
+    def test_reads_northern_eastern_coordinates(self, tmp_path):
+        path = tmp_path / "a.jpg"
+        _make_image_with_gps(path, {
+            1: "N",
+            2: (53.0, 33.0, 12.6),  # GPSLatitude DMS
+            3: "E",
+            4: (10.0, 0.0, 0.0),  # GPSLongitude DMS
+        })
+
+        lat, lon = read_exif_gps(path)
+
+        assert lat == pytest.approx(53.0 + 33.0 / 60 + 12.6 / 3600)
+        assert lon == pytest.approx(10.0)
+
+    def test_reads_southern_western_coordinates_as_negative(self, tmp_path):
+        path = tmp_path / "a.jpg"
+        _make_image_with_gps(path, {
+            1: "S",
+            2: (34.0, 36.0, 0.0),
+            3: "W",
+            4: (58.0, 22.0, 48.0),
+        })
+
+        lat, lon = read_exif_gps(path)
+
+        assert lat == pytest.approx(-(34.0 + 36.0 / 60))
+        assert lon == pytest.approx(-(58.0 + 22.0 / 60 + 48.0 / 3600))
+
+    def test_photo_without_gps_returns_none(self, tmp_path):
+        path = tmp_path / "no_gps.jpg"
+        _make_image(path)
+
+        assert read_exif_gps(path) is None
+
+    def test_photo_without_any_exif_returns_none(self, tmp_path):
+        path = tmp_path / "plain.jpg"
+        Image.new("RGB", (20, 20), color="white").save(path)
+
+        assert read_exif_gps(path) is None
+
+    def test_incomplete_gps_tags_returns_none(self, tmp_path):
+        path = tmp_path / "incomplete.jpg"
+        # Latitude present, longitude entirely missing.
+        _make_image_with_gps(path, {
+            1: "N",
+            2: (53.0, 33.0, 12.6),
+        })
+
+        assert read_exif_gps(path) is None
+
+    def test_malformed_gps_rational_returns_none(self, tmp_path, monkeypatch):
+        # A rational tuple that can't be parsed as floats - not something a
+        # real camera would write, but a corrupt/hand-edited file might
+        # contain it. PIL itself refuses to *write* non-numeric rationals,
+        # so this exercises read_exif_gps's parsing directly.
+        path = tmp_path / "malformed.jpg"
+        _make_image(path)
+
+        class FakeExifImage:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def _getexif(self):
+                return {34853: {1: "N", 2: ("not", "a", "rational"), 3: "E", 4: (10.0, 0.0, 0.0)}}
+
+        import photobook_as_code.photos as photos_module
+
+        monkeypatch.setattr(photos_module.Image, "open", lambda _path: FakeExifImage())
+
+        assert read_exif_gps(path) is None
+
+
+class TestPhotoMetadataGps:
+    def test_read_photo_metadata_populates_gps(self, tmp_path):
+        path = tmp_path / "a.jpg"
+        _make_image_with_gps(path, {
+            1: "N",
+            2: (53.0, 33.0, 12.6),
+            3: "E",
+            4: (10.0, 0.0, 0.0),
+        })
+
+        metadata = read_photo_metadata(path)
+
+        assert metadata.gps == pytest.approx((53.0 + 33.0 / 60 + 12.6 / 3600, 10.0))
+
+    def test_read_photo_metadata_gps_is_none_without_gps_exif(self, tmp_path):
+        path = tmp_path / "no_gps.jpg"
+        _make_image(path)
+
+        metadata = read_photo_metadata(path)
+
+        assert metadata.gps is None
+
+    def test_collect_photos_surfaces_gps_field(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_image_with_gps(photos_dir / "with_gps.jpg", {
+            1: "N",
+            2: (53.0, 33.0, 12.6),
+            3: "E",
+            4: (10.0, 0.0, 0.0),
+        })
+        _make_image(photos_dir / "without_gps.jpg")
+
+        photos = collect_photos([photos_dir], order="alphabetical")
+
+        by_name = {p.filename: p for p in photos}
+        assert by_name["with_gps.jpg"].gps == pytest.approx(
+            (53.0 + 33.0 / 60 + 12.6 / 3600, 10.0)
+        )
+        assert by_name["without_gps.jpg"].gps is None

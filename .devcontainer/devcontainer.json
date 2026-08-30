@@ -37,7 +37,7 @@
     }
   },
   "mounts": [
-    "source=${localEnv:HOME}/Pictures,target=/mnt/pictures,type=bind,readonly",
+    "source=/Volumes/Photos,target=/mnt/pictures,type=bind,readonly",
     "source=${localEnv:HOME}/Downloads,target=/mnt/downloads,type=bind",
     "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind"
   ],

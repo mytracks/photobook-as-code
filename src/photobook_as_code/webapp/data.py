@@ -107,6 +107,12 @@ class EditorData:
         """Current content of the title at `index`."""
         return self.title_at(index).title
 
+    def has_gps(self, index: int) -> bool:
+        """Whether the item at `index` is a photo with a known GPS location."""
+        if self.is_title(index):
+            return False
+        return self.photo_at(index).gps is not None
+
     def date_taken_iso(self, index: int) -> Optional[str]:
         """
         ISO 8601 timestamp of the item's date - a title's own timestamp

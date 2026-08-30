@@ -213,6 +213,32 @@ def save_title_text(
     save_document(config_path, document)
 
 
+def prepend_to_title_entry(
+    config_path: Path,
+    text_labels: List[dict],
+    label: TitleLabel,
+    date_text: str,
+) -> None:
+    """
+    Prepend `date_text` to the title entry identified by `label`: the new
+    first line of its content, separated from any existing content by a
+    blank line - matching this project's own hand-written convention of a
+    plain date line followed by the rest of a title's Markdown content. When
+    the title has no existing content, `date_text` becomes its entire
+    content.
+
+    Loads and writes the document fresh so the save always reflects the
+    file's current on-disk content.
+    """
+    document = load_document(config_path)
+    index = find_title_entry_index(text_labels, label)
+    existing = document["text_labels"][index]["title"]
+    document["text_labels"][index]["title"] = (
+        f"{date_text}\n\n{existing}" if existing else date_text
+    )
+    save_document(config_path, document)
+
+
 def delete_title_entry(
     config_path: Path,
     text_labels: List[dict],

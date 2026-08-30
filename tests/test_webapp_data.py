@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from PIL import Image
+from PIL import ExifTags, Image
 
 import photobook_as_code.webapp.data as data_module
 from photobook_as_code.webapp.data import PhotoDirectoryCache, load_editor_data
@@ -37,6 +37,18 @@ def _make_photo_file_with_exif(path: Path, date_taken: datetime) -> None:
     img = Image.new("RGB", (20, 20), color="white")
     exif = Image.Exif()
     exif[36867] = date_taken.strftime("%Y:%m:%d %H:%M:%S")  # DateTimeOriginal
+    img.save(path, exif=exif.tobytes())
+
+
+def _make_photo_file_with_gps(path: Path) -> None:
+    img = Image.new("RGB", (20, 20), color="white")
+    exif = Image.Exif()
+    exif[ExifTags.IFD.GPSInfo] = {
+        1: "N",
+        2: (53.0, 33.0, 12.6),
+        3: "E",
+        4: (10.0, 0.0, 0.0),
+    }
     img.save(path, exif=exif.tobytes())
 
 
@@ -287,6 +299,44 @@ class TestEditorDataItems:
 
         assert data.count == len(data.photos) == 3
         assert all(data.is_title(i) is False for i in range(data.count))
+
+
+class TestEditorDataHasGps:
+    def test_photo_with_gps_is_true(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_gps(photos_dir / "a.jpg")
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+
+        data = load_editor_data(config_path)
+
+        assert data.has_gps(0) is True
+
+    def test_photo_without_gps_is_false(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file(photos_dir / "a.jpg", mtime_offset_seconds=0)
+        config_path = _write_config(tmp_path, photos_dir, order="alphabetical")
+
+        data = load_editor_data(config_path)
+
+        assert data.has_gps(0) is False
+
+    def test_title_item_is_false(self, tmp_path):
+        photos_dir = tmp_path / "photos"
+        photos_dir.mkdir()
+        _make_photo_file_with_exif(photos_dir / "a.jpg", datetime(2025, 6, 14, 9, 0))
+        text_labels_yaml = (
+            "text_labels:\n"
+            '  - timestamp: "2025-06-14T08:00:00"\n'
+            "    title: Day One\n"
+        )
+        config_path = _write_config_with_labels(tmp_path, photos_dir, "date", text_labels_yaml)
+
+        data = load_editor_data(config_path)
+
+        assert data.is_title(0) is True
+        assert data.has_gps(0) is False
 
 
 class TestPhotoDirectoryCache:

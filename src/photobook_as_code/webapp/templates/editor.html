@@ -23,6 +23,17 @@
     <symbol id="icon-sunrise" viewBox="0 0 24 24">
       <path d="M12 2v4M4.9 10.1l1.4 1.4M2 18h20M19.1 10.1l-1.4 1.4M6 18a6 6 0 0112 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
+    <symbol id="icon-geo" viewBox="0 0 24 24">
+      <path d="M12 21s-7-7.58-7-12a7 7 0 0114 0c0 4.42-7 12-7 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="12" cy="9" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="icon-spinner" viewBox="0 0 24 24">
+      <path d="M12 3a9 9 0 019 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="icon-map" viewBox="0 0 24 24">
+      <path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
   </svg>
 
   <header>
@@ -53,12 +64,22 @@
     <span class="filename">{{ filename if not is_title else "Title entry" }}</span>
 
     <div class="header-actions">
+      <a class="header-action" href="{{ url_for('batch_settings') }}">Batch…</a>
       {% if is_title %}
         <button type="button" id="delete-title-button" class="header-action header-action-danger">
           <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>
           Delete title
         </button>
       {% else %}
+        <button type="button" id="geo-button" class="header-action"
+          aria-label="Look up location from photo"
+          {% if has_gps %}title="Look up location from photo GPS (shortcut: G, or ⌘G/Ctrl+G while editing the text)"{% else %}disabled title="This photo has no GPS location in its EXIF data"{% endif %}>
+          <svg id="geo-icon-svg" class="icon" aria-hidden="true"><use id="geo-icon-use" href="#icon-geo"></use></svg>
+        </button>
+        <a id="maps-button" class="header-action" aria-label="Open location in Maps"
+          {% if has_gps %}href="https://maps.apple.com/?ll={{ lat }},{{ lon }}&q={{ lat }},{{ lon }}" target="_blank" rel="noopener" title="Open this photo's location in Maps (shortcut: ⌥G/Alt+G)"{% else %}aria-disabled="true" title="This photo has no GPS location in its EXIF data"{% endif %}>
+          <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg>
+        </a>
         <button type="button" id="add-title-button" class="header-action">
           <svg class="icon" aria-hidden="true"><use href="#icon-plus"></use></svg>
           Add title before this photo

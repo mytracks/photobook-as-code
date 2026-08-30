@@ -9,7 +9,7 @@ from typing import Optional
 from flask import Flask, abort, jsonify, redirect, render_template, request, send_file, url_for
 from PIL import Image
 
-from . import yaml_store
+from . import batch, geocoding, yaml_store
 from .data import EditorData, PhotoDirectoryCache, load_editor_data
 
 MAX_IMAGE_DIMENSION = 1600
@@ -37,6 +37,9 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
     def view_item(index: int):
         data = _load_data_or_404(index)
 
+        has_gps = data.has_gps(index)
+        lat, lon = data.photo_at(index).gps if has_gps else (None, None)
+
         common_context = dict(
             index=index,
             total=data.count,
@@ -45,6 +48,9 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
             date_display=data.display_date(index),
             date_taken_iso=data.date_taken_iso(index),
             is_new_day=data.is_new_day(index),
+            has_gps=has_gps,
+            lat=lat,
+            lon=lon,
         )
 
         if data.is_title(index):
@@ -135,6 +141,87 @@ def create_app(config_path: Path, photo_cache: Optional[PhotoDirectoryCache] = N
 
         # The new title takes the photo's old slot, immediately before it.
         return jsonify({"status": "ok", "index": index})
+
+    @app.post("/items/<int:index>/reverse-geocode")
+    def reverse_geocode_item(index: int):
+        data = _load_data_or_404(index)
+        if data.is_title(index):
+            abort(400)
+
+        photo = data.photo_at(index)
+        if photo.gps is None:
+            abort(400)
+
+        lat, lon = photo.gps
+        accept_language = request.headers.get("Accept-Language", "")
+
+        try:
+            response = geocoding.reverse_geocode(lat, lon, accept_language=accept_language)
+        except geocoding.GeocodingError:
+            return jsonify({
+                "status": "error",
+                "reason": "service_error",
+                "message": "Reverse geocoding service is unavailable",
+            }), 502
+
+        place_name = geocoding.resolve_place_name(response)
+        if place_name is None:
+            return jsonify({
+                "status": "error",
+                "reason": "no_location_found",
+                "message": "No location could be resolved for this photo",
+            }), 404
+
+        return jsonify({"status": "ok", "text": place_name})
+
+    @app.get("/batch")
+    def batch_settings():
+        return render_template("batch.html")
+
+    @app.post("/batch/start")
+    def batch_start():
+        form = request.form
+        settings = batch.BatchSettings(
+            date_enabled=form.get("date_enabled") == "on",
+            date_destination=form.get("date_destination", batch.DATE_DESTINATION_TEXT_LABEL),
+            geocode_enabled=form.get("geocode_enabled") == "on",
+            geocode_strict=form.get("geocode_strictness") == "strict",
+            skip_mode=form.get("skip_mode", batch.SKIP_MODE_SKIP),
+        )
+        accept_language = request.headers.get("Accept-Language", "")
+
+        try:
+            job_id = batch.start_batch_job(
+                app.config["PHOTOBOOK_CONFIG_PATH"], photo_cache, settings, accept_language
+            )
+        except ValueError:
+            abort(400)
+        except batch.BatchAlreadyRunningError as e:
+            # Send the user to the job that's already running instead of
+            # failing the request outright.
+            job_id = e.job_id
+
+        return redirect(url_for("batch_progress", job_id=job_id))
+
+    @app.get("/batch/progress/<job_id>")
+    def batch_progress(job_id: str):
+        if batch.get_job(job_id) is None:
+            abort(404)
+        return render_template("batch_progress.html", job_id=job_id)
+
+    @app.get("/batch/status/<job_id>")
+    def batch_status(job_id: str):
+        job = batch.get_job(job_id)
+        if job is None:
+            abort(404)
+        return jsonify(job.to_dict())
+
+    @app.post("/batch/cancel/<job_id>")
+    def batch_cancel(job_id: str):
+        if batch.get_job(job_id) is None:
+            abort(404)
+        batch.cancel_job(job_id)
+        return jsonify({"status": "ok"})
 
     @app.post("/items/<int:index>/delete-title")
     def delete_title(index: int):

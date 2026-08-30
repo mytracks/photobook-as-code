@@ -305,6 +305,12 @@ Then open the printed URL (`http://127.0.0.1:5000/` by default) in your browser.
 - While viewing a photo, "Add title before this photo" creates a new, empty title positioned right before it, timestamped to that photo, ready to edit immediately.
 - While viewing a title, "Delete title" removes it from the configuration file.
 - The editor only ever writes to the one configuration file it was started with. Photos themselves are never modified, moved, or deleted.
+- If a photo's EXIF data includes a GPS location, the geotag button next to it looks up that location's name (via the public Nominatim/OpenStreetMap service) and inserts it into the caption field. This is the one editor feature that requires internet access - it's opt-in (only runs when clicked) and its unavailability doesn't affect anything else in the app, which otherwise works entirely offline.
+- "Batch…" in the header opens a settings page for running two of the above across every photo in the book at once, instead of one item at a time:
+  - **Insert date on each new day** - as a text label on the first photo of the day, or as a new title, formatted in the language of your browser.
+  - **Reverse-geocode every photo with GPS data** - landmarks/points of interest only, or falling back to a city and country name.
+  - Either or both can be combined with **leave existing content alone** or **add to it**, so a batch run is safe to re-run: with "leave alone" selected, anything already captioned or titled is skipped, making a cancelled or partial run resumable by just starting it again.
+  - Reverse-geocoding is rate-limited to one request per second (Nominatim's usage policy), so a batch covering a full book with many GPS photos can take several minutes. It runs in the background with a progress page you can leave and come back to, and a Cancel control - anything already processed stays saved even if you cancel.
 
 Options:
 

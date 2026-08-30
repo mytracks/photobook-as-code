@@ -1,0 +1,298 @@
+photo_folders:
+  - /mnt/pictures/2025/2025-09-20+ Ostseekreuzfahrt Fotobuch
+output:
+  size: A4
+  format: png
+  directory: /mnt/downloads/ostseekreuzfahrt
+  transparent: true
+  page_margin: 0
+
+layout:
+  pages: 200
+  order: date
+
+theme: clean2
+
+text_labels:
+  - timestamp: "2025-09-20T14:25:00"  # 2025-09-20 14-25-00.jpg
+    title: "# Ostseekreuzfahrt\n## 20. September - 1. Oktober 2025"
+  - timestamp: "2025-09-20T14:25:00"  # 2025-09-20 14-25-00.jpg
+    text: "20. September 2025\n# Bad Doberan"
+  - timestamp: "2025-09-20T14:53:49"  # 2025-09-20 14-53-49.jpg
+    text: Warnemünde
+  - timestamp: "2025-09-20T15:14:53"  # 2025-09-20 15-14-53.jpg
+    text: ''
+  - timestamp: "2025-09-20T15:37:53"  # 2025-09-20 15-37-53.jpg
+    text: Neptunbrunnen
+  - timestamp: "2025-09-20T15:39:46"  # 2025-09-20 15-39-46.jpg
+    text: ''
+  - timestamp: "2025-09-20T15:50:37"  # 2025-09-20 15-50-37.jpg
+    text: ''
+  - timestamp: "2025-09-20T16:19:47"  # 2025-09-20 16-19-47.jpg
+    text: Mittelmole
+  - timestamp: "2025-09-21T06:59:02"  # 2025-09-21 06-59-02.jpg
+    title: "21. September 2025\n# Abfahrt aus Warnemünde"
+  - timestamp: "2025-09-21T06:59:02"  # 2025-09-21 06-59-02.jpg
+    text: Hotel **Bellevue**
+  - timestamp: "2025-09-21T09:33:17"  # 2025-09-21 09-33-17.jpg
+    text: ''
+  - timestamp: "2025-09-21T09:34:04"  # 2025-09-21 09-34-04.jpg
+    text: Am Passagierkai
+  - timestamp: "2025-09-21T09:35:13"  # 2025-09-21 09-35-13.jpg
+    text: ''
+  - timestamp: "2025-09-21T09:48:57"  # 2025-09-21 09-48-57.jpg
+    text: '# Mein Schiff 7'
+  - timestamp: "2025-09-21T10:07:30"  # 2025-09-21 10-07-30.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:07:38"  # 2025-09-21 10-07-38.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:09:14"  # 2025-09-21 10-09-14.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:09:52"  # 2025-09-21 10-09-52.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:10:19"  # 2025-09-21 10-10-19.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:10:50"  # 2025-09-21 10-10-50.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:11:32"  # 2025-09-21 10-11-32.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:14:37"  # 2025-09-21 10-14-37.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:14:43"  # 2025-09-21 10-14-43.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:16:05"  # 2025-09-21 10-16-05.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:42:57"  # 2025-09-21 10-42-57.jpg
+    text: ''
+  - timestamp: "2025-09-21T10:58:41"  # 2025-09-21 10-58-41.jpg
+    text: ''
+  - timestamp: "2025-09-21T12:40:50"  # 2025-09-21 12-40-50.jpg
+    text: ''
+  - timestamp: "2025-09-21T14:03:58"  # 2025-09-21 14-03-58.jpg
+    text: ''
+  - timestamp: "2025-09-21T17:13:40"  # 2025-09-21 17-13-40.jpg
+    text: ''
+  - timestamp: "2025-09-21T17:13:45"  # 2025-09-21 17-13-45.jpg
+    text: '17:13 Uhr
+
+      # Es geht los'
+  - timestamp: "2025-09-21T17:14:37"  # 2025-09-21 17-14-37.jpg
+    text: ''
+  - timestamp: "2025-09-21T17:15:10"  # 2025-09-21 17-15-10.jpg
+    text: ''
+  - timestamp: "2025-09-21T17:20:08"  # 2025-09-21 17-20-08.jpg
+    text: ''
+  - timestamp: "2025-09-21T17:20:45"  # 2025-09-21 17-20-45.jpg
+    text: ''
+  - timestamp: "2025-09-21T17:21:08"  # 2025-09-21 17-21-08.jpg
+    text: Molenfeuer **Westmole**
+  - timestamp: "2025-09-21T17:21:24"  # 2025-09-21 17-21-24.jpg
+    text: ''
+  - timestamp: "2025-09-21T22:04:37"  # 2025-09-21 22-04-37.jpg
+    text: Abtanzbar
+  - timestamp: "2025-09-22T09:17:53"  # 2025-09-22 09-17-53.jpg
+    text: "Geschenke von Annette und Bernd"
+  - timestamp: "2025-09-22T09:17:53"  # 2025-09-22 09-17-53.jpg
+    title: '22. September 2025
+
+      # Unsere **Silberhochzeit**'
+  - timestamp: "2025-09-22T09:56:29"  # 2025-09-22 09-56-29.jpg
+    text: Geschenke von **Mein Schiff**
+  - timestamp: "2025-09-22T10:24:39"  # 2025-09-22 10-24-39.jpg
+    text: Besuch auf der **Brücke**
+  - timestamp: "2025-09-22T13:35:26"  # 2025-09-22 13-35-26.jpg
+    text: ''
+  - timestamp: "2025-09-22T16:18:18"  # 2025-09-22 16-18-18.jpg
+    text: '**Gotland** am Horizont'
+  - timestamp: "2025-09-22T18:20:45"  # 2025-09-22 18-20-45.jpg
+    text: Abendessen im **La Spezia**
+  - timestamp: "2025-09-22T21:45:21"  # 2025-09-22 21-45-21.jpg
+    text: '**Polarlichter** zur Silberhochzeit'
+  - timestamp: "2025-09-23T06:00:53"  # 2025-09-23 06-00-53.jpg
+    text: "23. September 2025\n# Fahrt durch die Schären nach **Stockholm**"
+  - timestamp: "2025-09-23T09:23:31"  # 2025-09-23 09-23-31.jpg
+    text: Der erste Blick auf **Stockholm**
+  - timestamp: "2025-09-23T10:46:07"  # 2025-09-23 10-46-07.jpg
+    text: Rechts das **Parlament**, links das **Schloss**
+  - timestamp: "2025-09-23T10:57:00"  # 2025-09-23 10-57-00.jpg
+    text: Das **Parlament**
+  - timestamp: "2025-09-23T11:01:40"  # 2025-09-23 11-01-40.jpg
+    text: Vor dem **Königlichen Schloss**
+  - timestamp: "2025-09-23T11:12:45"  # 2025-09-23 11-12-45.jpg
+    text: ''
+  - timestamp: "2025-09-23T11:19:47"  # 2025-09-23 11-19-47.jpg
+    text: Die **Deutsche Kirche**
+  - timestamp: "2025-09-23T11:20:33"  # 2025-09-23 11-20-33.jpg
+    text: ''
+  - timestamp: "2025-09-23T11:23:02"  # 2025-09-23 11-23-02.jpg
+    text: ''
+  - timestamp: "2025-09-23T11:41:31"  # 2025-09-23 11-41-31.jpg
+    text: Das **Rathaus**
+  - timestamp: "2025-09-23T12:18:11"  # 2025-09-23 12-18-11.jpg
+    text: Auf dem Weg nach oben im Turm des Rathauses
+  - timestamp: "2025-09-23T12:25:16"  # 2025-09-23 12-25-16.jpg
+    text: 'Blick auf die Altstadt - **Gamla Stan**'
+  - timestamp: "2025-09-23T12:29:26"  # 2025-09-23 12-29-26.jpg
+    text: Links das **Parlament**, rechts das **Schloss**
+  - timestamp: "2025-09-23T12:50:43"  # 2025-09-23 12-50-43.jpg
+    text: Der Innenhof des **Rathauses**
+  - timestamp: "2025-09-23T12:55:53"  # 2025-09-23 12-55-53.jpg
+    text: 'Zimtschnecken - **Kanelbullar**'
+  - timestamp: "2025-09-23T13:50:01"  # 2025-09-23 13-50-01.jpg
+    text: Sightseeing mit dem Boot
+  - timestamp: "2025-09-23T14:02:01"  # 2025-09-23 14-02-01.jpg
+    text: Das **Nationalmuseum**
+  - timestamp: "2025-09-23T14:02:52"  # 2025-09-23 14-02-52.jpg
+    text: Noch einmal das **Schloss**
+  - timestamp: "2025-09-23T14:05:51"  # 2025-09-23 14-05-51.jpg
+    text: Links das **Nordische Museum**, rechts das **Vasa-Museum**
+  - timestamp: "2025-09-23T14:11:30"  # 2025-09-23 14-11-30.jpg
+    text: Gröna Lund
+  - timestamp: "2025-09-23T14:12:54"  # 2025-09-23 14-12-54.jpg
+    text: Kastellholmen
+  - timestamp: "2025-09-23T14:19:23"  # 2025-09-23 14-19-23.jpg
+    text: ''
+  - timestamp: "2025-09-23T14:28:07"  # 2025-09-23 14-28-07.jpg
+    text: 'Schleuse am **Stockholms Hamn**'
+  - timestamp: "2025-09-23T14:56:43"  # 2025-09-23 14-56-43.jpg
+    text: ''
+  - timestamp: "2025-09-23T14:59:19"  # 2025-09-23 14-59-19.jpg
+    text: Das **Rathaus**
+  - timestamp: "2025-09-23T15:43:52"  # 2025-09-23 15-43-52.jpg
+    text: Das **Skistadion** von Stockholm
+  - timestamp: "2025-09-24T06:57:55"  # 2025-09-24 06-57-55.jpg
+    text: 24. September 2025
+  - timestamp: "2025-09-24T09:01:33"  # 2025-09-24 09-01-33.jpg
+    text: Geführte **Bustour** durch Stockholm
+  - timestamp: "2025-09-24T09:06:43"  # 2025-09-24 09-06-43.jpg
+    text: ''
+  - timestamp: "2025-09-24T10:31:56"  # 2025-09-24 10-31-56.jpg
+    text: ''
+  - timestamp: "2025-09-24T10:32:01"  # 2025-09-24 10-32-01.jpg
+    text: Vasa-Museum
+  - timestamp: "2025-09-24T10:54:22"  # 2025-09-24 10-54-22.jpg
+    text: Kunst in der **U-Bahn-Station**
+  - timestamp: "2025-09-24T11:22:28"  # 2025-09-24 11-22-28.jpg
+    text: Noch mehr Kunst
+  - timestamp: "2025-09-24T11:26:59"  # 2025-09-24 11-26-59.jpg
+    text: Der **Herr Bernd** und das **Schloss**
+  - timestamp: "2025-09-24T12:06:13"  # 2025-09-24 12-06-13.jpg
+    text: ''
+  - timestamp: "2025-09-24T13:58:35"  # 2025-09-24 13-58-35.jpg
+    text: '**Beine hoch** zur Abfahrt'
+  - timestamp: "2025-09-24T14:07:12"  # 2025-09-24 14-07-12.jpg
+    text: "# 14:07 Uhr\nEs geht weiter ..."
+  - timestamp: "2025-09-24T16:01:31"  # 2025-09-24 16-01-31.jpg
+    text: Käse- und Weinverkostung
+  - timestamp: "2025-09-24T18:09:54"  # 2025-09-24 18-09-54.jpg
+    text: Sonnenuntergang in den **Schären**
+  - timestamp: "2025-09-25T07:53:59"  # 2025-09-25 07-53-59.jpg
+    text: "25. September 2025\n# Tallinn"
+  - timestamp: "2025-09-25T09:50:16"  # 2025-09-25 09-50-16.jpg
+    text: ''
+  - timestamp: "2025-09-25T11:19:59"  # 2025-09-25 11-19-59.jpg
+    text: ''
+  - timestamp: "2025-09-25T11:20:53"  # 2025-09-25 11-20-53.jpg
+    text: '**Geführte Radtour** rund um Tallinn'
+  - timestamp: "2025-09-25T12:21:53"  # 2025-09-25 12-21-53.jpg
+    text: Der **Fernsehturm**
+  - timestamp: "2025-09-25T12:57:30"  # 2025-09-25 12-57-30.jpg
+    text: 'Maarjamäe memoriaal'
+  - timestamp: "2025-09-25T13:23:47"  # 2025-09-25 13-23-47.jpg
+    text: '**Lauluväljak** - der Sängerplatz'
+  - timestamp: "2025-09-25T13:38:56"  # 2025-09-25 13-38-56.jpg
+    text: 'Schloss **Katharinental**'
+  - timestamp: "2025-09-25T14:47:34"  # 2025-09-25 14-47-34.jpg
+    text: Tallinn
+  - timestamp: "2025-09-25T16:05:21"  # 2025-09-25 16-05-21.jpg
+    text: 'Alexander-Newski-Kathedrale'
+  - timestamp: "2025-09-25T16:06:12"  # 2025-09-25 16-06-12.jpg
+    text: '**Schloss Toompea** (Estnisches Parlament)'
+  - timestamp: "2025-09-25T21:17:37"  # 2025-09-25 21-17-37.jpg
+    text: Uno **Extreme**
+  - timestamp: "2025-09-25T23:57:15"  # 2025-09-25 23-57-15.jpg
+    text: "23:57 Uhr\nAbfahrt Richtung **Helsinki**"
+  - timestamp: "2025-09-26T06:57:54"  # 2025-09-26 06-57-54.jpg
+    text: "26. September 2025\n# Helsinki"
+  - timestamp: "2025-09-26T06:58:29"  # 2025-09-26 06-58-29.jpg
+    text: 6:58 Uhr
+  - timestamp: "2025-09-26T10:17:27"  # 2025-09-26 10-17-27.jpg
+    text: ''
+  - timestamp: "2025-09-26T10:21:25"  # 2025-09-26 10-21-25.jpg
+    text: 'Am **Hafen**'
+  - timestamp: "2025-09-26T10:40:00"  # 2025-09-26 10-40-00.jpg
+    text: Uspenski-Kathedrale
+  - timestamp: "2025-09-26T10:46:27"  # 2025-09-26 10-46-27.jpg
+    text: '**Dom** von Helsinki'
+  - timestamp: "2025-09-26T10:48:50"  # 2025-09-26 10-48-50.jpg
+    text: ''
+  - timestamp: "2025-09-26T11:03:46"  # 2025-09-26 11-03-46.jpg
+    text: ''
+  - timestamp: "2025-09-26T11:04:09"  # 2025-09-26 11-04-09.jpg
+    text: '**Ateneum** - Kunstmuseum'
+  - timestamp: "2025-09-26T11:05:15"  # 2025-09-26 11-05-15.jpg
+    text: Der **Hauptbahnhof**
+  - timestamp: "2025-09-26T11:14:33"  # 2025-09-26 11-14-33.jpg
+    text: '**Oodi** - Helsinkis Bibliothek'
+  - timestamp: "2025-09-26T11:23:14"  # 2025-09-26 11-23-14.jpg
+    text: Das **Parlamentsgebäude**
+  - timestamp: "2025-09-26T11:48:18"  # 2025-09-26 11-48-18.jpg
+    text: '**Temppeliaukio** - Die Felsenkirche'
+  - timestamp: "2025-09-26T11:52:27"  # 2025-09-26 11-52-27.jpg
+    text: ''
+  - timestamp: "2025-09-26T13:04:02"  # 2025-09-26 13-04-02.jpg
+    text: Am **Olympiastadion**
+  - timestamp: "2025-09-26T17:16:29"  # 2025-09-26 17-16-29.jpg
+    text: "17:16 Uhr\nWeiter geht's Richtung **Kleipeda**"
+  - timestamp: "2025-09-27T07:33:42"  # 2025-09-27 07-33-42.jpg
+    text: "27. September 2025\n# Seetag"
+  - timestamp: "2025-09-27T16:52:06"  # 2025-09-27 16-52-06.jpg
+    text: Sushi-Kurs
+  - timestamp: "2025-09-28T07:03:49"  # 2025-09-28 07-03-49.jpg
+    text: "28. September 2025\n# Kleipeda"
+  - timestamp: "2025-09-28T07:03:58"  # 2025-09-28 07-03-58.jpg
+    text: 7:03 Uhr
+  - timestamp: "2025-09-28T08:45:32"  # 2025-09-28 08-45-32.jpg
+    text: 'Rundgang durch **Kleipeda** und Fahrt auf die **Kurische Nehrung**'
+  - timestamp: "2025-09-28T11:49:20"  # 2025-09-28 11-49-20.jpg
+    text: Die **Kurische Nehrung**
+  - timestamp: "2025-09-28T11:53:46"  # 2025-09-28 11-53-46.jpg
+    text: 'Blick nach **Russland**'
+  - timestamp: "2025-09-28T12:02:45"  # 2025-09-28 12-02-45.jpg
+    text: Jean-Paul **Sartre**
+  - timestamp: "2025-09-28T12:44:09"  # 2025-09-28 12-44-09.jpg
+    text: Der Ort **Nida**
+  - timestamp: "2025-09-28T14:08:31"  # 2025-09-28 14-08-31.jpg
+    text: '**Thomas Mann** Museum'
+  - timestamp: "2025-09-28T17:32:07"  # 2025-09-28 17-32-07.jpg
+    text: "17:30 Uhr\n# Abfahrt"
+  - timestamp: "2025-09-29T06:55:52"  # 2025-09-29 06-55-52.jpg
+    text: "29. September 2025\n# **Gdingen** und **Danzig**"
+  - timestamp: "2025-09-29T09:44:39"  # 2025-09-29 09-44-39.jpg
+    text: '**Private Führung** durch **Danzig**'
+  - timestamp: "2025-09-29T10:11:27"  # 2025-09-29 10-11-27.jpg
+    text: ''
+  - timestamp: "2025-09-29T10:33:15"  # 2025-09-29 10-33-15.jpg
+    text: 'Das **Theater**'
+  - timestamp: "2025-09-29T10:55:00"  # 2025-09-29 10-55-00.jpg
+    text: 'Das **Große Zeughaus**'
+  - timestamp: "2025-09-29T11:03:37"  # 2025-09-29 11-03-37.jpg
+    text: Marienkirche
+  - timestamp: "2025-09-29T11:56:11"  # 2025-09-29 11-56-11.jpg
+    text: Johanniskirche
+  - timestamp: "2025-09-29T12:22:49"  # 2025-09-29 12-22-49.jpg
+    text: ''
+  - timestamp: "2025-09-29T13:20:14"  # 2025-09-29 13-20-14.jpg
+    text: Spaziergang mit unserem Taxifahrer durch **Zoppot**
+  - timestamp: "2025-09-29T17:19:25"  # 2025-09-29 17-19-25.jpg
+    text: Cocktailkurs
+  - timestamp: "2025-09-30T10:12:51"  # 2025-09-30 10-12-51.jpg
+    text: "30. September 2025\n# Seetag"
+  - timestamp: "2025-09-30T13:50:57"  # 2025-09-30 13-50-57.jpg
+    text: Apfelstrudelkurs
+  - timestamp: "2025-09-30T16:29:22"  # 2025-09-30 16-29-22.jpg
+    text: Champagner-Treff
+  - timestamp: "2025-09-30T17:50:09"  # 2025-09-30 17-50-09.jpg
+    text: Rügen
+  - timestamp: "2025-10-01T07:24:38"  # 2025-10-01 07-24-38.jpg
+    text: "1. Oktober 2025\n# Ankunft in Warnemünde"
