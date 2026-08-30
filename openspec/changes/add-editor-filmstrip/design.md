@@ -51,3 +51,18 @@ The footer becomes a real flex child of `body` (which is already `display: flex;
 ## Migration Plan
 
 Purely additive to `webapp/app.py` (new route), `webapp/data.py` (new cache), `webapp/templates/editor.html`, `webapp/static/editor.js`, and `webapp/static/style.css`. No YAML schema, CLI, or batch-operation changes. Rollback is reverting those files.
+
+## Addendum: cold-start thumbnail performance (real-world testing)
+
+After implementation, real-world testing against a 600-photo book showed the filmstrip taking ~1-2s to fill in on first open. Diagnosis (measured, not assumed):
+
+- The test fixtures used during development are 1600x1200; real camera/phone photos are commonly ~12MP (e.g. 4032x3024). `_render_thumbnail`'s cost scales with source resolution: ~3ms/photo at 1600x1200 vs. **~33ms/photo at 4032x3024** (measured on a synthetic 12MP JPEG with photographic-like detail, not a flat-color image).
+- The browser's `loading="lazy"` fetches some batch of near-viewport thumbnails on load; against a cold `ThumbnailCache`, a 60-photo batch at 12MP cost ~2s **because the dev server handles one request at a time** - this, not a missing-cache problem per se, is what produced the reported delay.
+- **`threaded=True` on the dev server was considered and rejected**: measured head-to-head with a real separate-process client (curl - not sharing a GIL with the server, unlike an in-process benchmark) against 60 concurrent thumbnail requests: threaded=False (today's default) = 0.28s, threaded=True = 1.26s. Thread-creation/GIL overhead outweighs any real parallelism for this CPU-bound decode/resize/encode workload. Not applied.
+
+Two fixes were applied instead:
+
+1. **`Image.draft()` before resizing** (`_render_thumbnail`): tells libjpeg to decode at a reduced DCT scale instead of full resolution before immediately downscaling further. No-op for non-JPEG sources. Cut cold-render cost from ~33ms to ~12ms/photo (measured) on the same 12MP test image, with the final `.thumbnail()` call still enforcing the exact output size bound regardless of the draft scale libjpeg actually lands on.
+2. **Long-lived `Cache-Control: public, max-age=31536000, immutable` on the thumbnail response**: this is the "browser-side caching" gap that prompted the investigation. It doesn't help the very first open (nothing's cached anywhere yet), but this tool's normal workflow is paging through the whole book one item at a time, and the filmstrip re-renders on every single navigation (full page reload, no client-side state) - without this header, every already-seen thumbnail was being re-fetched over the network on every subsequent item view, for the entire session. Justified by the same read-only-photo-directory-for-the-session assumption `PhotoDirectoryCache` already relies on elsewhere.
+
+**Not applied**: pre-warming the thumbnail cache in a background thread at server startup (would hide the remaining cold-generation cost entirely behind the time the user spends on the first item) - deferred by user choice; the two fixes above were judged sufficient for now. Left as a documented option if the remaining first-open cost is ever worth eliminating.

@@ -3,6 +3,7 @@ Tests for the web editor's read-side data loading (config + photo order +
 text associations).
 """
 
+import io
 import os
 import time
 from datetime import datetime
@@ -422,6 +423,21 @@ class TestThumbnailCache:
 
         assert calls["count"] == 1
         assert first == second
+
+    def test_thumbnail_dimensions_are_bounded_regardless_of_source_resolution(self, tmp_path):
+        # Regression check for draft-mode decoding: libjpeg's reduced-scale
+        # draft decode only gets close to the target size (powers of two),
+        # so the subsequent full resize must still bring it exactly within
+        # bounds - this would catch a regression that skipped that step.
+        path = tmp_path / "large.jpg"
+        Image.new("RGB", (3000, 2000), color="white").save(path)
+        photo = PhotoMetadata(path=path, filename="large.jpg", width=3000, height=2000)
+        cache = ThumbnailCache()
+
+        thumbnail_bytes = cache.get(photo)
+
+        with Image.open(io.BytesIO(thumbnail_bytes)) as thumb:
+            assert max(thumb.size) <= 120
 
     def test_different_photos_are_cached_independently(self, tmp_path):
         path_a = tmp_path / "a.jpg"

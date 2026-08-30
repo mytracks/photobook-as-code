@@ -33,6 +33,12 @@ THUMBNAIL_JPEG_QUALITY = 70
 def _render_thumbnail(photo: PhotoMetadata) -> bytes:
     """Decode, downscale, and JPEG-encode a small filmstrip thumbnail for one photo."""
     with Image.open(photo.path) as img:
+        # Ask the JPEG decoder for a reduced scale up front, instead of
+        # decoding at full (often multi-megapixel camera) resolution and
+        # throwing most of it away in the resize below - a no-op for
+        # non-JPEG sources. Must be called before any load-triggering
+        # operation (convert/thumbnail/etc.).
+        img.draft("RGB", (THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION))
         img = img.convert("RGB")
         img.thumbnail((THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION), Image.Resampling.LANCZOS)
         buf = io.BytesIO()

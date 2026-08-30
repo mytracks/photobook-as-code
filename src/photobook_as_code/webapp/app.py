@@ -15,6 +15,13 @@ from .data import EditorData, PhotoDirectoryCache, ThumbnailCache, load_editor_d
 MAX_IMAGE_DIMENSION = 1600
 JPEG_QUALITY = 85
 
+# The photo directory is treated as read-only for the life of an editing
+# session (same assumption PhotoDirectoryCache already relies on), so a
+# thumbnail at a given index is safe for the browser to cache for a long
+# time without revalidation - it only ever changes across a server restart
+# against a different config/photo set, not within one.
+THUMBNAIL_CACHE_MAX_AGE = 60 * 60 * 24 * 365
+
 
 def create_app(
     config_path: Path,
@@ -103,7 +110,12 @@ def create_app(
         photo = data.photo_at(index)
 
         thumbnail_bytes = thumbnail_cache.get(photo)
-        return send_file(io.BytesIO(thumbnail_bytes), mimetype="image/jpeg")
+        response = send_file(
+            io.BytesIO(thumbnail_bytes), mimetype="image/jpeg", max_age=THUMBNAIL_CACHE_MAX_AGE
+        )
+        response.cache_control.public = True
+        response.cache_control.immutable = True
+        return response
 
     @app.post("/items/<int:index>/text")
     def save_text(index: int):

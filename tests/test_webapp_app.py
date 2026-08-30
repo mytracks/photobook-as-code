@@ -297,6 +297,13 @@ class TestPhotoThumbnail:
         client, _ = make_client(tmp_path)
         assert client.get("/items/99/thumbnail").status_code == 404
 
+    def test_thumbnail_is_cacheable_long_term_by_the_browser(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        response = client.get("/items/0/thumbnail")
+        assert response.cache_control.public
+        assert response.cache_control.immutable
+        assert int(response.cache_control.max_age) > 0
+
     def test_thumbnail_on_title_index_is_404(self, tmp_path):
         client, _ = make_client_with_title(tmp_path)
         response = client.get("/items/1/thumbnail")  # merged order: [a.jpg, title, b.jpg]
