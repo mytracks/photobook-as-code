@@ -19,7 +19,7 @@ text_labels:
   - timestamp: "2025-09-20T14:25:00"  # 2025-09-20 14-25-00.jpg
     text: "20. September 2025\n# **Bad Doberan**"
   - timestamp: "2025-09-20T14:53:49"  # 2025-09-20 14-53-49.jpg
-    text: '**Warnemünde**'
+    text: '# **Warnemünde**'
   - timestamp: "2025-09-20T15:14:53"  # 2025-09-20 15-14-53.jpg
     text: ''
   - timestamp: "2025-09-20T15:37:53"  # 2025-09-20 15-37-53.jpg
@@ -33,15 +33,13 @@ text_labels:
   - timestamp: "2025-09-21T06:59:02"  # 2025-09-21 06-59-02.jpg
     title: "21. September 2025\n# Abfahrt aus **Warnemünde**"
   - timestamp: "2025-09-21T06:59:02"  # 2025-09-21 06-59-02.jpg
-    text: Hotel **Bellevue**
+    text: "Hotel **Bellevue**"
   - timestamp: "2025-09-21T09:33:17"  # 2025-09-21 09-33-17.jpg
     text: ''
-  - timestamp: "2025-09-21T09:34:04"  # 2025-09-21 09-34-04.jpg
-    text: Am Passagierkai
   - timestamp: "2025-09-21T09:35:13"  # 2025-09-21 09-35-13.jpg
     text: ''
   - timestamp: "2025-09-21T09:48:57"  # 2025-09-21 09-48-57.jpg
-    text: '# **Mein Schiff 7**'
+    text: '**Mein Schiff 7**'
   - timestamp: "2025-09-21T10:07:30"  # 2025-09-21 10-07-30.jpg
     text: ''
   - timestamp: "2025-09-21T10:07:38"  # 2025-09-21 10-07-38.jpg
