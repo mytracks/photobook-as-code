@@ -416,10 +416,10 @@ class TestTitleLabel:
         label = TitleLabel.from_dict(data)
         assert label.title == 'A title'
 
-    def test_orientation_is_always_portrait(self):
-        """Titles always report portrait orientation for layout matching."""
+    def test_orientation_is_always_landscape(self):
+        """Titles always report landscape orientation for layout matching."""
         label = TitleLabel(timestamp=datetime.now(), title='Anything')
-        assert label.orientation == 'portrait'
+        assert label.orientation == 'landscape'
 
 
 class TestParseTitleLabels:

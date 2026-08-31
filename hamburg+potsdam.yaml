@@ -7,8 +7,8 @@ output:
   filename: /mnt/downloads/hamburg+potsdam.pdf
 
 layout:
-  #photos_per_page: 4
-  pages: 160
+  photos_per_page: 4
+  #pages: 160
   order: date
 
 theme: clean2

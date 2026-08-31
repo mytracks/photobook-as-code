@@ -84,7 +84,7 @@ def match_template(templates: List[LayoutTemplate], photos: List[PageItem]) -> L
     """
     Match page items to a layout template based on count and orientation.
     Prefers exact orientation order match. Items may be photos or title slots -
-    both expose `.orientation` (a title slot always reports 'portrait').
+    both expose `.orientation` (a title slot always reports 'landscape').
 
     Args:
         templates: Available layout templates from theme

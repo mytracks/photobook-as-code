@@ -392,6 +392,34 @@ class TestPhotoDirectoryCache:
 
         assert calls["count"] == 2
 
+    def test_clear_forces_a_rescan_on_next_get(self, tmp_path, monkeypatch):
+        photos_dir = _make_photos_dir(tmp_path)
+        calls = _counting_collect_photos(monkeypatch)
+        cache = PhotoDirectoryCache()
+
+        cache.get([photos_dir], "alphabetical")
+        cache.get([photos_dir], "alphabetical")
+        assert calls["count"] == 1
+
+        cache.clear()
+        cache.get([photos_dir], "alphabetical")
+
+        assert calls["count"] == 2
+
+    def test_clear_picks_up_a_newly_added_photo(self, tmp_path):
+        photos_dir = _make_photos_dir(tmp_path)
+        cache = PhotoDirectoryCache()
+        before = cache.get([photos_dir], "alphabetical")
+        assert len(before) == 3
+
+        _make_photo_file(photos_dir / "d_new.jpg", mtime_offset_seconds=40)
+        still_stale = cache.get([photos_dir], "alphabetical")
+        assert len(still_stale) == 3
+
+        cache.clear()
+        after = cache.get([photos_dir], "alphabetical")
+        assert len(after) == 4
+
     def test_cache_key_ignores_folder_listing_order(self, tmp_path, monkeypatch):
         photos_dir = _make_photos_dir(tmp_path)
         other_dir = tmp_path / "other"

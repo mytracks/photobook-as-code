@@ -116,6 +116,10 @@ class PhotoDirectoryCache:
             self._cache[key] = collect_photos(photo_folders, order=order, recursive=False)
         return self._cache[key]
 
+    def clear(self) -> None:
+        """Drop every cached scan, so the next `get()` re-scans from disk."""
+        self._cache.clear()
+
 
 class EditorData:
     """

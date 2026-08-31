@@ -56,8 +56,8 @@ class TitleLabel:
 
     @property
     def orientation(self) -> str:
-        """Titles always present as portrait orientation for layout template matching."""
-        return 'portrait'
+        """Titles always present as landscape orientation for layout template matching."""
+        return 'landscape'
 
     @classmethod
     def from_dict(cls, data: dict) -> 'TitleLabel':

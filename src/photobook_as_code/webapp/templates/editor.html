@@ -34,6 +34,10 @@
       <path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
       <path d="M9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="2"/>
     </symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24">
+      <path d="M23 4v6h-6M1 20v-6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
   </svg>
 
   <header>
@@ -65,6 +69,11 @@
 
     <div class="header-actions">
       <a class="header-action" href="{{ url_for('batch_settings') }}">Batch…</a>
+      <button type="button" id="refresh-button" class="header-action"
+        title="Re-scan the photo folder for changes made outside the editor">
+        <svg class="icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+        Refresh
+      </button>
       {% if is_title %}
         <button type="button" id="delete-title-button" class="header-action header-action-danger">
           <svg class="icon" aria-hidden="true"><use href="#icon-trash"></use></svg>

@@ -7,6 +7,7 @@
   var status = document.getElementById("save-status");
   var prevZone = document.getElementById("nav-prev");
   var nextZone = document.getElementById("nav-next");
+  var refreshButton = document.getElementById("refresh-button");
   var addTitleButton = document.getElementById("add-title-button");
   var deleteTitleButton = document.getElementById("delete-title-button");
   var geoButton = document.getElementById("geo-button");
@@ -102,6 +103,25 @@
     if (currentCell) {
       currentCell.scrollIntoView({ inline: "center", behavior: "instant" });
     }
+  }
+
+  if (refreshButton) {
+    refreshButton.addEventListener("click", function () {
+      save()
+        .then(function () {
+          setStatus("Refreshing…");
+          return fetch("/refresh", { method: "POST" });
+        })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("Refresh failed");
+          }
+          window.location.href = "/items/0";
+        })
+        .catch(function () {
+          setStatus("Could not refresh - check your connection and try again");
+        });
+    });
   }
 
   if (addTitleButton) {

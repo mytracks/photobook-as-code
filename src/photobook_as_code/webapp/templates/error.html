@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Couldn't load photobook - Photobook Text Editor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <span class="filename">Photobook Text Editor</span>
+  </header>
+
+  <main class="error-main">
+    <div class="error-box">
+      <h1 class="error-title">Couldn't load the photobook</h1>
+      <p class="error-message">{{ message }}</p>
+      <a class="header-action" href="{{ retry_path }}">Try again</a>
+    </div>
+  </main>
+</body>
+</html>

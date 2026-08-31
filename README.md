@@ -245,7 +245,7 @@ A `title` entry is different from a `text` caption in one important way: instead
 - Each `text_labels` entry must have exactly one of `text` or `title` - not both, not neither.
 - Titles support the same Markdown formatting and multi-line content as `text` captions (headings, `**bold**`, `*italic*`/`_italic_`).
 
-Because a title takes a photo's place in the page's layout template, themes need at least one layout at each relevant photo count that includes a **portrait**-shaped slot - a title always renders into a portrait-shaped cell, reusing whichever layout your theme already uses for a portrait photo at that count. No dedicated "title layout" needs to be authored.
+Because a title takes a photo's place in the page's layout template, themes need at least one layout at each relevant photo count that includes a **landscape**-shaped slot - a title always renders into a landscape-shaped cell, reusing whichever layout your theme already uses for a landscape photo at that count. No dedicated "title layout" needs to be authored.
 
 #### Theme Title Styling
 

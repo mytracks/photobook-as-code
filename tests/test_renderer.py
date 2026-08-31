@@ -94,7 +94,7 @@ def test_render_page_title_slot_skips_photo_and_border(tmp_path):
                 count=2,
                 photos=[
                     LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), LayoutPhotoSize(width=1.0, height=0.5)),
-                    LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), LayoutPhotoSize(width=1.0, height=0.5))
+                    LayoutPhoto('landscape', LayoutPosition(0.5, 0.75), LayoutPhotoSize(width=1.0, height=0.5))
                 ]
             )
         ]

@@ -400,6 +400,45 @@ class TestSaveText:
         assert response.status_code == 404
 
 
+class TestLoadErrorHandling:
+    def test_invalid_yaml_after_startup_shows_friendly_error(self, tmp_path):
+        client, config_path = make_client(tmp_path)
+        config_path.write_text("photo_folders: [this is: not: valid: yaml")
+
+        response = client.get("/items/0")
+
+        assert response.status_code == 500
+        body = response.get_data(as_text=True)
+        assert "Couldn't load the photobook" in body
+        assert "Try again" in body
+
+    def test_missing_photo_folder_after_startup_shows_friendly_error(self, tmp_path):
+        client, config_path = make_client(tmp_path)
+        missing_dir = tmp_path / "does-not-exist"
+        config_path.write_text(
+            f"photo_folders:\n  - {missing_dir}\n"
+            "output:\n"
+            "  size: A4\n"
+            "layout:\n"
+            "  photos_per_page: 2\n"
+            "  order: alphabetical\n"
+            "theme: clean\n"
+        )
+
+        response = client.get("/items/0")
+
+        assert response.status_code == 500
+        assert "Couldn't load the photobook" in response.get_data(as_text=True)
+
+    def test_error_page_does_not_leak_a_stack_trace(self, tmp_path):
+        client, config_path = make_client(tmp_path)
+        config_path.write_text("photo_folders: [this is: not: valid: yaml")
+
+        response = client.get("/items/0")
+
+        assert "Traceback" not in response.get_data(as_text=True)
+
+
 class TestPhotoDirectoryCaching:
     def test_multiple_routes_share_one_photo_directory_scan(self, tmp_path, monkeypatch):
         original = data_module.collect_photos
@@ -417,6 +456,38 @@ class TestPhotoDirectoryCaching:
         client.get("/items/1")
 
         assert calls["count"] == 1
+
+
+class TestRefresh:
+    def test_added_photo_is_invisible_until_refresh(self, tmp_path):
+        client, config_path = make_client(tmp_path)  # photos: a.jpg, b.jpg
+        photos_dir = config_path.parent / "photos"
+        client.get("/items/0")  # warm the photo directory cache before adding a new file
+        Image.new("RGB", (2000, 1500), color="white").save(photos_dir / "c.jpg")
+
+        stale = client.get("/items/0").get_data(as_text=True)
+        assert "1 / 2" in stale  # cache hasn't seen the new photo yet
+
+        response = client.post("/refresh")
+        assert response.status_code == 200
+        assert response.get_json() == {"status": "ok"}
+
+        fresh = client.get("/items/0").get_data(as_text=True)
+        assert "1 / 3" in fresh
+
+    def test_removed_photo_is_still_present_until_refresh(self, tmp_path):
+        client, config_path = make_client(tmp_path)  # photos: a.jpg, b.jpg
+        photos_dir = config_path.parent / "photos"
+        client.get("/items/0")  # warm the photo directory cache before removing a file
+        (photos_dir / "b.jpg").unlink()
+
+        stale = client.get("/items/0").get_data(as_text=True)
+        assert "1 / 2" in stale
+
+        client.post("/refresh")
+
+        fresh = client.get("/items/0").get_data(as_text=True)
+        assert "1 / 1" in fresh
 
 
 class TestTitleNavigation:
@@ -709,6 +780,18 @@ class TestReverseGeocode:
         assert response.status_code >= 400
         payload = response.get_json()
         assert payload["status"] == "error"
+
+
+class TestRefreshButtonMarkup:
+    def test_refresh_button_present_on_photo_item(self, tmp_path):
+        client, _ = make_client(tmp_path)
+        body = client.get("/items/0").get_data(as_text=True)
+        assert 'id="refresh-button"' in body
+
+    def test_refresh_button_present_on_title_item(self, tmp_path):
+        client, _ = make_client_with_title(tmp_path)
+        body = client.get("/items/1").get_data(as_text=True)  # the title item
+        assert 'id="refresh-button"' in body
 
 
 class TestBatchSettingsPage:

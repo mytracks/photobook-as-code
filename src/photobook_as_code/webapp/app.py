@@ -10,6 +10,8 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, sen
 from PIL import Image
 
 from . import batch, geocoding, yaml_store
+from ..config import ConfigurationError
+from ..photos import PhotoCollectionError
 from .data import EditorData, PhotoDirectoryCache, ThumbnailCache, load_editor_data
 
 MAX_IMAGE_DIMENSION = 1600
@@ -41,6 +43,21 @@ def create_app(
         if index < 0 or index >= data.count:
             abort(404)
         return data
+
+    @app.errorhandler(ConfigurationError)
+    @app.errorhandler(PhotoCollectionError)
+    def _handle_load_error(error):
+        # Covers every route below, since all of them load the configuration
+        # and photo folder via load_editor_data(); without this, a config
+        # hand-edited into an invalid state while the server is running
+        # (most likely to be noticed right after clicking Refresh) would
+        # otherwise crash the request with an unhandled 500.
+        return render_template("error.html", message=str(error), retry_path=request.path), 500
+
+    @app.post("/refresh")
+    def refresh():
+        photo_cache.clear()
+        return jsonify({"status": "ok"})
 
     @app.get("/")
     def index():

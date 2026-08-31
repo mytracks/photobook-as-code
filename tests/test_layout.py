@@ -85,25 +85,25 @@ class TestMatchTemplate:
         with pytest.raises(LayoutError, match="with orientations"):
             match_template([t1], photos)
 
-    def test_title_matches_as_portrait_orientation(self):
-        """A title slot reports 'portrait' and matches a template built for a portrait photo."""
+    def test_title_matches_as_landscape_orientation(self):
+        """A title slot reports 'landscape' and matches a template built for a landscape photo."""
         t1 = LayoutTemplate(count=2, photos=[
-            LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), 0.7),
-            LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), 0.7)
+            LayoutPhoto('portrait', LayoutPosition(0.5, 0.25), 0.7),
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.75), 0.7)
         ])
         title = TitleLabel(timestamp=datetime.now(), title='A title')
-        items = [make_photo('landscape'), title]
+        items = [make_photo('portrait'), title]
         matched = match_template([t1], items)
         assert matched is t1
 
     def test_mixed_photo_and_title_page_matches_by_combined_count(self):
         """Matching uses the total item count, including title slots."""
         t2 = LayoutTemplate(count=2, photos=[
-            LayoutPhoto('landscape', LayoutPosition(0.5, 0.25), 0.7),
-            LayoutPhoto('portrait', LayoutPosition(0.5, 0.75), 0.7)
+            LayoutPhoto('portrait', LayoutPosition(0.5, 0.25), 0.7),
+            LayoutPhoto('landscape', LayoutPosition(0.5, 0.75), 0.7)
         ])
         title = TitleLabel(timestamp=datetime.now(), title='A title')
-        items = [make_photo('landscape'), title]
+        items = [make_photo('portrait'), title]
         with pytest.raises(LayoutError, match="No layout template found for 2 photos"):
             # A count:1 template shouldn't match a page with 1 photo + 1 title (count 2)
             match_template([LayoutTemplate(count=1, photos=[
