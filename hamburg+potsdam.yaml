@@ -3,12 +3,14 @@ photo_folders:
   - /mnt/pictures/2026/2026-04-30+ Hamburg
 output:
   size: A4
-  format: pdf
-  filename: /mnt/downloads/hamburg+potsdam.pdf
+  format: png
+  directory: /mnt/downloads/hamburg+potsdam
+  transparent: true
+  page_margin: 0
 
 layout:
-  photos_per_page: 4
-  #pages: 160
+  #photos_per_page: 4
+  pages: 160
   order: date
 
 theme: clean2
@@ -32,21 +34,21 @@ text_labels:
   - timestamp: "2026-04-30T14:39:59"  # 2026-04-30 14-39-59.jpg
     text: ''
   - timestamp: "2026-04-30T15:03:10"  # 2026-04-30 15-03-10.jpg
-    text: Das Haus, in dem **Rainer** wohnt.
+    text: ''
   - timestamp: "2026-04-30T15:29:51"  # 2026-04-30 15-29-51.jpg
-    text: Die **Dachterrasse**
+    text: Mit **Rainer** auf der **Dachterrasse**
   - timestamp: "2026-04-30T16:42:16"  # 2026-04-30 16-42-16.jpg
-    text: Tokiostraße
+    text: ''
   - timestamp: "2026-04-30T16:48:46"  # 2026-04-30 16-48-46.jpg
-    text: 'Westfield Einkaufszentrum '
+    text: '**Westfield** Einkaufszentrum'
   - timestamp: "2026-04-30T17:13:33"  # 2026-04-30 17-13-33.jpg
-    text: 25hours Hotel Hamburg HafenCity
+    text: '**25hours Hotel** Hamburg HafenCity'
   - timestamp: "2026-04-30T17:37:18"  # 2026-04-30 17-37-18.jpg
-    text: View Point
+    text: '**View**Point'
   - timestamp: "2026-04-30T20:00:13"  # 2026-04-30 20-00-13.jpg
     text: ''
   - timestamp: "2026-05-01T09:06:33"  # 2026-05-01 09-06-33.jpg
-    text: '# 1. Mai 2026'
+    text: '# **1. Mai 2026**'
   - timestamp: "2026-05-01T09:15:33"  # 2026-05-01 09-15-33.jpg
     text: ''
   - timestamp: "2026-05-01T10:03:45"  # 2026-05-01 10-03-45.jpg
@@ -58,68 +60,68 @@ text_labels:
   - timestamp: "2026-05-01T11:51:16"  # 2026-05-01 11-51-16.jpg
     text: "Der **Hauptbahnhof**\n"
   - timestamp: "2026-05-01T13:09:39"  # 2026-05-01 13-09-39.jpg
-    text: '# Blankenese'
+    text: '**Blankenese**'
   - timestamp: "2026-05-01T13:12:14"  # 2026-05-01 13-12-14.jpg
     text: ''
   - timestamp: "2026-05-01T15:55:37"  # 2026-05-01 15-55-37.jpg
-    text: '# Binnenalster'
+    text: '**Binnenalster**'
   - timestamp: "2026-05-01T15:57:56"  # 2026-05-01 15-57-56.jpg
-    text: '# Das **Rathaus**'
+    text: 'Das **Rathaus**'
   - timestamp: "2026-05-01T16:20:04"  # 2026-05-01 16-20-04.jpg
     text: Die **Speicherstadt**
   - timestamp: "2026-05-01T20:19:44"  # 2026-05-01 20-19-44.jpg
     text: ''
   - timestamp: "2026-05-02T07:04:44"  # 2026-05-02 07-04-44.jpg
-    text: '# 2. Mai 2026'
+    text: '# **2. Mai 2026**'
   - timestamp: "2026-05-02T07:04:49"  # 2026-05-02 07-04-49.jpg
-    text: '# Frühstück im Hotel **25hours** in der **Hafencity**'
+    text: 'Frühstück im Hotel **25hours** in der **Hafencity**'
   - timestamp: "2026-05-02T09:44:08"  # 2026-05-02 09-44-08.jpg
-    text: '# Führung im **Hamburger Rathaus**'
+    text: 'Führung im **Hamburger Rathaus**'
   - timestamp: "2026-05-02T13:32:44"  # 2026-05-02 13-32-44.jpg
-    text: '# **Planten** un **Blomen**'
+    text: '**Planten** un **Blomen**'
   - timestamp: "2026-05-02T15:56:11"  # 2026-05-02 15-56-11.jpg
     text: Die **Queen Anne** direkt am **Westfield Center**
   - timestamp: "2026-05-02T16:19:37"  # 2026-05-02 16-19-37.jpg
-    text: '# Unser Hotel **25hours**'
+    text: 'Unser Hotel **25hours**'
   - timestamp: "2026-05-02T19:21:25"  # 2026-05-02 19-21-25.jpg
-    text: '# **Rooftop-Bar** mit Blick über **Hamburg**'
+    text: '**Rooftop-Bar** mit Blick über **Hamburg**'
   - timestamp: "2026-05-03T08:09:24"  # 2026-05-03 08-09-24.jpg
-    text: '# 3. Mai 2026'
+    text: '# **3. Mai 2026**'
   - timestamp: "2026-05-22T12:12:03"  # 2026-05-22 12-12-03.jpg
     title: '22. Mai 2026
 
       # In **Potsdam** mit **Ulrike** und **Stefan**'
   - timestamp: "2026-05-22T12:12:03"  # 2026-05-22 12-12-03.jpg
-    text: '# Radtour um den **Templiner See**'
+    text: 'Radtour um den **Templiner See**'
   - timestamp: "2026-05-22T13:03:16"  # 2026-05-22 13-03-16.jpg
-    text: '# Platz am **Neuen Palais**'
+    text: 'Platz am **Neuen Palais**'
   - timestamp: "2026-05-22T13:15:27"  # 2026-05-22 13-15-27.jpg
-    text: '# Das **Chinesische Haus**'
+    text: 'Das **Chinesische Haus**'
   - timestamp: "2026-05-22T13:31:08"  # 2026-05-22 13-31-08.jpg
-    text: '# Schloss **Sanssouci**'
+    text: 'Schloss **Sanssouci**'
   - timestamp: "2026-05-22T20:02:42"  # 2026-05-22 20-02-42.jpg
-    text: '# Die **Freundschaftsinsel**'
+    text: 'Die **Freundschaftsinsel**'
   - timestamp: "2026-05-23T08:25:18"  # 2026-05-23 08-25-18.jpg
-    text: '# 23. Mai 2026'
+    text: '# **23. Mai 2026**'
   - timestamp: "2026-05-23T08:25:26"  # 2026-05-23 08-25-26.jpg
     text: '# Radtour zum **Wannsee**'
   - timestamp: "2026-05-23T10:00:01"  # 2026-05-23 10-00-01.jpg
     text: Mit dem Schiff über den **Wannsee** auf die andere Seite
   - timestamp: "2026-05-23T10:49:58"  # 2026-05-23 10-49-58.jpg
-    text: 'Heilandskirche am Port von **Sacrow**'
+    text: '**Heilandskirche** am Port von **Sacrow**'
   - timestamp: "2026-05-23T13:16:30"  # 2026-05-23 13-16-30.jpg
-    text: '# Das **Brandenburger Tor**'
+    text: 'Das **Brandenburger Tor**'
   - timestamp: "2026-05-23T17:05:16"  # 2026-05-23 17-05-16.jpg
-    text: '# **St. Nikolaikirche**'
+    text: '**St. Nikolaikirche**'
   - timestamp: "2026-05-23T17:26:10"  # 2026-05-23 17-26-10.jpg
-    text: Blick auf das neu aufgebaute **Schloss,** dem **Parlament von Brandenburg**
+    text: Blick auf das neu aufgebaute **Schloss**, dem **Parlament von Brandenburg**
   - timestamp: "2026-05-24T08:39:17"  # 2026-05-24 08-39-17.jpg
-    text: '# 24. Mai 2026'
+    text: '# **24. Mai 2026**'
   - timestamp: "2026-05-24T08:39:55"  # 2026-05-24 08-39-55.jpg
-    text: '# Schloss **Sanssouci** von der anderen Seite'
+    text: 'Schloss **Sanssouci** von der anderen Seite'
   - timestamp: "2026-05-24T09:25:25"  # 2026-05-24 09-25-25.jpg
-    text: '# **Glienicker** Brücke - auch **Agentenbrücke** genannt'
+    text: '**Glienicker** Brücke - auch **Agentenbrücke** genannt'
   - timestamp: "2026-05-24T10:38:35"  # 2026-05-24 10-38-35.jpg
-    text: '# Rundfahrt mit der **Charlottenhof** mit dem Charme der 70er Jahre'
+    text: 'Rundfahrt mit der **Charlottenhof** mit dem Charme der 70er Jahre'
   - timestamp: "2026-05-24T11:53:18"  # 2026-05-24 11-53-18.jpg
-    text: '# Schloss **Cecilienhof**'
+    text: 'Schloss **Cecilienhof**'
