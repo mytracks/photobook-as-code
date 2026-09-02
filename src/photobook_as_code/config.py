@@ -12,6 +12,7 @@ import yaml
 # Paper size definitions in pixels at 300 DPI
 PAPER_SIZES = {
     "A4": (2480, 3508),  # 210mm x 297mm at 300 DPI
+    "A4l": (3508, 2480),  # 297mm x 210mm at 300 DPI
     "Letter": (2550, 3300),  # 8.5in x 11in at 300 DPI
 }
 
@@ -20,12 +21,13 @@ PAPER_SIZES = {
 class OutputConfig:
     """Output configuration settings."""
     size: str = "A4"
-    format: Literal["pdf", "png", "jpg"] = "pdf"
+    format: Literal["pdf", "png", "jpg", "html"] = "pdf"
     filename: Optional[str] = None
     directory: Optional[str] = None
     quality: int = 95  # For JPG output
     transparent: bool = False  # PNG only: render with a transparent background
     page_margin: Optional[int] = None  # Overrides the selected theme's spacing.page_margin (pixels) when set
+    interval_seconds: float = 5.0  # HTML slideshow only: seconds each slide is shown before advancing
 
 
 @dataclass
@@ -258,6 +260,7 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
             quality=data['output'].get('quality', 95),
             transparent=data['output'].get('transparent', False),
             page_margin=data['output'].get('page_margin'),
+            interval_seconds=data['output'].get('interval_seconds', 5.0),
         )
         
         layout_config = LayoutConfig(
@@ -280,17 +283,34 @@ def load_config(config_path: Union[str, Path]) -> PhotobookConfig:
         raise ConfigurationError(f"Invalid configuration values: {e}")
     
     # Validate output format
-    if config.output.format not in ('pdf', 'png', 'jpg'):
+    if config.output.format not in ('pdf', 'png', 'jpg', 'html'):
         raise ConfigurationError(
             f"Invalid output format: {config.output.format}. "
-            f"Must be 'pdf', 'png', or 'jpg'"
+            f"Must be 'pdf', 'png', 'jpg', or 'html'"
         )
 
-    # Validate transparent background: only PNG supports an alpha channel
-    if config.output.transparent and config.output.format != 'png':
+    # Validate transparent background: only formats with a bitmap alpha
+    # channel (png) or none at all (html, which simply ignores it - same
+    # treatment output.quality already gets outside jpg) can accept it. jpg
+    # and pdf have no way to represent it, so those are rejected outright.
+    if config.output.transparent and config.output.format in ('jpg', 'pdf'):
         raise ConfigurationError(
-            f"output.transparent is only supported with format: png "
-            f"(got format: {config.output.format})"
+            f"output.transparent is not supported with format: {config.output.format} "
+            f"(only png and html)"
+        )
+
+    # Validate interval_seconds: only meaningful for html output, but
+    # validated unconditionally (same pattern as page_margin) so a bad value
+    # is caught at load time regardless of which format is selected. bool is
+    # a subclass of int, so it must be rejected explicitly (same pattern as
+    # timestamp/page_margin validation above).
+    if isinstance(config.output.interval_seconds, bool) or not isinstance(config.output.interval_seconds, (int, float)):
+        raise ConfigurationError(
+            f"Invalid output.interval_seconds: {config.output.interval_seconds!r}. Must be a number"
+        )
+    if config.output.interval_seconds <= 0:
+        raise ConfigurationError(
+            f"Invalid output.interval_seconds: {config.output.interval_seconds}. Must be positive"
         )
 
     # Validate page_margin: overrides theme.spacing.page_margin when set, so

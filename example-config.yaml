@@ -12,15 +12,26 @@ photo_folders:
 output:
   # Paper size: A4, Letter, or custom dimensions
   size: A4
-  
-  # Output format: pdf, png, or jpg
+
+  # Output format: pdf, png, jpg, or html
   format: pdf
-  
+
   # Output filename (optional - defaults to config filename)
   filename: /mnt/downloads/my-photobook.pdf
-  
+
   # Output directory (optional - defaults to current directory)
   # directory: ./output/
+
+  # --- format: html only ---
+  # Generates a single self-contained HTML file that plays the photobook as
+  # an endless, autoplaying slideshow (one slide per photo/title). It's
+  # always written into the first photo_folders entry - output.directory and
+  # output.filename's directory are ignored for this format, since that's
+  # what keeps the slideshow's relative photo paths correct; only a bare
+  # filename override is honored. See README.md's "HTML Slideshow Output"
+  # section for details.
+  # format: html
+  # interval_seconds: 5  # seconds per slide (optional, default 5)
 
 # Layout configuration
 # Specify EITHER photos_per_page OR pages (not both)

@@ -344,10 +344,12 @@ photo_folders:
 # Output configuration (required)
 output:
   size: A4              # Paper size: A4, Letter, or custom (e.g., "2480x3508")
-  format: pdf           # Output format: pdf, png, or jpg
+  format: pdf           # Output format: pdf, png, jpg, or html
   filename: album.pdf   # Output filename (optional, defaults to config name)
-  directory: ./output/  # Output directory (optional, defaults to current dir)
+  directory: ./output/  # Output directory (optional, defaults to current dir;
+                         # ignored for html - see "HTML Slideshow Output" below)
   quality: 95           # JPEG quality 1-100 (only for jpg format)
+  interval_seconds: 5   # Seconds per slide (only for html format, default 5)
 
 # Layout configuration
 layout:
@@ -377,6 +379,39 @@ Common sizes at 300 DPI:
 - A4: 2480 × 3508 pixels
 - Letter: 2550 × 3300 pixels
 - A5: 1748 × 2480 pixels
+
+### HTML Slideshow Output
+
+```yaml
+output:
+  format: html
+  interval_seconds: 5   # optional, default 5
+```
+
+`format: html` generates a single, self-contained `.html` file that plays the
+photobook as an endless, autoplaying slideshow - one slide per photo or
+title, in the same order as the other formats, with captions/titles styled
+from the active theme. It references photos by relative path rather than
+copying or resizing them, and only loads the current and next slide's photo
+at a time, so it stays lightweight even for large collections of large
+originals.
+
+Because those relative paths only resolve correctly from one fixed
+location, **the file is always written into the first folder listed in
+`photo_folders`** - `output.directory` and `--output`'s directory portion are
+ignored for this format (a note is printed when one was given and discarded).
+A filename override (`output.filename` or `--output custom.html`) is still
+honored; only the directory it implies is discarded. `output.size`,
+`output.quality`, `layout.photos_per_page`, and `layout.pages` have no effect
+on html output - every page item always gets its own slide.
+
+If `photo_folders` lists more than one directory, photos outside the first
+one are referenced with a `../`-style relative path - opening the file
+directly from disk still works, but copying it to a web server means copying
+those sibling folders alongside it too, preserving their relative layout.
+
+Controls: click or press spacebar to pause/resume, left/right arrow keys to
+step manually.
 
 ## Theme Customization
 

@@ -304,3 +304,194 @@ theme: clean
     # --output for jpg/png is always treated as the target directory, and the
     # base filename still comes from config, not the directory's own name.
     assert sorted(p.name for p in override_dir.iterdir()) == ["mondsee_page_001.jpg"]
+
+
+class TestHtmlSlideshowFormat:
+    """CLI-level tests for output.format: html - directory-forcing, filename
+    override, and multi-folder relative paths."""
+
+    def test_ignores_output_directory_writes_into_first_photo_folder(self, tmp_path):
+        photos_dir, _ = _make_photos_dir(tmp_path)
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+
+        config_content = f"""photo_folders:
+  - {photos_dir}
+output:
+  size: A4
+  format: html
+  directory: {elsewhere}
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", str(config_path)])
+
+        assert result.exit_code == 0, result.output
+        assert (photos_dir / "test-config.html").exists()
+        assert list(elsewhere.iterdir()) == []
+        assert "ignored for html" in result.output
+
+    def test_output_flag_directory_ignored_but_filename_honored(self, tmp_path):
+        photos_dir, _ = _make_photos_dir(tmp_path)
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+
+        config_content = f"""photo_folders:
+  - {photos_dir}
+output:
+  size: A4
+  format: html
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["--config", str(config_path), "--output", str(elsewhere / "custom.html")]
+        )
+
+        assert result.exit_code == 0, result.output
+        # Filename honored, but written into the first photo folder, not "elsewhere"
+        assert (photos_dir / "custom.html").exists()
+        assert list(elsewhere.iterdir()) == []
+        assert "ignored for html" in result.output
+
+    def test_output_filename_config_field_honored_directory_ignored(self, tmp_path):
+        photos_dir, _ = _make_photos_dir(tmp_path)
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+
+        config_content = f"""photo_folders:
+  - {photos_dir}
+output:
+  size: A4
+  format: html
+  filename: {elsewhere / "custom.html"}
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", str(config_path)])
+
+        assert result.exit_code == 0, result.output
+        assert (photos_dir / "custom.html").exists()
+        assert list(elsewhere.iterdir()) == []
+
+    def test_no_override_uses_config_stem_and_no_notice_printed(self, tmp_path):
+        photos_dir, _ = _make_photos_dir(tmp_path)
+
+        config_content = f"""photo_folders:
+  - {photos_dir}
+output:
+  size: A4
+  format: html
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", str(config_path)])
+
+        assert result.exit_code == 0, result.output
+        assert (photos_dir / "test-config.html").exists()
+        assert "ignored for html" not in result.output
+
+    def test_multi_folder_relative_paths_from_first_folder(self, tmp_path):
+        photos_dir_1, base = _make_photos_dir(tmp_path)
+        photos_dir_2 = tmp_path / "photos2"
+        photos_dir_2.mkdir()
+        second_photo = photos_dir_2 / "photo_extra.jpg"
+        Image.new("RGB", (800, 600), color="green").save(second_photo)
+        mtime = (base + timedelta(hours=10)).timestamp()
+        os.utime(second_photo, (mtime, mtime))
+
+        config_content = f"""photo_folders:
+  - {photos_dir_1}
+  - {photos_dir_2}
+output:
+  size: A4
+  format: html
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", str(config_path)])
+
+        assert result.exit_code == 0, result.output
+        html_path = photos_dir_1 / "test-config.html"
+        assert html_path.exists()
+        html = html_path.read_text()
+        assert 'data-src="../photos2/photo_extra.jpg"' in html
+
+    def test_transparent_true_no_longer_errors_with_html_format(self, tmp_path):
+        """A config still carrying transparent: true from a previous png export
+        (the motivating YAML-reuse case) must not block switching to html."""
+        photos_dir, _ = _make_photos_dir(tmp_path)
+
+        config_content = f"""photo_folders:
+  - {photos_dir}
+output:
+  size: A4
+  format: html
+  transparent: true
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", str(config_path)])
+
+        assert result.exit_code == 0, result.output
+        assert (photos_dir / "test-config.html").exists()
+
+    def test_html_generation_error_reported_clearly(self, tmp_path, monkeypatch):
+        photos_dir, _ = _make_photos_dir(tmp_path)
+
+        config_content = f"""photo_folders:
+  - {photos_dir}
+output:
+  size: A4
+  format: html
+layout:
+  photos_per_page: 4
+theme: clean
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        from photobook_as_code import cli as cli_module
+        from photobook_as_code.html_output import HtmlOutputError
+
+        def failing_generate(*args, **kwargs):
+            raise HtmlOutputError(f"Could not write to {photos_dir}: permission denied")
+
+        monkeypatch.setattr(cli_module, "generate_html_slideshow", failing_generate)
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", str(config_path)])
+
+        assert result.exit_code == 1
+        assert "HTML slideshow error" in result.output
+        assert "permission denied" in result.output

@@ -145,6 +145,26 @@ def draw_shadow(page: Image.Image, x: int, y: int, width: int, height: int) -> I
     return Image.alpha_composite(page_rgba, shadow)
 
 
+def font_variant_paths(font_family: str) -> tuple[Path, Path, Path, Path]:
+    """
+    Resolve the regular/bold/italic/bold-italic file paths for a font family
+    installed under the system's DejaVu font directory - the single source of
+    truth for that filename convention, shared by `_load_font_variants` (PIL
+    rendering) and the html slideshow generator (font embedding).
+
+    Returns:
+        Tuple of (regular, bold, italic, bold_italic) Path objects. The files
+        are not guaranteed to exist - callers check/handle that themselves.
+    """
+    base = Path("/usr/share/fonts/truetype/dejavu")
+    return (
+        base / f"{font_family}.ttf",
+        base / f"{font_family}-Bold.ttf",
+        base / f"{font_family}-Oblique.ttf",
+        base / f"{font_family}-BoldOblique.ttf",
+    )
+
+
 def _load_font_variants(font_family: str, base_font_size: int):
     """
     Load regular/bold/italic/bold-italic variants of a font, falling back to
@@ -154,10 +174,11 @@ def _load_font_variants(font_family: str, base_font_size: int):
         Tuple of (font_regular, font_bold, font_italic, font_bold_italic)
     """
     try:
-        font_regular = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}.ttf", base_font_size)
-        font_bold = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Bold.ttf", base_font_size)
-        font_italic = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-Oblique.ttf", base_font_size)
-        font_bold_italic = ImageFont.truetype(f"/usr/share/fonts/truetype/dejavu/{font_family}-BoldOblique.ttf", base_font_size)
+        regular_path, bold_path, italic_path, bold_italic_path = font_variant_paths(font_family)
+        font_regular = ImageFont.truetype(str(regular_path), base_font_size)
+        font_bold = ImageFont.truetype(str(bold_path), base_font_size)
+        font_italic = ImageFont.truetype(str(italic_path), base_font_size)
+        font_bold_italic = ImageFont.truetype(str(bold_italic_path), base_font_size)
         return font_regular, font_bold, font_italic, font_bold_italic
     except:
         logger.warning(f"Font {font_family} with size {base_font_size} not found.")

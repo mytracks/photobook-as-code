@@ -1,7 +1,7 @@
 photo_folders:
   - /mnt/pictures/für Heinz
 output:
-  size: A4
+  size: A4l
   format: png
   directory: /mnt/downloads/heinz
   transparent: true
@@ -10,16 +10,10 @@ output:
 layout:
   photos_per_page: 1
   #pages: 160
-  order: date
+  order: alphabetical
 
 theme: clean2
 text_labels:
-  - timestamp: "1980-01-01T02:00:00"  # 2003_07_0006_Kellenhusen.jpg
-    text: 1. Januar 1980
-  - timestamp: "1980-11-30T23:26:50"  # 120-2081_IMG.jpg
-    text: 30. November 1980
-  - timestamp: "1980-11-30T23:59:46"  # 0002.jpg
-    text: 30. November 1980
   - timestamp: "2000-09-22T11:00:16"  # 119-1914_IMG.jpg
     text: "# 22. September 2000\n# **Hochzeit Dirk und Christiane**"
   - timestamp: "2000-09-25T21:24:30"  # 121-2133_IMG.jpg
@@ -59,7 +53,7 @@ text_labels:
   - timestamp: "2002-09-05T18:19:33"  # 2002-09-05.18-19-33.jpg
     text: ''
   - timestamp: "2002-10-13T14:34:36"  # 2002-10-13.14-34-36.jpg
-    text: 13. Oktober 2002
+    text: '# 13. Oktober 2002'
   - timestamp: "2002-12-24T17:25:51"  # 2002-12-24.17-25-51.jpg
     text: '# 24. Dezember 2002'
   - timestamp: "2003-01-05T11:52:40"  # 2003-01-05.11-52-40.jpg
@@ -79,7 +73,7 @@ text_labels:
   - timestamp: "2003-07-20T10:02:42"  # 2003-07-20 10-02-42.jpg
     text: ''
   - timestamp: "2003-10-18T11:13:16"  # 2003-10-18.11-13-16.jpg
-    text: "# 18. Oktober 2003\n# **Annemies Geburtstag**"
+    text: "# 18. Oktober 2003\n# **Annemies 60er Geburtstag**"
   - timestamp: "2004-07-31T11:12:05"  # 2004_07_31_11_12_05.jpg
     text: '# Juli 2004'
   - timestamp: "2004-12-20T15:54:08"  # 2004-12-20 15-54-08.jpg

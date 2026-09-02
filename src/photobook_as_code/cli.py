@@ -20,6 +20,7 @@ from .layout import (
 )
 from .renderer import render_all_pages
 from .output import generate_output, prepare_output_path, OutputError
+from .html_output import generate_html_slideshow, HtmlOutputError
 from .text_labels import associate_text_labels_with_photos, parse_title_labels, merge_titles_with_photos
 
 
@@ -45,7 +46,10 @@ def setup_logging(verbose: bool = False):
     '--output', '-o',
     type=click.Path(path_type=Path),
     default=None,
-    help='Override output location (file path or directory)'
+    help='Override output location (file path or directory). For html '
+         'format, only a filename in this value is honored - its directory '
+         'is always ignored, since the slideshow is always written into the '
+         'first photo_folders entry.'
 )
 @click.option(
     '--verbose', '-v',
@@ -66,8 +70,9 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
     """
     Generate photobook layouts from YAML configuration.
 
-    Takes photos from a directory, arranges them in a grid layout,
-    and outputs print-ready PDF or image files.
+    Takes photos from a directory, arranges them in a grid layout, and
+    outputs print-ready PDF or image files - or, with format: html, a
+    self-contained HTML slideshow written into the first photo folder.
 
     Example:
 
@@ -143,78 +148,117 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
         if titles:
             click.echo(f"   {len(titles)} titles merged as page slots")
 
-        # Stage 4: Calculate layout
-        click.echo("📐 Calculating layout...")
+        if pb_config.output.format == 'html':
+            # Stages 4-6 (html): no grid layout, no theme-template matching,
+            # no PIL rendering - every page item is its own slide, built
+            # straight from the merged sequence and its captions.
+            click.echo("🎞️  Generating HTML slideshow...")
 
-        # Get paper dimensions
-        page_width, page_height = pb_config.get_paper_size_pixels()
-        book_orientation = pb_config.get_book_orientation()
-
-        # Calculate photo distribution (titles count as page slots, same as photos)
-        distribution = distribute_photos(
-            items=page_items,
-            photos_per_page=pb_config.layout.photos_per_page,
-            total_pages=pb_config.layout.pages,
-            max_items_per_page=theme.max_layout_count,
-            book_orientation=book_orientation,
-            new_page_per_day=pb_config.layout.new_page_per_day,
-        )
-
-        click.echo(f"   {distribution.total_pages} pages, "
-                  f"{distribution.photos_per_page} items per page")
-
-        # Stage 5: Render pages
-        click.echo("🖼️  Rendering pages...")
-
-        # Create page generator (memory-efficient streaming)
-        pages_generator = render_all_pages(page_width, page_height, page_items, distribution, theme,
-                                            text_label_associations, pb_config.output.transparent)
-        
-        # Stage 6: Generate output
-        click.echo("💾 Generating output...")
-        
-        # Determine output directory and base filename. PDF resolves to a
-        # single file (output_dir/base_filename.pdf); png/jpg resolve to
-        # output_dir itself, with base_filename used as each page's prefix -
-        # never as a subfolder name.
-        if output:
-            if pb_config.output.format == 'pdf':
-                output_dir = output.parent
-                base_filename = output.stem
-            else:
-                output_dir = output
-                base_filename = Path(pb_config.get_output_filename(config.name)).stem
-        else:
-            output_dir = pb_config.get_output_directory()
-            filename = pb_config.get_output_filename(config.name)
-            if pb_config.output.format == 'pdf':
-                output_path = prepare_output_path(output_dir, filename, ensure_unique=False)
-                output_dir = output_path.parent
-                base_filename = output_path.stem
-            else:
-                base_filename = Path(filename).stem
-
-        # Generate output files with streaming pages
-        with click.progressbar(
-            length=distribution.total_pages,
-            label='Processing',
-            show_percent=True
-        ) as bar:
-            # We'll consume the generator during output generation
-            # Progress updates happen inside the output functions
-            output_files = generate_output(
-                pages=pages_generator,
-                output_format=pb_config.output.format,
-                output_dir=output_dir,
-                base_filename=base_filename,
-                page_width=page_width,
-                page_height=page_height,
-                total_pages=distribution.total_pages,
-                quality=pb_config.output.quality,
-                dpi=300
+            # The output directory is always the first photo folder - never
+            # output.directory or --output's directory - since that's what
+            # keeps the slideshow's relative photo paths correct. A filename
+            # override is still honored; only the directory it implies is
+            # discarded.
+            html_output_dir = photo_folders[0]
+            directory_overridden = bool(pb_config.output.directory) or (
+                output is not None and output.parent != Path('.')
             )
-            bar.update(distribution.total_pages)
-        
+            if directory_overridden:
+                click.echo(
+                    f"   ℹ️  output.directory/--output's directory is ignored for html "
+                    f"format; the slideshow is always written into the first photo "
+                    f"folder: {html_output_dir}"
+                )
+
+            if output is not None:
+                filename_override = output.name
+            elif pb_config.output.filename is not None:
+                filename_override = Path(pb_config.output.filename).name
+            else:
+                filename_override = pb_config.get_output_filename(config.name)
+
+            base_filename = Path(filename_override).stem
+            html_path = html_output_dir / f"{base_filename}.html"
+
+            generate_html_slideshow(
+                page_items, text_label_associations, theme, html_path,
+                interval_seconds=pb_config.output.interval_seconds,
+            )
+            output_files = [html_path]
+
+        else:
+            # Stage 4: Calculate layout
+            click.echo("📐 Calculating layout...")
+
+            # Get paper dimensions
+            page_width, page_height = pb_config.get_paper_size_pixels()
+            book_orientation = pb_config.get_book_orientation()
+
+            # Calculate photo distribution (titles count as page slots, same as photos)
+            distribution = distribute_photos(
+                items=page_items,
+                photos_per_page=pb_config.layout.photos_per_page,
+                total_pages=pb_config.layout.pages,
+                max_items_per_page=theme.max_layout_count,
+                book_orientation=book_orientation,
+                new_page_per_day=pb_config.layout.new_page_per_day,
+            )
+
+            click.echo(f"   {distribution.total_pages} pages, "
+                      f"{distribution.photos_per_page} items per page")
+
+            # Stage 5: Render pages
+            click.echo("🖼️  Rendering pages...")
+
+            # Create page generator (memory-efficient streaming)
+            pages_generator = render_all_pages(page_width, page_height, page_items, distribution, theme,
+                                                text_label_associations, pb_config.output.transparent)
+
+            # Stage 6: Generate output
+            click.echo("💾 Generating output...")
+
+            # Determine output directory and base filename. PDF resolves to a
+            # single file (output_dir/base_filename.pdf); png/jpg resolve to
+            # output_dir itself, with base_filename used as each page's prefix -
+            # never as a subfolder name.
+            if output:
+                if pb_config.output.format == 'pdf':
+                    output_dir = output.parent
+                    base_filename = output.stem
+                else:
+                    output_dir = output
+                    base_filename = Path(pb_config.get_output_filename(config.name)).stem
+            else:
+                output_dir = pb_config.get_output_directory()
+                filename = pb_config.get_output_filename(config.name)
+                if pb_config.output.format == 'pdf':
+                    output_path = prepare_output_path(output_dir, filename, ensure_unique=False)
+                    output_dir = output_path.parent
+                    base_filename = output_path.stem
+                else:
+                    base_filename = Path(filename).stem
+
+            # Generate output files with streaming pages
+            with click.progressbar(
+                length=distribution.total_pages,
+                label='Processing',
+                show_percent=True
+            ) as bar:
+                # We'll consume the generator during output generation
+                # Progress updates happen inside the output functions
+                output_files = generate_output(
+                    pages=pages_generator,
+                    output_format=pb_config.output.format,
+                    output_dir=output_dir,
+                    base_filename=base_filename,
+                    page_width=page_width,
+                    page_height=page_height,
+                    total_pages=distribution.total_pages,
+                    quality=pb_config.output.quality,
+                    dpi=300
+                )
+                bar.update(distribution.total_pages)
+
         # Stage 7: Success!
         click.echo()
         click.secho("✅ Photobook generated successfully!", fg='green', bold=True)
@@ -252,7 +296,11 @@ def main(config: Path, output: Optional[Path], verbose: bool, extract_labels: bo
     except OutputError as e:
         click.secho(f"❌ Output error: {e}", fg='red', err=True)
         sys.exit(1)
-    
+
+    except HtmlOutputError as e:
+        click.secho(f"❌ HTML slideshow error: {e}", fg='red', err=True)
+        sys.exit(1)
+
     except Exception as e:
         click.secho(f"❌ Unexpected error: {e}", fg='red', err=True)
         if verbose:

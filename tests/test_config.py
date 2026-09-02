@@ -378,6 +378,188 @@ layout:
         finally:
             config_path.unlink()
 
+    def test_true_accepted_with_html_format(self):
+        """transparent: true with format: html is accepted (and simply unused),
+        so a config already used for transparent PNG export can be reused for
+        html without editing it first."""
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+  transparent: true
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.transparent is True
+        assert config.output.format == 'html'
+
+
+class TestOutputFormatField:
+    """Tests for the output.format configuration field, including the html value."""
+
+    def _write_and_load(self, config_content: str):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_html_format_accepted(self):
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.format == 'html'
+
+    def test_invalid_format_rejected(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: gif
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="Invalid output format"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+
+class TestOutputIntervalSecondsConfig:
+    """Tests for the output.interval_seconds configuration field (html slideshow only)."""
+
+    def _write_and_load(self, config_content: str):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(config_content)
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            return load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_default_is_five(self):
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.interval_seconds == 5.0
+
+    def test_explicit_value_accepted(self):
+        config = self._write_and_load("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+  interval_seconds: 2.5
+layout:
+  photos_per_page: 4
+""")
+        assert config.output.interval_seconds == 2.5
+
+    def test_zero_rejected(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+  interval_seconds: 0
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="interval_seconds"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_negative_rejected(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+  interval_seconds: -3
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="interval_seconds"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_non_numeric_rejected(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+  interval_seconds: "slow"
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="interval_seconds"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
+    def test_boolean_rejected(self):
+        """bool is an int subclass, so it must be rejected explicitly."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write("""
+photo_folders:
+  - tests/fixtures/sample-photos
+output:
+  size: A4
+  format: html
+  interval_seconds: true
+layout:
+  photos_per_page: 4
+""")
+            f.flush()
+            config_path = Path(f.name)
+        try:
+            with pytest.raises(ConfigurationError, match="interval_seconds"):
+                load_config(config_path)
+        finally:
+            config_path.unlink()
+
 
 class TestOutputPageMarginConfig:
     """Tests for the output.page_margin configuration field (overrides theme.spacing.page_margin)."""

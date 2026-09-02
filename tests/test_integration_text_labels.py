@@ -423,6 +423,77 @@ text_labels:
             assert Path(output_file).stat().st_size > 0
             assert Path(output_file).parent == tmp_path
 
+    def test_html_output_with_text_and_titles_across_multiple_folders(self, tmp_path):
+        """End-to-end html slideshow generation exercising photos from two
+        folders together with both a caption ('text') and a chapter title
+        ('title') - the same pipeline cli.py's html branch drives."""
+        import os
+        import shutil
+        from datetime import datetime, timedelta
+
+        from src.photobook_as_code.html_output import generate_html_slideshow
+
+        folder1 = tmp_path / "first"
+        folder2 = tmp_path / "second"
+        folder1.mkdir()
+        folder2.mkdir()
+
+        src_photos = sorted(Path('tests/fixtures/sample-photos').glob('*.jpg'))[:3]
+        shutil.copy(src_photos[0], folder1 / "photo_a.jpg")
+        shutil.copy(src_photos[1], folder1 / "photo_b.jpg")
+        shutil.copy(src_photos[2], folder2 / "photo_c.jpg")
+
+        base = datetime(2026, 7, 1, 10, 0, 0)
+        for i, p in enumerate([folder1 / "photo_a.jpg", folder1 / "photo_b.jpg", folder2 / "photo_c.jpg"]):
+            mtime = (base + timedelta(hours=i)).timestamp()
+            os.utime(p, (mtime, mtime))
+
+        config_content = f"""photo_folders:
+  - {folder1}
+  - {folder2}
+output:
+  size: A4
+  format: html
+layout:
+  order: date
+theme: clean2
+text_labels:
+  - timestamp: "{(base - timedelta(hours=1)).isoformat()}"
+    title: "# Chapter One"
+  - timestamp: "{(base + timedelta(minutes=5)).isoformat()}"
+    text: "**Caption** for photo a"
+"""
+        config_path = tmp_path / "test-config.yaml"
+        config_path.write_text(config_content)
+
+        config = load_config(config_path)
+        photos = collect_photos([folder1, folder2], order=config.layout.order)
+        theme = load_theme(config.theme)
+
+        text_associations = associate_text_labels_with_photos(config.text_labels, photos)
+        titles = parse_title_labels(config.text_labels)
+        page_items = merge_titles_with_photos(titles, photos)
+
+        output_path = folder1 / "slideshow.html"
+        result = generate_html_slideshow(
+            page_items, text_associations, theme, output_path,
+            interval_seconds=config.output.interval_seconds,
+        )
+
+        assert result == output_path
+        html = output_path.read_text()
+
+        # 3 photos + 1 title = 4 slides
+        assert html.count('class="ps-slide') == 4
+        assert "Chapter One" in html
+        assert "<strong>Caption</strong>" in html
+
+        # Same-folder photos get bare relative filenames; the folder2 photo
+        # needs a '../' traversal from folder1, where the file was written.
+        assert 'data-src="photo_a.jpg"' in html
+        assert 'data-src="photo_b.jpg"' in html
+        assert 'data-src="../second/photo_c.jpg"' in html
+
 
 class TestMixedTextAndTitleLabelsIntegration:
     """Integration tests for a photobook mixing 'text' captions and 'title' slots."""

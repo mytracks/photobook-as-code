@@ -2,12 +2,14 @@ photo_folders:
   - /mnt/pictures/2026/2026-03-17+ Sevilla + La Barrosa/
 output:
   size: A4
-  format: pdf
-  filename: /mnt/downloads/sevilla.pdf
+  format: png
+  directory: /mnt/downloads/sevilla
+  transparent: true
+  page_margin: 0
 
 layout:
   #photos_per_page: 2
-  pages: 100
+  pages: 200
 
 theme: clean2
 

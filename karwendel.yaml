@@ -1,9 +1,12 @@
 photo_folders:
-  - /mnt/pictures/2026/2026-06-11+ Karwendel + Schenna/
+  #- /mnt/pictures/2026/2026-06-11+ Karwendel + Schenna/
+  - /mnt/downloads/2026-06-11+ Karwendel + Schenna/
 output:
   size: A4
-  format: pdf
-  filename: /mnt/downloads/karwendel.pdf
+  format: html
+  directory: /mnt/downloads/karwendel
+  transparent: true
+  page_margin: 0
 
 layout:
   #photos_per_page: 2
